@@ -1,0 +1,24 @@
+[core]
+	repositoryformatversion = 0
+	filemode = false
+	bare = false
+	logallrefupdates = true
+	symlinks = false
+	ignorecase = true
+	hideDotFiles = dotGitOnly
+[remote "github"]
+	url = https://github.com/pgneditor/pgneditor.git
+	fetch = +refs/heads/*:refs/remotes/github/*
+[remote "gitlab"]
+	url = https://gitlab.com/pgneditor/pgneditor.git
+	fetch = +refs/heads/*:refs/remotes/gitlab/*
+[user]
+	name = pgneditor
+	email = pgneditorapplication@gmail.com
+	[credential "https://github.com/pgneditor/pgneditor.git"]
+		username = pgneditor
+	[credential "https://gitlab.com/pgneditor/pgneditor.git"]
+		username = pgneditor
+[remote "heroku"]
+	url = https://git.heroku.com/pgneditor.git
+	fetch = +refs/heads/*:refs/remotes/heroku/*
