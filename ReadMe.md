@@ -1,0 +1,3 @@
+# pgneditor
+
+Chess pgn editor.
