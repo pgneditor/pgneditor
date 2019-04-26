@@ -1,33 +1,30 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="UTF-8">
-    <title>Tornado Chat Demo</title>
-    <link rel="stylesheet" href="{{ static_url("chat.css") }}" type="text/css">
-  </head>
-  <body>
-    <div id="body">
-      <div id="inbox">
-        {% for message in messages %}
-          {% include "message.html" %}
-        {% end %}
-      </div>
-      <div id="input">
-        <form action="/a/message/new" method="post" id="messageform">
-          <table>
-            <tr>
-              <td><input type="text" name="body" id="message" style="width:500px"></td>
-              <td style="padding-left:5px">
-                <input type="submit" value="{{ _("Post") }}">
-                <input type="hidden" name="next" value="{{ request.path }}">
-                {% module xsrf_form_html() %}
-              </td>
-            </tr>
-          </table>
-        </form>
-      </div>
-    </div>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js" type="text/javascript"></script>
-    <script src="{{ static_url("chat.js") }}" type="text/javascript"></script>
-  </body>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8">
+    <title>Pgn Editor</title>
+
+    <link rel="stylesheet" href="static/css/reset.css?ver=1553783521">
+    <link rel="stylesheet" href="static/piece/alpha.css">
+    <link rel="stylesheet" href="static/piece/merida.css">
+    <link rel="stylesheet" href="static/css/markdown.css?ver=1553615350">
+
+    <script src="static/js/showdown.min.js?ver=1513938387"></script>
+
+    <script src="static/js/utils.js?ver=1553614389"></script>
+    <script src="static/js/dom.js?ver=1553845419"></script>    
+    <script src="static/js/conn.js?ver=1553845442"></script>    
+
+</head>
+
+<body>
+
+    <div id="root"></div>
+
+    <script src="static/js/main.js?ver=1553614063"></script>
+
+</body>
+
 </html>
