@@ -333,6 +333,81 @@ function Div(){return new Div_()}
 ////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////
+// a
+class A_ extends e{
+    constructor(){
+        super("a")
+    }
+
+    href(href){
+        this.sa("href", href)
+        return this
+    }
+
+    download(download){
+        this.sa("download", download)
+        return this
+    }
+}
+function A(){return new A_()}
+////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////
+// canvas
+class Canvas_ extends e{
+    constructor(){
+        super("canvas")
+    }
+
+    width(width){
+        this.sa("width", width)
+        return this
+    }
+
+    height(height){
+        this.sa("height", height)
+        return this
+    }
+
+    getContext(context){
+        return this.e.getContext(context)
+    }
+
+    toDataURL(kind){
+        return this.e.toDataURL(kind)
+    }
+
+    downloadHref(name, kind){
+        let dt = this.toDataURL('image/' + kind)
+        dt = dt.replace(/^data:image\/[^;]*/, 'data:application/octet-stream')
+        dt = dt.replace(/^data:application\/octet-stream/, 'data:application/octet-stream;headers=Content-Disposition%3A%20attachment%3B%20filename=' + name + "." + kind)
+        return dt
+    }
+}
+function Canvas(){return new Canvas_()}
+////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////
+// img
+class Img_ extends e{
+    constructor(){
+        super("img")
+    }
+
+    width(width){
+        this.sa("width", width)
+        return this
+    }
+
+    height(height){
+        this.sa("height", height)
+        return this
+    }
+}
+function Img(){return new Img_()}
+////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////
 // table
 class Table_ extends e{
     constructor(){
