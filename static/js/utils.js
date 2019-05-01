@@ -164,8 +164,38 @@ function getScrollBarWidth(){
 
 ////////////////////////////////////////////////////////////////////
 // fetch utils
+function defaulterrhandler(kind, url, content, err){
+    console.log(kind, url, content, err)
+}
+
 function fetchjson(url, callback, errcallback){
+    if(!errcallback) errcallback = defaulterrhandler
     fetch(url).then(
+        res=>res.text().then(
+            content=>{
+                try{
+                    obj = JSON.parse(content)
+                    callback(obj)
+                }catch(err){
+                    errcallback("fetch parse failed", url, content, err)
+                }
+            },
+            err=>errcallback("fetching content failed", url, "", err)
+        ),
+        err=>errcallback("fetch request failed", url, "", err)
+    )
+}
+
+function jsonapi(url, obj, callback, errcallback){
+    if(!errcallback) errcallback = defaulterrhandler
+    fetch(url, {
+        method: "POST",
+        body: JSON.stringify(obj),
+        headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+        }
+    }).then(
         res=>res.text().then(
             content=>{
                 try{
