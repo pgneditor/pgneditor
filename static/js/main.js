@@ -1,9 +1,11 @@
 ////////////////////////////////////////////////////////////////////
 
-jsonapi("/jsonapi", {
+function initapp(resobj){
+    console.log("initializing app")
+}
+
+api({
     "kind": "connected"
-}, function(resobj){
-    console.log(resobj)
-})
+}, initapp)
 
 ////////////////////////////////////////////////////////////////////

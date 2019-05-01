@@ -164,6 +164,9 @@ function getScrollBarWidth(){
 
 ////////////////////////////////////////////////////////////////////
 // fetch utils
+function defaultcallback(){
+}
+
 function defaulterrhandler(kind, url, content, err){
     console.log(kind, url, content, err)
 }
@@ -186,8 +189,9 @@ function fetchjson(url, callback, errcallback){
     )
 }
 
-function jsonapi(url, obj, callback, errcallback){
-    if(!errcallback) errcallback = defaulterrhandler
+function jsonapi(url, obj, callbackarg, errcallbackarg){
+    let callback = callbackarg || defaultcallback
+    let errcallback = errcallbackarg || defaulterrhandler
     fetch(url, {
         method: "POST",
         body: JSON.stringify(obj),
@@ -286,3 +290,73 @@ function elapsedday(time1ms, time2ms){
 
 ////////////////////////////////////////////////////////////////////
 
+////////////////////////////////////////////////////////////////////
+// local storage
+
+function getLocalElse(key, defaultvalue){
+    valuestring = localStorage.getItem(key)
+    let value = defaultvalue
+    if(!value) value = null
+    if(valuestring) try{
+        value = JSON.parse(valuestring)
+    }catch(err){}
+    return value
+}
+
+function setLocal(key, value){
+    localStorage.setItem(key, JSON.stringify(value))
+}
+
+////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////
+// user
+
+class User_{
+    constructor(blobarg){
+        let blob = blobarg || {}
+        this.uid = getelse(blob, "uid", "anonuser")
+        this.username = getelse(blob, "username", "Anonymous")
+    }
+
+    toblob(){
+        return {
+            uid: this.uid,
+            username: this.username
+        }
+    }
+}
+function User(blobarg){return new User_(blobarg)}
+
+function getuser(){
+    let blobarg = getLocalElse("user", {})
+    return User(blobarg)
+}
+
+function getuserblob(){
+    return getuser().toblob()
+}
+
+function setuserfromblobarg(blobarg){
+    let user = User(blobarg)
+    let blob = user.toblob()
+    setLocal("user", blob)
+}
+
+////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////
+// api
+
+function api(reqobj, callback){
+    function defaultapicallback(resobj){
+        console.log("<-", resobj.kind, resobj)        
+        setuserfromblobarg(resobj.user)
+        if(callback) callback(resobj)
+    }
+    reqobj.user = getuserblob()    
+    console.log("->", reqobj.kind, reqobj)
+    jsonapi("/jsonapi", reqobj, defaultapicallback)
+}
+
+////////////////////////////////////////////////////////////////////
