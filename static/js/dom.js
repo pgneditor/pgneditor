@@ -5,6 +5,11 @@ class e{
         this.e = document.createElement(kind)
     }
 
+    transition(transition){
+        this.e.style.transition = transition        
+        return this
+    }
+
     txd(textdecoration){
         this.e.style.textDecoration = textdecoration
 		return this
@@ -996,6 +1001,28 @@ class SplitPane_ extends e{
     }
 }
 function SplitPane(args){return new SplitPane_(args)}
+////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////
+// head log pane
+
+class HeadlogPane_ extends SplitPane_{
+    constructor(args){
+        super(args)
+        this.controlpanel.fd("row").jc("left")
+        this.logdiv = Div().ff("monospace").ml(10).mr(10).ellipsis().fs(20)
+        this.controlpanel.a(this.logdiv)
+    }
+
+    log(msg, kind){
+        this.logdiv.html(msg)
+        this.logdiv.c("#000")
+        if(kind == "info") this.logdiv.c("#007")
+        if(kind == "success") this.logdiv.c("#070")
+        if(kind == "error") this.logdiv.c("#700")
+    }
+}
+function HeadlogPane(args){return new HeadlogPane_(args)}
 ////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////
