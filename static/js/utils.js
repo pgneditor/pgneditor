@@ -318,22 +318,31 @@ function setLocal(key, value){
 
 class User_{
     constructor(blobarg){
-        let blob = blobarg || {}
+        let blob = blobarg || {}        
         this.uid = getelse(blob, "uid", "anonuser")
         this.username = getelse(blob, "username", "Anonymous")
         this.createdat = getelse(blob, "createdat", gettimesec())
         this.verifiedat = getelse(blob, "verifiedat", null)
         this.lastactiveat = getelse(blob, "lastactiveat", gettimesec())
+        this.verification = getelse(blob, "verification", null)
     }
 
     isverified(){        
         return !(!this.verifiedat)
     }
 
+    beingverified(){        
+        return !(!this.verification)
+    }
+
     toblob(){
         return {
             uid: this.uid,
-            username: this.username
+            username: this.username,
+            createdat: this.createdat,
+            verifiedat: this.verifiedat,
+            lastactiveat: this.lastactiveat,
+            verification: this.verification
         }
     }
 }

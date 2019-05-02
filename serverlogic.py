@@ -35,6 +35,7 @@ class User():
         self.createdat = blob.get("createdat", time.time())
         self.verifiedat = blob.get("verifiedat", None)
         self.lastactiveat = blob.get("lastactiveat", time.time())
+        self.verification = blob.get("verification", None)
 
     def toblob(self):
         return {
@@ -42,7 +43,8 @@ class User():
             "username": self.username,
             "createdat": self.createdat,
             "verifiedat": self.verifiedat,
-            "lastactiveat": self.lastactiveat
+            "lastactiveat": self.lastactiveat,
+            "verification": self.verification
         }
 
     def dbpath(self):
@@ -67,12 +69,14 @@ class Req():
         self.reqobj = reqobj
         self.kind = reqobj.get("kind", "dummy")
         self.userblob = reqobj.get("user", {})
-        self.user = User(self.userblob)        
+        self.user = User(self.userblob)       
+        self.verifyusername = reqobj.get("verifyusername", None)
 
         if SERVERLOGIC_VERBOSE:
             log(self, "warning")
 
-        if self.user.uid == "anonuser":            
+        if not db.pathexists("users/" + self.user.uid):    
+            self.user = User()        
             uid = uuid.uuid1().hex            
             self.user.uid = uid
             self.user.createdat = time.time()
@@ -106,6 +110,32 @@ def dummy(req):
 def connected(req):        
     return {
         "kind": "connectedack"        
+    }
+
+def login(req):
+    req.user.verification = {
+        "username": req.verifyusername,
+        "code": uuid.uuid1().hex
+    }
+    req.user.storedb()
+    return {
+        "kind": "login"        
+    }
+
+def verify(req):    
+    req.user.username = req.user.verification["username"]
+    req.user.verifiedat = time.time()
+    req.user.verification = None    
+    req.user.storedb()
+    return {
+        "kind": "verified"        
+    }
+
+def cancelverification(req):    
+    req.user.verification = None
+    req.user.storedb()
+    return {
+        "kind": "verificationcanceled"        
     }
 
 ###################################################################

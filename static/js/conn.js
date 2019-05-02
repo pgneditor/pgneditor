@@ -763,6 +763,45 @@ class Profile_ extends e{
         this.pad(10)
     }
 
+    login(){
+        api({
+            "kind": "login",
+            "verifyusername": this.usernameinput.getText()
+        }, this.build.bind(this))
+    }
+
+    verify(){
+        api({
+            "kind": "verify"
+        }, this.build.bind(this))
+    }
+
+    cancelverification(){
+        api({
+            "kind": "cancelverification"
+        }, this.build.bind(this))
+    }
+
+    loginwithuserid(){
+        let user = getuser()
+        user.uid = this.useridinput.getText()
+        user.verification = null
+        setuserfromblobarg(user.toblob())
+        api({
+            "kind": "connected"
+        }, initapp)
+    }
+
+    logout(){
+        let user = getuser()
+        user.uid = "anonuser"
+        user.verification = null
+        setuserfromblobarg(user.toblob())
+        api({
+            "kind": "connected"
+        }, initapp)
+    }
+
     build(){
         let user = getuser()
         try{
@@ -772,8 +811,34 @@ class Profile_ extends e{
         }catch(err){console.log(err)}
         this.x
         this.usernameinput = TextInput().pad(3).w(400)
-        this.a(Labeled("Username", this.usernameinput.fs(20)).fs(24))
-        if(user.isverified()) this.usernameinput.setText(user.username)
+        this.usernameinputdiv = Div().disp("flex").ai("center")
+        this.loginhook = Div().ml(10)
+        this.usernameinputdiv.a(Labeled("Username", this.usernameinput.fs(20)).fs(24), this.loginhook)
+        this.a(this.usernameinputdiv)
+        if(user.isverified()){
+            this.usernameinput.setText(user.username)
+            this.loginhook.a(Button("Logout", this.logout.bind(this)).fs(22).bc("#faa"))
+        }else if(user.beingverified()){
+            app.log("Enter the Verification Code into your lichess profile and press Verify !", "info")
+            this.verificationdiv = Div().mt(10).disp("flex").ai("center")
+            this.vercodeinput = CopyText({dopaste: false, width: 500}).setText(user.verification.code)
+            this.usernameinput.setText(user.verification.username)
+            this.verificationdiv.a(
+                Labeled("Verification Code",this.vercodeinput).fs(24),
+                Button("Verify", this.verify.bind(this)).bc("#afa").fs(24).ml(10).pad(4).pl(20).pr(20),
+                Button("Cancel verification", this.cancelverification.bind(this)).bc("#faa").fs(14).ml(20)
+            )
+            this.a(this.verificationdiv)
+        }else{
+            this.loginhook.a(Button("Login", this.login.bind(this)).fs(22).bc("#afa"))
+        }
+        this.useridinput = CopyText({width: 500}).fs(24).setText(user.uid)
+        this.useridinputdiv = Div().disp("flex").ai("center").mt(40)
+        this.useridinputdiv.a(            
+            Labeled("Your user ID", this.useridinput).fs(22),
+            Button("Login with User ID", this.loginwithuserid.bind(this)).fs(22).ml(10)
+        )
+        this.a(this.useridinputdiv)
         return this
     }
 }

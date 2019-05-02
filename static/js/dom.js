@@ -563,7 +563,7 @@ class CopyText_ extends e{
         this.height = height        
         this.copydiv.w(this.dopaste ? this.controlwidth/2 : this.controlwidth).h(this.height/1.4)
         this.pastediv.w(this.docopy ? this.controlwidth/2 : this.controlwidth).h(this.height/1.4)
-        this.textinput.w(this.width - this.controlwidth * 1.2).h(this.height * 0.5).fs(this.height * 0.5)
+        this.textinput.w(this.width - this.controlwidth * 1.2).h(this.height * 0.5).fs(this.height * 0.5).pl(5)
         this.w(this.width).h(this.height)
         return this
     }

@@ -19,6 +19,8 @@ function initapp(resobj){
 
     profile.build()
     maintabpane.op(1)
+
+    if(getuser().beingverified()) maintabpane.selecttab("profile")
 }
 
 function connect(){    
@@ -31,6 +33,6 @@ function connect(){
 
 app.log("Pgn Editor authenticating ...", "info")
 
-setTimeout(connect, 1000)
+setTimeout(connect, 100)
 
 ////////////////////////////////////////////////////////////////////
