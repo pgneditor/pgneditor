@@ -10,6 +10,10 @@ function getelse(obj, key, defaultvalue){
     return defaultvalue
 }
 
+function gettimesec(){
+    return new Date().getTime()/1000.0
+}
+
 ////////////////////////////////////////////////////////////////////
 
 try{
@@ -317,6 +321,9 @@ class User_{
         let blob = blobarg || {}
         this.uid = getelse(blob, "uid", "anonuser")
         this.username = getelse(blob, "username", "Anonymous")
+        this.createdat = getelse(blob, "createdat", gettimesec())
+        this.verifiedat = getelse(blob, "verifiedat", null)
+        this.lastactiveat = getelse(blob, "lastactiveat", gettimesec())
     }
 
     toblob(){

@@ -4,8 +4,14 @@ function initapp(resobj){
     console.log("initializing app")
 }
 
-api({
-    "kind": "connected"
-}, initapp)
+function connect(){
+    api({
+        "kind": "connected"
+    }, initapp)
+}
+
+////////////////////////////////////////////////////////////////////
+
+connect()
 
 ////////////////////////////////////////////////////////////////////
