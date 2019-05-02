@@ -1,4 +1,6 @@
 
+/db/*
+
 /.vscode/*
 
 __pycache__/
