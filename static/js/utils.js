@@ -326,6 +326,10 @@ class User_{
         this.lastactiveat = getelse(blob, "lastactiveat", gettimesec())
     }
 
+    isverified(){        
+        return !(!this.verifiedat)
+    }
+
     toblob(){
         return {
             uid: this.uid,

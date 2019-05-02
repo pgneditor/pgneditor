@@ -754,3 +754,28 @@ class ProfileTab_ extends Tab_{
 }
 function ProfileTab(args){return new ProfileTab_(args)}
 ////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////
+// profile
+class Profile_ extends e{
+    constructor(){
+        super("div")
+        this.pad(10)
+    }
+
+    build(){
+        let user = getuser()
+        try{
+            let cd = this.parenttab.captiondiv
+            cd.html(user.username).c("#700")
+            if(user.isverified()) cd.c("#070")
+        }catch(err){console.log(err)}
+        this.x
+        this.usernameinput = TextInput().pad(3).w(400)
+        this.a(Labeled("Username", this.usernameinput.fs(20)).fs(24))
+        if(user.isverified()) this.usernameinput.setText(user.username)
+        return this
+    }
+}
+function Profile(){return new Profile_()}
+////////////////////////////////////////////////////////////////////

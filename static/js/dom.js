@@ -1041,6 +1041,7 @@ class Tab_ extends e{
         this.captiondiv = Div()
         this.setcaption(caption)
         this.a(this.captiondiv)
+        contentelement.parenttab = this
     }
 }
 function Tab(id, caption, contentelement){return new Tab_(id, caption, contentelement)}
@@ -1462,6 +1463,22 @@ class BasicBoard_ extends e{
     }
 }
 function BasicBoard(args){return new BasicBoard_(args)}
+////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////
+// labeled
+class Labeled_ extends e{
+    constructor(caption, element){
+        super("div")
+        this.disp("inline-block").bc("#ffe")
+        this.container = Div().disp("flex").curlyborder().pad(3).ai("center").jc("space-around").mar(1)
+        this.captiondiv = Div().pad(2).pl(8).pr(8).html(caption).ff("monospace").ml(1).mr(6).bc("#eff").curlyborder()
+        this.contentdiv = Div().a(element).mr(5)
+        this.container.a(this.captiondiv, this.contentdiv)
+        this.a(this.container)
+    }
+}
+function Labeled(caption, element){return new Labeled_(caption, element)}
 ////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////
