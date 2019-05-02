@@ -7,6 +7,10 @@ from traceback import print_exc as pe
 
 ###################################################################
 
+from utils.logger import log
+
+###################################################################
+
 FILE_VERBOSE = True
 
 ###################################################################
@@ -14,17 +18,17 @@ FILE_VERBOSE = True
 def createdir(path):
     if os.path.isdir(path):
         if FILE_VERBOSE:
-            print(f"{path} already exists")
+            log(f"< < {path} > already exists >", "warning")
         return True
     try:
         os.mkdir(path)
         if FILE_VERBOSE:
-            print(f"{path} created")
+            log(f"< < {path} > created >", "success")
         return True
     except:
         pe()
         if FILE_VERBOSE:
-            print(f"{path} could not be created")
+            log(f"< < {path} > could not be created >", "error")
         return False
 
 ###################################################################
@@ -41,7 +45,7 @@ def write_string_to_file(path, content):
     with open(path,"wb") as outfile:
         outfile.write(content.encode("utf-8"))
     if FILE_VERBOSE:
-        print(f"written file { path } ( { len(str) } characters )")
+        log(f"< written file < { path } [ { len(str) } characters ] > >", "info")
 
 def read_string_from_file(path, default):
 	try:		
@@ -56,7 +60,7 @@ def read_string_from_file(path, default):
 def write_json_to_file(path, obj, indent = 2):        
     json.dump(obj, open(path, "w"), indent = indent)
     if FILE_VERBOSE:
-        print(f"written json { path } ( { len(json.dumps(obj, indent = indent)) } characters )")
+        log(f"< written json < { path } [ { len(json.dumps(obj, indent = indent)) } characters ] > >", "info")
     
 def read_json_from_file(path, default):
     try:
@@ -120,33 +124,33 @@ class Db:
 
     def getpath(self, path):
         if FILE_VERBOSE:
-            print(f"getting {path} from db")        
+            log(f"< getting < {path} > from db >", "info")        
         if not self.pathexists(path):
             if FILE_VERBOSE:
-                print(f"{path} does not exist, requesting from remote")        
+                log(f"< < {path} > does not exist, requesting from remote >", "warning")        
             dbresult = self.getpathfromdb(path)
             if not dbresult:
                 if FILE_VERBOSE:
-                    print(f"{path} does not exist on remote")        
+                    log(f"< < {path} > does not exist on remote >", "error")        
                 return None
             if FILE_VERBOSE:
-                print(f"setting {path} locally to", dbresult)        
+                log(f"< setting < {path} > locally to < {dbresult} > >", "info")        
             self.pathexists(path, dbresult)
             return dbresult
         if FILE_VERBOSE:
-            print(f"{path} exists")        
+            log(f"< < {path} > exists >", "info")        
         if self.isdocpath(path):            
             effpath = self.dbpath + "/" + path + ".json"
             doc = read_json_from_file(effpath, {})
             if FILE_VERBOSE:
-                print(f"returning doc from {effpath}", doc)        
+                log(f"< returning doc from < {effpath} | {doc} > >", "info")        
             return doc
         ids = getfilenamesfromdir(self.dbpath + "/" + path, ext = ".json")
         colldict = {}
         for id in ids:
             colldict[id] = read_json_from_file(path + "/" + id + ".json", {})
         if FILE_VERBOSE:
-            print(f"returning coll dict from {path}")        
+            log(f"< returning coll dict from < {path} > >", "info")        
         return colldict
 
 ###################################################################

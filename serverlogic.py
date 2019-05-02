@@ -7,6 +7,7 @@ import time
 ###################################################################
 
 import utils.file
+from utils.logger import log
 
 ###################################################################
 
@@ -69,18 +70,18 @@ class Req():
         self.user = User(self.userblob)        
 
         if SERVERLOGIC_VERBOSE:
-            print(self)
+            log(self, "warning")
 
         if self.user.uid == "anonuser":            
             uid = uuid.uuid1().hex            
             self.user.uid = uid
             self.user.createdat = time.time()
             if SERVERLOGIC_VERBOSE:
-                print("anonuser in request, creating new user", uid)
+                log(f"< anonuser in request, creating new user < {uid} > >", "error")
         if self.user.indb():
             self.user.fromdb()
             if SERVERLOGIC_VERBOSE:
-                print("user found in db")        
+                log("< user found in db >", "success")        
         self.user.lastactiveat = time.time()
         self.user.storedb()        
 
