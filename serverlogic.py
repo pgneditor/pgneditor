@@ -127,7 +127,7 @@ def verify(req):
     username = req.user.verification["username"]
     code = req.user.verification["code"]
     if SERVERLOGIC_VERBOSE:
-        log(f"< verifying user < {username} > code < {code} > >")
+        log(f"< verifying user < {username} > code < {code} > >", "info")
     try:
         content = geturl("https://lichess.org/@/" + username)
         if SERVERLOGIC_VERBOSE:
@@ -138,6 +138,14 @@ def verify(req):
             req.user.username = username
             req.user.verifiedat = time.time()
             req.user.verification = None    
+            allusers = db.getpath("users")
+            for id, userblob in allusers.items():
+                if userblob["username"] == username:
+                    newuid = userblob["uid"]
+                    if SERVERLOGIC_VERBOSE:
+                        log(f"< user already exists, changing uid to < {newuid} > >", "warning")
+                    req.user.uid = newuid
+                    break
             req.user.storedb()
             return {
                 "kind": "verified"        

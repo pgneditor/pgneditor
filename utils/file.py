@@ -34,7 +34,7 @@ def createdir(path):
 ###################################################################
 
 def getfilenamesfromdir(path, ext = None):
-    for (dirpath, dirnames, filenames) in os.walk(mypath):
+    for (dirpath, dirnames, filenames) in os.walk(path):
         if ext:
             filenames = [os.path.splitext(filename)[0] for filename in filenames if os.path.splitext(filename)[1] == ext]
         return filenames
@@ -62,11 +62,12 @@ def write_json_to_file(path, obj, indent = 2):
     if FILE_VERBOSE:
         log(f"< written json < { path } [ { len(json.dumps(obj, indent = indent)) } characters ] > >", "info")
     
-def read_json_from_file(path, default):
+def read_json_from_file(path, default):    
     try:
-        obj = json.load(open(path))
+        obj = json.load(open(path))        
         return obj
     except:
+        pe()
         return default
 
 ###################################################################
@@ -100,15 +101,11 @@ class Db:
         if isdoc:
             dirpath = self.dbpath + "/" + "/".join(parts[:-1])
             effpath = dirpath + "/" + parts[-1] + ".json"
-            exists = os.path.isfile(effpath)        
-            if exists:
-                exists = read_json_from_file(effpath, {})
+            exists = os.path.isfile(effpath)                    
         else:
             dirpath = self.dbpath + "/" + path
             effpath = dirpath        
-            exists = os.path.isdir(effpath)        
-            if exists:
-                exists = {}
+            exists = os.path.isdir(effpath)         
         if not create:
             return exists
         createdir(dirpath)
@@ -148,7 +145,7 @@ class Db:
         ids = getfilenamesfromdir(self.dbpath + "/" + path, ext = ".json")
         colldict = {}
         for id in ids:
-            colldict[id] = read_json_from_file(path + "/" + id + ".json", {})
+            colldict[id] = read_json_from_file(self.dbpath + "/" + path + "/" + id + ".json", {})
         if FILE_VERBOSE:
             log(f"< returning coll dict from < {path} > >", "info")        
         return colldict
