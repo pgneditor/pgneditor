@@ -8,6 +8,7 @@ import time
 
 import utils.file
 from utils.logger import log
+from utils.http import geturl
 
 ###################################################################
 
@@ -123,12 +124,36 @@ def login(req):
     }
 
 def verify(req):    
-    req.user.username = req.user.verification["username"]
-    req.user.verifiedat = time.time()
-    req.user.verification = None    
-    req.user.storedb()
+    username = req.user.verification["username"]
+    code = req.user.verification["code"]
+    if SERVERLOGIC_VERBOSE:
+        log(f"< verifying user < {username} > code < {code} > >")
+    try:
+        content = geturl("https://lichess.org/@/" + username)
+        if SERVERLOGIC_VERBOSE:
+            log(f"< received content < {len(content)} characters > >", "info")
+        if code in content:
+            if SERVERLOGIC_VERBOSE:
+                log(f"< code found in content >", "success")
+            req.user.username = username
+            req.user.verifiedat = time.time()
+            req.user.verification = None    
+            req.user.storedb()
+            return {
+                "kind": "verified"        
+            }
+    except:
+        pe()
+        if SERVERLOGIC_VERBOSE:
+            log(f"< there was a problem verifying user >", "error")
+    if SERVERLOGIC_VERBOSE:
+        log(f"< verification failed >", "error")
     return {
-        "kind": "verified"        
+        "kind": "verificationfailed",
+        "alert": {
+            "msg": "Verification failed !",
+            "kind": "error"
+        }
     }
 
 def cancelverification(req):    

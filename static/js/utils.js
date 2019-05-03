@@ -372,6 +372,9 @@ function api(reqobj, callback){
     function defaultapicallback(resobj){
         console.log("<-", resobj.kind, resobj)        
         setuserfromblobarg(resobj.user)
+        if("alert" in resobj){
+            window.alert(resobj.alert.msg)
+        }
         if(callback) callback(resobj)
     }
     reqobj.user = getuserblob()    
