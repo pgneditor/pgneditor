@@ -4,11 +4,13 @@ let app = HeadlogPane({fillwindow: true})
 app.controlpanel.bc("#ddd")
 
 let profile = Profile()
+let board = Board()
 
-let maintabpane = TabPane().settabs([
+let maintabpane = TabPane("maintabpane").settabs([
+    Tab("board", "Board", board),
     Tab("about", "About", Div().html("Pgn Editor.").mar(10).fs(20)),
     Tab("profile", "Profile", profile)
-]).selecttab("about", USE_STORED_IF_AVAILABLE).op(0.25).transition("all 1s")
+]).selecttab("board", USE_STORED_IF_AVAILABLE).op(0.25).transition("all 1s")
 
 app.setcontentelement(maintabpane)
 

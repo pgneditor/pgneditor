@@ -1309,7 +1309,7 @@ class BasicBoard_ extends e{
             if(p.nonempty()){                
                 let pdiv = Div().po("absolute").tl(pc)                
                 pdiv.w(this.piecesize).h(this.piecesize)
-                let klass = getclassforpiece(p, this.piecestyle)                
+                let klass = getclassforpiece(p, this.piecestyle)                    
                 pdiv.ac(klass).sa("draggable", true)
                 pdiv.ae("dragstart", this.piecedragstart.bind(this, p, sq, pdiv))
                 pdiv.ae("dragover", this.piecedragover.bind(this))
@@ -1351,6 +1351,7 @@ class BasicBoard_ extends e{
             }
         }        
         this.buildpieces()
+        return this
     }
 
     settottalheight(totalheight){
@@ -1441,8 +1442,9 @@ class BasicBoard_ extends e{
         this.flip = ( flip ? true : false )
     }
 
-    constructor(args){
+    constructor(argsopt){
         super("div")
+        let args = argsopt || {}
         this.draggedp = undefined
         this.draggedsq = undefined
         this.draggedpdiv = undefined
@@ -1462,7 +1464,7 @@ class BasicBoard_ extends e{
         this.setfromfen(this.fen)
     }
 }
-function BasicBoard(args){return new BasicBoard_(args)}
+function BasicBoard(argsopt){return new BasicBoard_(argsopt)}
 ////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////

@@ -293,7 +293,7 @@ class GameNode_ extends e{
 }
 function GameNode(){return new GameNode_()}
 
-class Board_ extends ConnWidget_{
+class BoardOld_ extends ConnWidget_{
 	gamenodeclicked(line){
 		//console.log(line)
 		
@@ -600,7 +600,7 @@ class Board_ extends ConnWidget_{
         }
     }
 }
-function Board(id, args){return new Board_(id, args)}
+function BoardOld(id, args){return new Board_(id, args)}
 ////////////////////////////////////////////////////////////////////
 class ProfileConnWidget_ extends ConnWidget_{
     constructor(siorescallback){        
@@ -843,4 +843,44 @@ class Profile_ extends e{
     }
 }
 function Profile(){return new Profile_()}
+////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////
+// board
+class Board_ extends e{
+    resize(width, height){
+        this.width = width
+        this.height = height        
+        this.basicboardheight = this.height - this.controlheight
+        this.basicboard.resize(null, this.basicboardheight)
+        this.boardwidth = this.basicboard.totalwidth()
+        this.controlpanel.w(this.boardwidth).h(this.controlheight)
+        this.tabpanewidth = this.width - this.boardwidth
+        this.tabpane.resize(this.tabpanewidth, this.height)
+        this.w(this.width).h(this.height)
+    }
+
+    constructor(argsopt){
+        super("div")
+        let args = argsopt || {}
+        this.width = getelse(args, "width", 1000)
+        this.height = getelse(args, "height", 400)        
+        this.controlheight = getelse(args, "controlheight", 80)
+        this.basicboard = BasicBoard()
+        this.guicontainer = Div().disp("flex")
+        this.boardcontainer = Div().disp("flex").fd("column")
+        this.controlpanel = Div().bc("#ccc")
+        this.boardcontainer.a(this.controlpanel, this.basicboard)
+        this.gamediv = Div()
+        this.studiesdiv = Div()
+        this.tabpane = TabPane("boardtabpane").settabs([
+            Tab("game", "Game", this.gamediv),
+            Tab("studies", "Studies", this.studiesdiv)
+        ]).selecttab("game", USE_STORED_IF_AVAILABLE)
+        this.guicontainer.a(this.boardcontainer, this.tabpane)
+        this.a(this.guicontainer)
+        this.resize(this.width, this.height)
+    }
+}
+function Board(argsopt){return new Board_(argsopt)}
 ////////////////////////////////////////////////////////////////////
