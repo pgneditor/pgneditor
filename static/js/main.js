@@ -19,6 +19,8 @@ se("root", app)
 function initapp(resobj){
     app.log("Welcome to Pgn Editor !", "success")    
 
+    board.init()
+
     profile.build()
     maintabpane.op(1)
 

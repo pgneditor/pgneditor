@@ -15,13 +15,24 @@ FILE_VERBOSE = True
 
 ###################################################################
 
-def createdir(path):
+def deletefile(path):
+    if FILE_VERBOSE:
+        log(f"< deleting file < {path} >", "info")
+    try:
+        os.remove(path)
+    except:
+        pe()
+
+def createdir(path, createall = True):
     if os.path.isdir(path):
         if FILE_VERBOSE:
             log(f"< < {path} > already exists >", "warning")
         return True
     try:
-        os.mkdir(path)
+        if createall:
+            os.makedirs(path)
+        else:
+            os.mkdir(path)
         if FILE_VERBOSE:
             log(f"< < {path} > created >", "success")
         return True
@@ -94,6 +105,9 @@ class Db:
     def setdocindb(self, path, doc):
         pass
 
+    def deletedocfromdb(self, path):
+        pass
+
     def pathexists(self, path, create = None):
         parts = path.split("/")
         l = len(parts)
@@ -108,7 +122,10 @@ class Db:
             exists = os.path.isdir(effpath)         
         if not create:
             return exists
-        createdir(dirpath)
+        if not exists:
+            if FILE_VERBOSE:
+                log(f"< < {dirpath} > does not exist, creating >", "warning")
+            createdir(dirpath)
         if isdoc:
             write_json_to_file(effpath, create)
         else:
@@ -118,6 +135,11 @@ class Db:
     def setdoc(self, path, doc):
         self.pathexists(path, doc)
         self.setdocindb(path, doc)
+
+    def deletedoc(self, path):
+        self.deletedocfromdb(path)
+        path = self.dbpath + "/" + path + ".json"
+        deletefile(path)
 
     def getpath(self, path):
         if FILE_VERBOSE:

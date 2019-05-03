@@ -9,10 +9,16 @@ import time
 import utils.file
 from utils.logger import log
 from utils.http import geturl
+from utils.study import Study
 
 ###################################################################
 
 SERVERLOGIC_VERBOSE = True
+
+###################################################################
+
+def createuuid():
+    return uuid.uuid1().hex
 
 ###################################################################
 
@@ -72,13 +78,15 @@ class Req():
         self.userblob = reqobj.get("user", {})
         self.user = User(self.userblob)       
         self.verifyusername = reqobj.get("verifyusername", None)
+        self.title = reqobj.get("title", None)
+        self.id = reqobj.get("id", None)
 
         if SERVERLOGIC_VERBOSE:
             log(self, "warning")
 
         if not db.pathexists("users/" + self.user.uid):    
             self.user = User()        
-            uid = uuid.uuid1().hex            
+            uid = createuuid()
             self.user.uid = uid
             self.user.createdat = time.time()
             if SERVERLOGIC_VERBOSE:
@@ -89,6 +97,14 @@ class Req():
                 log("< user found in db >", "success")        
         self.user.lastactiveat = time.time()
         self.user.storedb()        
+
+    def studiespath(self):
+        return "users/" + self.user.uid + "/studies"
+
+    def studypath(self, study):
+        return self.studiespath() + "/" + study.id
+
+###################################################################
 
     def res(self, resobj):
         if not ("user" in resobj):
@@ -116,7 +132,7 @@ def connected(req):
 def login(req):
     req.user.verification = {
         "username": req.verifyusername,
-        "code": uuid.uuid1().hex
+        "code": createuuid()
     }
     req.user.storedb()
     return {
@@ -169,6 +185,108 @@ def cancelverification(req):
     req.user.storedb()
     return {
         "kind": "verificationcanceled"        
+    }
+
+def getstudies(req):
+    if not db.getpath(req.studiespath()):
+        log("< no studies, creating default >", "warning")
+        defaultstudy = Study({
+            "selected": True
+        })
+        db.setdoc(req.studypath(defaultstudy), defaultstudy.toblob())
+    studies = db.getpath(req.studiespath())
+    return {
+        "kind": "setstudies",
+        "studies": studies
+    }
+
+def unselectstudies(req, selectid = None):
+    studies = db.getpath(req.studiespath())
+    if not studies:
+        return
+    for id, studyblob in studies.items():        
+        study = Study(studyblob)        
+        if study.selected:
+            if SERVERLOGIC_VERBOSE:
+                log(f"< unselecting study < {id} > >", "info")
+            study.selected = False
+            db.setdoc(req.studypath(study), study.toblob())
+        if selectid == id:
+            if SERVERLOGIC_VERBOSE:
+                log(f"< selecting study < {id} > >", "info")
+            study.selected = True
+            db.setdoc(req.studypath(study), study.toblob())
+
+def createstudy(req):
+    id = createuuid()
+    study = Study({
+        "title": req.title,
+        "id": id,
+        "selected": True
+    })
+    unselectstudies(req)
+    db.setdoc(req.studypath(study), study.toblob())
+    if SERVERLOGIC_VERBOSE:
+        log(f"< created study < {req.title} | {id} > >", "success")
+    return {
+        "kind": "studycreated"
+    }
+
+def deletestudy(req):
+    if req.id == "default":
+        return {
+            "kind": "studydeletefailed",
+            "status": "default study cannot be deleted",
+            "alert": {
+                "msg": "The default study cannot be deleted !",
+                "kind": "error"
+            }
+        }
+    unselectstudies(req, selectid = "default")
+    study = Study({"id": req.id})
+    db.deletedoc(req.studypath(study))
+    return {
+        "kind": "studydeleted"
+    }
+
+def getstudy(req):
+    study = Study({"id": req.id})
+    blob = db.getpath(req.studypath(study))
+    if not blob:
+        return None
+    study = Study(blob)
+    return study
+
+def editstudytitle(req):
+    if req.id == "default":
+        return {
+            "kind": "editstudytitlefailed",
+            "status": "default study's title cannot be edited",
+            "alert": {
+                "msg": "The default study's title cannot be edited !",
+                "kind": "error"
+            }
+        }
+    study = getstudy(req)
+    if not study:
+        return {
+            "kind": "editstudytitlefailed",
+            "status": "fatal no such study",
+            "alert": {
+                "msg": "The default study's title cannot be edited !",
+                "kind": "error"
+            }
+        }
+    study.title = req.title
+    db.setdoc(req.studypath(study), study.toblob())
+    return {
+        "kind": "studytitleedited"
+    }
+
+def selectstudy(req):
+    unselectstudies(req, selectid = req.id)
+    return {
+        "kind": "studyselected"
     }
 
 ###################################################################

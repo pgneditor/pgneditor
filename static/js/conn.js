@@ -846,6 +846,133 @@ function Profile(){return new Profile_()}
 ////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////
+// study
+class Study_ extends e{
+    build(){
+        this.titlediv.html(this.title)
+        this.container.bc(this.selected ? "#efe" : "#eee")
+        this.titlediv.bc(this.selected ? "#eff" : "#eee")
+        return this
+    }
+
+    fromblob(blobopt){
+        this.blob = blobopt || {}
+        this.id = getelse(this.blob, "id", "default")
+        this.title = getelse(this.blob, "title", "Default study")
+        this.createdat = getelse(this.blob, "createdat", gettimesec())
+        this.selected = getelse(this.blob, "selected", false)
+        return this.build()
+    }
+
+    titleedited(resobj){
+        if(this.parentstudies) this.parentstudies.request()
+    }
+
+    edittitle(){
+        let title = window.prompt("title", this.title)
+        api({
+            "kind": "editstudytitle",
+            "id": this.id,
+            "title": title
+        }, this.titleedited.bind(this))
+    }
+
+    studydeleted(resobj){
+        if(this.parentstudies) this.parentstudies.request()
+    }
+
+    delete(){
+        api({
+            "kind": "deletestudy",
+            "id": this.id
+        }, this.studydeleted.bind(this))
+    }
+
+    studyselected(resobj){
+        if(this.parentstudies) this.parentstudies.request()
+    }
+
+    titleclicked(){
+        api({
+            "kind": "selectstudy",
+            "id": this.id
+        }, this.studyselected.bind(this))
+    }
+
+    constructor(argsopt){
+        super("div")
+        let args = argsopt || {}
+        this.parentstudies = getelse(args, "parentstudies", null)
+        this.container = Div().disp("flex").ai("center").pad(2).curlyborder()
+        this.titlediv = Div().pad(2).ff("monospace").ml(6).fs(16).w(300).ellipsis().cp()
+        this.titlediv.ae("mousedown", this.titleclicked.bind(this))
+        this.controldiv = Div().disp("flex")
+        this.controldiv.a(
+            Button("Edit title", this.edittitle.bind(this)).bc("#ffa"),
+            Button("Delete", this.delete.bind(this)).bc("#faa")
+        )
+        this.container.a(this.titlediv, this.controldiv)
+        this.a(this.container)
+        this.fromblob(getelse(args, "blob", {}))
+        this.mt(1).mb(1)
+    }
+}
+function Study(argsopt){return new Study_(argsopt)}
+////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////
+// studies
+class Studies_ extends e{
+    setstudies(resobj){
+        this.studies = resobj.studies
+        let ids = Object.keys(this.studies)
+        console.log(ids)
+        ids.sort((id1,id2) => this.studies[id1].createdat - this.studies[id2].createdat)        
+        this.container.x
+        for(let id of ids){
+            let blob = this.studies[id]
+            let study = Study({blob: blob, parentstudies: this})
+            this.container.a(study)
+        }
+    }
+
+    request(){
+        api({
+            "kind": "getstudies"
+        }, this.setstudies.bind(this))
+    }
+
+    init(){
+        this.request()
+    }
+
+    studycreated(resobj){
+        this.request()
+    }
+
+    createnew(){
+        let title = window.prompt("Study title:")
+        api({
+            "kind": "createstudy",
+            "title": title
+        }, this.studycreated.bind(this))
+    }
+
+    constructor(argsopt){
+        super("div")
+        let args = argsopt || {}     
+        this.controlpanel = Div().pad(2).disp("flex").ai("center").jc("space-around")
+        this.controlpanel.a(
+            Button("+ Create new", this.createnew.bind(this)).fs(18).bc("#afa").curlyborder().pl(8).pr(8)
+        )
+        this.container = Div().pad(2)
+        this.a(this.controlpanel, this.container)
+    }
+}
+function Studies(argsopt){return new Studies_(argsopt)}
+////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////
 // board
 class Board_ extends e{
     resize(width, height){
@@ -872,14 +999,18 @@ class Board_ extends e{
         this.controlpanel = Div().bc("#ccc")
         this.boardcontainer.a(this.controlpanel, this.basicboard)
         this.gamediv = Div()
-        this.studiesdiv = Div()
+        this.studies = Studies()
         this.tabpane = TabPane("boardtabpane").settabs([
             Tab("game", "Game", this.gamediv),
-            Tab("studies", "Studies", this.studiesdiv)
+            Tab("studies", "Studies", this.studies)
         ]).selecttab("game", USE_STORED_IF_AVAILABLE)
         this.guicontainer.a(this.boardcontainer, this.tabpane)
         this.a(this.guicontainer)
         this.resize(this.width, this.height)
+    }
+
+    init(){
+        this.studies.init()
     }
 }
 function Board(argsopt){return new Board_(argsopt)}
