@@ -849,9 +849,13 @@ function Profile(){return new Profile_()}
 // study
 class Study_ extends e{
     build(){
+        this.variantdiv.html(VARIANT_ICONS[this.variantkey])
         this.titlediv.html(this.title)
         this.container.bc(this.selected ? "#efe" : "#eee")
         this.titlediv.bc(this.selected ? "#eff" : "#eee")
+        if(this.selected && this.parentstudies){
+            this.parentstudies.setvariantkey(this.variantkey)
+        }
         return this
     }
 
@@ -859,6 +863,7 @@ class Study_ extends e{
         this.blob = blobopt || {}
         this.id = getelse(this.blob, "id", "default")
         this.title = getelse(this.blob, "title", "Default study")
+        this.variantkey = getelse(this.blob, "variantkey", "standard")
         this.createdat = getelse(this.blob, "createdat", gettimesec())
         this.selected = getelse(this.blob, "selected", false)
         return this.build()
@@ -904,6 +909,7 @@ class Study_ extends e{
         let args = argsopt || {}
         this.parentstudies = getelse(args, "parentstudies", null)
         this.container = Div().disp("flex").ai("center").pad(2).curlyborder()
+        this.variantdiv = Div().ff("lichess").ml(6)
         this.titlediv = Div().pad(2).ff("monospace").ml(6).fs(16).w(300).ellipsis().cp()
         this.titlediv.ae("mousedown", this.titleclicked.bind(this))
         this.controldiv = Div().disp("flex")
@@ -911,7 +917,7 @@ class Study_ extends e{
             Button("Edit title", this.edittitle.bind(this)).bc("#ffa"),
             Button("Delete", this.delete.bind(this)).bc("#faa")
         )
-        this.container.a(this.titlediv, this.controldiv)
+        this.container.a(this.variantdiv, this.titlediv, this.controldiv)
         this.a(this.container)
         this.fromblob(getelse(args, "blob", {}))
         this.mt(1).mb(1)
@@ -954,16 +960,27 @@ class Studies_ extends e{
         let title = window.prompt("Study title:")
         api({
             "kind": "createstudy",
-            "title": title
+            "title": title,
+            "variantkey": this.getvariantkey()
         }, this.studycreated.bind(this))
+    }
+
+    getvariantkey(){
+        return this.variantcombo.v()
+    }
+
+    setvariantkey(variantkey){
+        this.variantcombo.setoptions(VARIANT_KEYS, variantkey)
     }
 
     constructor(argsopt){
         super("div")
         let args = argsopt || {}     
         this.controlpanel = Div().pad(2).disp("flex").ai("center").jc("space-around")
+        this.variantcombo = Select().ff("monospace").fs(17)
         this.controlpanel.a(
-            Button("+ Create new", this.createnew.bind(this)).fs(18).bc("#afa").curlyborder().pl(8).pr(8)
+            Button("+ Create new", this.createnew.bind(this)).fs(18).bc("#afa").curlyborder().pl(8).pr(8),
+            this.variantcombo
         )
         this.container = Div().pad(2)
         this.a(this.controlpanel, this.container)

@@ -71,3 +71,8 @@ hr {
         opacity: 0.5;        
     }
 }
+
+@font-face {
+    font-family: "lichess";
+    src: url("font/lichess.woff") format('woff');
+}

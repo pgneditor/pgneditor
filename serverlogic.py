@@ -79,6 +79,7 @@ class Req():
         self.user = User(self.userblob)       
         self.verifyusername = reqobj.get("verifyusername", None)
         self.title = reqobj.get("title", None)
+        self.variantkey = reqobj.get("variantkey", "standard")
         self.id = reqobj.get("id", None)
 
         if SERVERLOGIC_VERBOSE:
@@ -221,6 +222,7 @@ def createstudy(req):
     id = createuuid()
     study = Study({
         "title": req.title,
+        "variantkey": req.variantkey,
         "id": id,
         "selected": True
     })

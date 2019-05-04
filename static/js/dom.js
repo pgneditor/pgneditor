@@ -1121,6 +1121,18 @@ VARIANT_KEYS = [
     [ "threeCheck", "Three-check" ]
 ]
 
+VARIANT_ICONS = {    
+    standard: "&#x0023;",
+    chess960: "&#x0027;",
+    crazyhouse: "&#xE00B;",
+    antichess: "&#x0040;",
+    atomic: "&#x003E;",
+    horde: "&#x005F;",
+    kingOfTheHill: "&#x0028;",
+    racingKings: "&#xE00A;",
+    threeCheck: "&#x002E;"
+}
+
 function getstartfenforvariantkey(variantkey){
     if(variantkey == "antichess") return ANTICHESS_START_FEN
     if(variantkey == "racingKings") return RACING_KINGS_START_FEN
