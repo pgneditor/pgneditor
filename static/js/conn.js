@@ -931,8 +931,7 @@ function Study(argsopt){return new Study_(argsopt)}
 class Studies_ extends e{
     setstudies(resobj){
         this.studies = resobj.studies
-        let ids = Object.keys(this.studies)
-        console.log(ids)
+        let ids = Object.keys(this.studies)        
         ids.sort((id1,id2) => this.studies[id1].createdat - this.studies[id2].createdat)        
         this.container.x
         for(let id of ids){

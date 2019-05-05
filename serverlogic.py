@@ -196,9 +196,13 @@ def getstudies(req):
         })
         db.setdoc(req.studypath(defaultstudy), defaultstudy.toblob())
     studies = db.getpath(req.studiespath())
+    studiesblob = {}
+    for id, studyblob in studies.items():
+        study = Study(studyblob)
+        studiesblob[id] = study.toblob(nodelist = study.selected)
     return {
         "kind": "setstudies",
-        "studies": studies
+        "studies": studiesblob
     }
 
 def unselectstudies(req, selectid = None):
