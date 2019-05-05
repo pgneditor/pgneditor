@@ -9,6 +9,7 @@ verify_ssl = true
 tornado = "*"
 certifi = "*"
 urllib3 = "*"
+python-chess = "*"
 
 [requires]
 python_version = "3.7"
