@@ -4,9 +4,10 @@ import time
 
 ###################################################################
 
+import io
 import chess
 from chess.variant import find_variant
-from chess.pgn import Game, StringExporter
+from chess.pgn import Game, StringExporter, read_game
 
 ###################################################################
 
@@ -101,9 +102,48 @@ class Study:
         board.set_fen(self.rootnode().fen)
         return board
 
+    def addgamenoderecursive(self, currentid, gamenode):
+        for childnode in gamenode.variations:
+            self.currentnodeid = currentid
+            moveuci = childnode.uci()
+            if self.makealgebmove(moveuci):
+                self.addgamenoderecursive(self.currentnodeid, childnode)
+            else:
+                print("could not make move", moveuci)
+
+    def parsepgn(self, pgn):
+        pgnio = io.StringIO(pgn)
+        try:
+            game = read_game(pgnio)
+        except:
+            print("could not read game")
+            return
+        rootboard = self.getrootboard()
+        try:
+            gamerootfen = game.board().fen()            
+            rootboard.set_fen(gamerootfen)
+        except:
+            print("could not set root board fen")
+            return
+        self.nodelist = {
+            "root": GameNode(self, {
+                "id": "root",
+                "fen": gamerootfen 
+            })
+        }        
+        self.addgamenoderecursive("root", game)
+
+    def reset(self):
+        self.nodelist = {
+            "root": GameNode(self, {
+                "id": "root",
+                "fen": self.getvariantboard().fen()
+            })
+        }        
+        self.currentnodeid = "root"
+
     def addmovesrecursive(self, studynode, gamenode):
-        for childnode in studynode.getchilds():
-            print("node", childnode.toblob())            
+        for childnode in studynode.getchilds():            
             move = chess.Move.from_uci(childnode.genuci)
             gamenode.add_variation(move)
             childgamenode = gamenode[move]
@@ -140,6 +180,9 @@ class Study:
             if not newid in currentnode.childids:
                 currentnode.childids.append(newid)
             self.currentnodeid = newid
+            return True
+        else:
+            return False
 
     def selectnodebyid(self, id):
         if id in self.nodelist:

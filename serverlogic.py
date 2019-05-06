@@ -83,6 +83,7 @@ class Req():
         self.id = reqobj.get("id", None)
         self.nodeid = reqobj.get("nodeid", None)
         self.algeb = reqobj.get("algeb", None)
+        self.pgn = reqobj.get("pgn", None)
 
         if SERVERLOGIC_VERBOSE:
             log(self, "warning")
@@ -307,6 +308,26 @@ def makealgebmove(req):
     storestudy(req, study)
     return {
         "kind": "algebmovemade",
+        "setstudy": study.toblob(nodelist = True)
+    }
+
+def parsepgn(req):
+    log(f"< parsing pgn < {req.id} | {req.pgn} > >", "info")
+    study = getstudy(req)
+    study.parsepgn(req.pgn)
+    storestudy(req, study)
+    return {
+        "kind": "pgnparsed",
+        "setstudy": study.toblob(nodelist = True)
+    }
+
+def reset(req):
+    log(f"< reset < {req.id} > >", "info")
+    study = getstudy(req)
+    study.reset()
+    storestudy(req, study)
+    return {
+        "kind": "resetdone",
         "setstudy": study.toblob(nodelist = True)
     }
 

@@ -1177,6 +1177,28 @@ class Board_ extends e{
         }        
     }
 
+    reset(){
+        if(this.study){
+            api({
+                "kind": "reset",
+                "id": this.study.id                
+            }, this.algebmovemade.bind(this))
+        }        
+    }
+
+    pgnparsed(resobj){
+        this.algebmovemade(resobj)
+    }
+
+    pgnpastecallback(pgn){
+        console.log("pasted", pgn)
+        api({
+            "kind": "parsepgn",
+            "id": this.study.id,
+            "pgn": pgn
+        }, this.pgnparsed.bind(this))
+    }
+
     constructor(argsopt){
         super("div")
         let args = argsopt || {}
@@ -1189,6 +1211,7 @@ class Board_ extends e{
         this.controlpanel = Div().bc("#ccc")
         this.navcontrolpanel = Div().pad(2).bc("#aaa").ta("center")
         this.navcontrolpanel.a(
+            BoardControlButton("i", this.reset.bind(this), "#f00"),
             BoardControlButton("W", this.tobegin.bind(this), "#007"),
             BoardControlButton("Y", this.back.bind(this), "#070"),
             BoardControlButton("X", this.forward.bind(this), "#070"),
@@ -1197,7 +1220,7 @@ class Board_ extends e{
         )
         this.controlpanel.a(this.navcontrolpanel)        
         this.boardcontainer.a(this.controlpanel, this.basicboard)
-        this.pgntext = CopyTextArea()
+        this.pgntext = CopyTextArea({pastecallback: this.pgnpastecallback.bind(this)})
         this.treediv = Div().pad(3).bimg("static/img/backgrounds/marble.jpg").mh(1000).mw(2000)
         this.studies = Studies({parentboard: this})
         this.tabpane = TabPane("boardtabpane").settabs([
