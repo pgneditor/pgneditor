@@ -1496,4 +1496,35 @@ function Labeled(caption, element){return new Labeled_(caption, element)}
 ////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////
+// font explorer
+function FontExplorerTd(){
+    return Td().pad(5).pl(8).pr(8).bds("solid").bdw(1).bdc("#777")
+}
+class FontExplorer_ extends e{    
+    build(){
+        this.table.x
+        for(let charcode = 32; charcode < 128; charcode++){
+            let char = String.fromCharCode(charcode)            
+            this.table.a(Tr().fs(20).a(                
+                FontExplorerTd().html(`${charcode}`).ff("monospace"),                
+                FontExplorerTd().html(char).ff("monospace"),
+                FontExplorerTd().html(char).ff(this.fontfamily),                
+                FontExplorerTd().html(`&amp;#x${charcode.toString(16).toUpperCase().padStart(4, "0")};`).ff("monospace")                
+            ))
+        }
+        return this
+    }
+
+    constructor(fontfamily){
+        super("div")
+        this.table = Table()
+        this.fontfamily = fontfamily
+        this.a(this.table)
+        this.build().pad(5)
+    }
+}
+function FontExplorer(fontfamily){return new FontExplorer_(fontfamily)}
+////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////
 

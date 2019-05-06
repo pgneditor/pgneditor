@@ -1019,6 +1019,10 @@ function Studies(argsopt){return new Studies_(argsopt)}
 
 ////////////////////////////////////////////////////////////////////
 // board
+function BoardControlButton(text, callback, color){
+    return Button(text, callback).ff("lichess").c(color).fs(20)
+}
+
 class Board_ extends e{
     setgamefromstudy(study){
         console.log("setting game from", study)
@@ -1110,18 +1114,18 @@ class Board_ extends e{
         let args = argsopt || {}
         this.width = getelse(args, "width", 1000)
         this.height = getelse(args, "height", 400)        
-        this.controlheight = getelse(args, "controlheight", 80)
+        this.controlheight = getelse(args, "controlheight", 35)
         this.basicboard = BasicBoard({dragmovecallback: this.dragmovecallback.bind(this)})
         this.guicontainer = Div().disp("flex")
         this.boardcontainer = Div().disp("flex").fd("column")
         this.controlpanel = Div().bc("#ccc")
-        this.navcontrolpanel = Div()
+        this.navcontrolpanel = Div().pad(2).bc("#aaa").ta("center")
         this.navcontrolpanel.a(
-            Button("<<", this.tobegin.bind(this)),
-            Button("<", this.back.bind(this)),
-            Button(">", this.forward.bind(this)),
-            Button(">>", this.toend.bind(this)),
-            Button("Del", this.del.bind(this))
+            BoardControlButton("W", this.tobegin.bind(this), "#007"),
+            BoardControlButton("Y", this.back.bind(this), "#070"),
+            BoardControlButton("X", this.forward.bind(this), "#070"),
+            BoardControlButton("V", this.toend.bind(this), "#007"),            
+            BoardControlButton("L", this.del.bind(this), "#700")
         )
         this.controlpanel.a(this.navcontrolpanel)        
         this.boardcontainer.a(this.controlpanel, this.basicboard)
