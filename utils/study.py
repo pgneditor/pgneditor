@@ -111,6 +111,10 @@ class Study:
                 currentnode.childids.append(newid)
             self.currentnodeid = newid
 
+    def selectnodebyid(self, id):
+        if id in self.nodelist:
+            self.currentnodeid = id
+
     def back(self):
         currentnode = self.currentnode()
         parentid = currentnode.parentid

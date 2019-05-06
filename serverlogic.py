@@ -81,6 +81,7 @@ class Req():
         self.title = reqobj.get("title", None)
         self.variantkey = reqobj.get("variantkey", "standard")
         self.id = reqobj.get("id", None)
+        self.nodeid = reqobj.get("nodeid", None)
         self.algeb = reqobj.get("algeb", None)
 
         if SERVERLOGIC_VERBOSE:
@@ -306,6 +307,16 @@ def makealgebmove(req):
     storestudy(req, study)
     return {
         "kind": "algebmovemade",
+        "setstudy": study.toblob(nodelist = True)
+    }
+
+def selectnodebyid(req):
+    log(f"< selecting node by id < {req.id} | {req.nodeid} > >", "info")
+    study = getstudy(req)
+    study.selectnodebyid(req.nodeid)
+    storestudy(req, study)
+    return {
+        "kind": "nodeselectedbyid",
         "setstudy": study.toblob(nodelist = True)
     }
 

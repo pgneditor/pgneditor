@@ -847,9 +847,63 @@ function Profile(){return new Profile_()}
 
 ////////////////////////////////////////////////////////////////////
 // game node
-class GameNode_{
-    constructor(parentsduty, blobopt){
-        this.parentsduty = parentsduty
+class GameNode_ extends e{
+    tree(){
+        this.childsdiv.x
+        this.movediv.bc("#eee")
+        for(let child of this.getchilds()){
+            this.childsdiv.a(child.tree())
+        }        
+        if(this.getchilds().length > 1){
+            this.childsdiv.pad(2).curlyborder()
+            this.childsdiv.bc(randrgb())
+        }
+        if(this.id == this.parentstudy.currentnodeid){            
+            let cursor = this
+            while(cursor){
+                cursor.movediv.bc("#afa")
+                cursor = cursor.getparent()
+            }                        
+        }
+        return this
+    }
+
+    getparent(){
+        if(this.parentid){
+            return this.parentstudy.nodelist[this.parentid]
+        }else{
+            return null
+        }
+    }
+
+    getchilds(){
+        return this.childids.map(childid => this.parentstudy.nodelist[childid])
+    }
+
+    nodeselectedbyid(resobj){
+        let study = Study({blob: resobj.setstudy, parentstudies: this.parentstudy.parentstudies})
+        this.parentstudy.parentstudies.parentboard.setgamefromstudy(study)
+    }
+
+    movedivclicked(){
+        api({
+            "kind": "selectnodebyid",
+            "id": this.parentstudy.id,
+            "nodeid": this.id
+        }, this.nodeselectedbyid.bind(this))
+    }
+
+    constructor(parentstudy, blobopt){
+        super("div")
+        this.container = Div().disp("flex").ai("center")
+        this.movediv = Div().w(80).h(20).disp("flex").ai("center").jc("space-around").cp().curlyborder()
+        this.movediv.ae("mousedown", this.movedivclicked.bind(this))
+        this.movelabeldiv = Div().ff("monospace").ml(6).mr(6)
+        this.movediv.a(this.movelabeldiv).ml(2).mr(2).mt(2).mb(2)
+        this.childsdiv = Div().disp("flex").fd("column")
+        this.container.a(this.movediv, this.childsdiv)
+        this.a(this.container)
+        this.parentstudy = parentstudy
         let blob = blobopt || {}
         this.id = blob.id
         this.parentid = blob.parentid
@@ -860,6 +914,7 @@ class GameNode_{
         this.metrainweight = blob.metrainweight
         this.opptrainweight = blob.opptrainweight
         this.childids = blob.childids
+        this.movelabeldiv.html(this.id == "root" ? "Root" : this.gensan)
     }
 }
 function GameNode(parentstudy, blobopt){return new GameNode_(parentstudy, blobopt)}
@@ -879,6 +934,15 @@ class Study_ extends e{
         return this
     }
 
+    rootnode(){
+        return this.nodelist["root"]
+    }
+
+    tree(){
+        setseed(20)
+        return this.rootnode().tree()
+    }
+
     fromblob(blobopt){
         this.blob = blobopt || {}
         this.id = getelse(this.blob, "id", "default")
@@ -890,7 +954,7 @@ class Study_ extends e{
         this.nodelistblob = getelse(this.blob, "nodelist", {})
         this.nodelist = {}
         for(let id in this.nodelistblob) this.nodelist[id] = GameNode(this, this.nodelistblob[id])                
-        this.currentnode = this.nodelist[this.currentnodeid]
+        this.currentnode = this.nodelist[this.currentnodeid]        
         return this.build()
     }
 
@@ -1033,6 +1097,8 @@ class Board_ extends e{
             this.resize(this.width, this.height)
         }
         this.basicboard.setfromfen(study.currentnode.fen)
+        this.treediv.x.a(this.study.tree())
+        this.study.currentnode.movediv.scrollIntoView({block: "center", inline: "center", behavior: "smooth"})
     }
 
     resize(width, height){
@@ -1048,7 +1114,7 @@ class Board_ extends e{
     }
 
     algebmovemade(resobj){        
-        let study = Study({blob: resobj.setstudy})
+        let study = Study({blob: resobj.setstudy, parentstudies: this.studies})
         this.setgamefromstudy(study)
     }
 
@@ -1130,9 +1196,11 @@ class Board_ extends e{
         this.controlpanel.a(this.navcontrolpanel)        
         this.boardcontainer.a(this.controlpanel, this.basicboard)
         this.gamediv = Div()
+        this.treediv = Div().pad(3).bimg("static/img/backgrounds/marble.jpg").mh(1000).mw(2000)
         this.studies = Studies({parentboard: this})
         this.tabpane = TabPane("boardtabpane").settabs([
             Tab("game", "Game", this.gamediv),
+            Tab("tree", "Tree", this.treediv),
             Tab("studies", "Studies", this.studies)
         ]).selecttab("game", USE_STORED_IF_AVAILABLE)
         this.guicontainer.a(this.boardcontainer, this.tabpane)

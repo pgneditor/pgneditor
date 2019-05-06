@@ -7,7 +7,7 @@ let profile = Profile()
 let board = Board()
 
 let maintabpane = TabPane("maintabpane").settabs([
-    Tab("board", "Board", board),
+    Tab("board", "Board", board),    
     Tab("font", "Font", FontExplorer("lichess")),
     Tab("about", "About", Div().html("Pgn Editor.").mar(10).fs(20)),
     Tab("profile", "Profile", profile)
