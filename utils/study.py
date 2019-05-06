@@ -6,6 +6,7 @@ import time
 
 import chess
 from chess.variant import find_variant
+from chess.pgn import Game, StringExporter
 
 ###################################################################
 
@@ -55,6 +56,9 @@ class GameNode:
         self.parentstudy = parentstudy
         self.fromblob(blob)
 
+    def getchilds(self):
+        return [self.parentstudy.nodelist[childid] for childid in self.childids]
+
     def fromblob(self, blob):
         self.id = blob.get("id", "root")
         self.parentid = blob.get("parentid", None)
@@ -88,6 +92,32 @@ class Study:
 
     def currentnode(self):
         return self.nodelist[self.currentnodeid]
+
+    def rootnode(self):
+        return self.nodelist["root"]
+
+    def getrootboard(self):
+        board = self.getvariantboard()
+        board.set_fen(self.rootnode().fen)
+        return board
+
+    def addmovesrecursive(self, studynode, gamenode):
+        for childnode in studynode.getchilds():
+            print("node", childnode.toblob())            
+            move = chess.Move.from_uci(childnode.genuci)
+            gamenode.add_variation(move)
+            childgamenode = gamenode[move]
+            self.addmovesrecursive(childnode, childgamenode)
+        return gamenode
+
+    def reportpgn(self):
+        rootboard = self.getrootboard()
+        game = Game()
+        game.setup(rootboard)
+        game = self.addmovesrecursive(self.rootnode(), game)
+        exporter = StringExporter(headers=True, variations=True, comments=True)
+        pgn = game.accept(exporter)
+        return pgn
 
     def makealgebmove(self, algeb):
         currentnode = self.currentnode()
@@ -176,9 +206,11 @@ class Study:
             
     def toblob(self, nodelist = False):
         nodelistblob = {}
+        pgn = None
         if nodelist:
             for id, gamenode in self.nodelist.items():
                 nodelistblob[id] = gamenode.toblob()
+            pgn = self.reportpgn()
         return {
             "id": self.id,
             "title": self.title,
@@ -186,7 +218,8 @@ class Study:
             "createdat": self.createdat,
             "selected": self.selected,
             "currentnodeid": self.currentnodeid,
-            "nodelist": nodelistblob
+            "nodelist": nodelistblob,
+            "pgn": pgn
         }
 
 ###################################################################

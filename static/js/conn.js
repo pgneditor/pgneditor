@@ -955,6 +955,7 @@ class Study_ extends e{
         this.nodelist = {}
         for(let id in this.nodelistblob) this.nodelist[id] = GameNode(this, this.nodelistblob[id])                
         this.currentnode = this.nodelist[this.currentnodeid]        
+        this.pgn = getelse(this.blob, "pgn", "?")
         return this.build()
     }
 
@@ -1099,6 +1100,7 @@ class Board_ extends e{
         this.basicboard.setfromfen(study.currentnode.fen)
         this.treediv.x.a(this.study.tree())
         this.study.currentnode.movediv.scrollIntoView({block: "center", inline: "center", behavior: "smooth"})
+        this.pgntext.setText(study.pgn)
     }
 
     resize(width, height){
@@ -1195,11 +1197,11 @@ class Board_ extends e{
         )
         this.controlpanel.a(this.navcontrolpanel)        
         this.boardcontainer.a(this.controlpanel, this.basicboard)
-        this.gamediv = Div()
+        this.pgntext = CopyTextArea()
         this.treediv = Div().pad(3).bimg("static/img/backgrounds/marble.jpg").mh(1000).mw(2000)
         this.studies = Studies({parentboard: this})
         this.tabpane = TabPane("boardtabpane").settabs([
-            Tab("game", "Game", this.gamediv),
+            Tab("game", "Game", this.pgntext),
             Tab("tree", "Tree", this.treediv),
             Tab("studies", "Studies", this.studies)
         ]).selecttab("game", USE_STORED_IF_AVAILABLE)

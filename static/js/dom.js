@@ -568,9 +568,9 @@ class CopyText_ extends e{
         return this
     }
 
-    constructor(args){
+    constructor(argsopt){
         super("div")
-        args = args || {}        
+        let args = argsopt || {}        
         this.dopaste = getelse(args, "dopaste", true)
         this.docopy = getelse(args, "docopy", true)
         this.disp("flex").ai("center").jc("space-around").bc("#ddd").ac("unselectable")
@@ -639,8 +639,9 @@ class CopyTextArea_ extends e{
         }        
     }
 
-    constructor(args){
+    constructor(argsopt){
         super("div")
+        let args = argsopt || {}
         this.width = args.width || 400
         this.height = args.height || 200
         this.controlheight = args.controlheight || 20 
