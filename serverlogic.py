@@ -81,6 +81,7 @@ class Req():
         self.title = reqobj.get("title", None)
         self.variantkey = reqobj.get("variantkey", "standard")
         self.id = reqobj.get("id", None)
+        self.algeb = reqobj.get("algeb", None)
 
         if SERVERLOGIC_VERBOSE:
             log(self, "warning")
@@ -194,7 +195,7 @@ def getstudies(req):
         defaultstudy = Study({
             "selected": True
         })
-        db.setdoc(req.studypath(defaultstudy), defaultstudy.toblob())
+        db.setdoc(req.studypath(defaultstudy), defaultstudy.toblob(nodelist = True))
     studies = db.getpath(req.studiespath())
     studiesblob = {}
     for id, studyblob in studies.items():
@@ -215,12 +216,12 @@ def unselectstudies(req, selectid = None):
             if SERVERLOGIC_VERBOSE:
                 log(f"< unselecting study < {id} > >", "info")
             study.selected = False
-            db.setdoc(req.studypath(study), study.toblob())
+            storestudy(req, study)
         if selectid == id:
             if SERVERLOGIC_VERBOSE:
                 log(f"< selecting study < {id} > >", "info")
             study.selected = True
-            db.setdoc(req.studypath(study), study.toblob())
+            storestudy(req, study)
 
 def createstudy(req):
     id = createuuid()
@@ -231,7 +232,7 @@ def createstudy(req):
         "selected": True
     })
     unselectstudies(req)
-    db.setdoc(req.studypath(study), study.toblob())
+    storestudy(req, study)
     if SERVERLOGIC_VERBOSE:
         log(f"< created study < {req.title} | {id} > >", "success")
     return {
@@ -263,6 +264,9 @@ def getstudy(req):
     study = Study(blob)
     return study
 
+def storestudy(req, study):
+    db.setdoc(req.studypath(study), study.toblob(nodelist = True))
+
 def editstudytitle(req):
     if req.id == "default":
         return {
@@ -284,7 +288,7 @@ def editstudytitle(req):
             }
         }
     study.title = req.title
-    db.setdoc(req.studypath(study), study.toblob())
+    storestudy(req, study)
     return {
         "kind": "studytitleedited"
     }
@@ -293,6 +297,66 @@ def selectstudy(req):
     unselectstudies(req, selectid = req.id)
     return {
         "kind": "studyselected"
+    }
+
+def makealgebmove(req):
+    log(f"< making algeb move < {req.algeb} | {req.id} > >", "info")
+    study = getstudy(req)
+    study.makealgebmove(req.algeb)
+    storestudy(req, study)
+    return {
+        "kind": "algebmovemade",
+        "setstudy": study.toblob(nodelist = True)
+    }
+
+def back(req):
+    log(f"< back < {req.id} > >", "info")
+    study = getstudy(req)
+    study.back()
+    storestudy(req, study)
+    return {
+        "kind": "backdone",
+        "setstudy": study.toblob(nodelist = True)
+    }
+
+def delete(req):
+    log(f"< deleted < {req.id} > >", "info")
+    study = getstudy(req)
+    study.delete()
+    storestudy(req, study)
+    return {
+        "kind": "deletedone",
+        "setstudy": study.toblob(nodelist = True)
+    }
+
+def tobegin(req):
+    log(f"< tobegin < {req.id} > >", "info")
+    study = getstudy(req)
+    study.tobegin()
+    storestudy(req, study)
+    return {
+        "kind": "tobegindone",
+        "setstudy": study.toblob(nodelist = True)
+    }
+
+def forward(req):
+    log(f"< forward < {req.id} > >", "info")
+    study = getstudy(req)
+    study.forward()
+    storestudy(req, study)
+    return {
+        "kind": "forwarddone",
+        "setstudy": study.toblob(nodelist = True)
+    }
+
+def toend(req):
+    log(f"< toend < {req.id} > >", "info")
+    study = getstudy(req)
+    study.toend()
+    storestudy(req, study)
+    return {
+        "kind": "toenddone",
+        "setstudy": study.toblob(nodelist = True)
     }
 
 ###################################################################

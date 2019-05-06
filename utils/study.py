@@ -86,6 +86,76 @@ class Study:
     def getvariantboard(self):
         return getvariantboard(self.variantkey)
 
+    def currentnode(self):
+        return self.nodelist[self.currentnodeid]
+
+    def makealgebmove(self, algeb):
+        currentnode = self.currentnode()
+        board = self.getvariantboard()
+        board.set_fen(currentnode.fen)
+        move = chess.Move.from_uci(algeb)
+        san = board.san(move)
+        newid = currentnode.id + "_" + san
+        if board.is_legal(move):
+            board.push(move)
+            newfen = board.fen()
+            if not newid in currentnode.childids:
+                self.nodelist[newid] = GameNode(self, {
+                    "id": newid,
+                    "parentid": currentnode.id,
+                    "fen": newfen,
+                    "gensan": san,
+                    "genuci": algeb
+                })
+            if not newid in currentnode.childids:
+                currentnode.childids.append(newid)
+            self.currentnodeid = newid
+
+    def back(self):
+        currentnode = self.currentnode()
+        parentid = currentnode.parentid
+        if parentid:
+            self.currentnodeid = parentid
+
+    def deletnoderecursive(self, node):
+        for childid in node.childids:
+            childnode = self.nodelist[childid]
+            self.deletnoderecursive(childnode)
+        del self.nodelist[node.id]
+
+    def delete(self):
+        currentnode = self.currentnode()
+        currentid = currentnode.id
+        parentid = currentnode.parentid
+        if parentid:
+            parentnode = self.nodelist[parentid]
+            if currentid in parentnode.childids:
+                parentnode.childids = [childid for childid in parentnode.childids if not ( childid == currentid )]
+            self.deletnoderecursive(currentnode)
+            self.currentnodeid = parentid
+
+    def tobegin(self):
+        while self.currentnode().parentid:
+            self.back()
+
+    def forward(self):
+        currentnode = self.currentnode()
+        childids = currentnode.childids
+        selectedid = None
+        for childid in childids:
+            if not selectedid:
+                selectedid = childid
+            else:
+                if self.nodelist[childid].priorityindex < self.nodelist[selectedid].priorityindex:
+                    selectedid = childid
+        if selectedid:
+            self.currentnodeid = selectedid
+        return selectedid
+
+    def toend(self):
+        while self.forward():
+            pass
+
     def fromblob(self, blob):
         self.id = blob.get("id", "default")
         self.title = blob.get("title", "Default study")

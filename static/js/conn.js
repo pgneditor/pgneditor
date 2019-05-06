@@ -104,7 +104,7 @@ MESSAGE_HEIGHT = 250
 NOVUM_LIMIT_HOURS = 24
 MESSAGE_WIDTH_FACTOR = 4
 
-class GameNode_ extends e{
+class GameNodeOld_ extends e{
     gearclicked(ev){        
         ev.stopPropagation()
         if(this.parboard.currpopup) this.parboard.currpopup.disp("none")
@@ -291,7 +291,7 @@ class GameNode_ extends e{
 		return this
 	}
 }
-function GameNode(){return new GameNode_()}
+function GameNodeOld(){return new GameNodeOld_()}
 
 class BoardOld_ extends ConnWidget_{
 	gamenodeclicked(line){
@@ -846,6 +846,26 @@ function Profile(){return new Profile_()}
 ////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////
+// game node
+class GameNode_{
+    constructor(parentsduty, blobopt){
+        this.parentsduty = parentsduty
+        let blob = blobopt || {}
+        this.id = blob.id
+        this.parentid = blob.parentid
+        this.fen = blob.fen
+        this.gensan = blob.gensan
+        this.genuci = blob.genuci
+        this.priorityindex = blob.priorityindex
+        this.metrainweight = blob.metrainweight
+        this.opptrainweight = blob.opptrainweight
+        this.childids = blob.childids
+    }
+}
+function GameNode(parentstudy, blobopt){return new GameNode_(parentstudy, blobopt)}
+////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////
 // study
 class Study_ extends e{
     build(){
@@ -866,6 +886,11 @@ class Study_ extends e{
         this.variantkey = getelse(this.blob, "variantkey", "standard")
         this.createdat = getelse(this.blob, "createdat", gettimesec())
         this.selected = getelse(this.blob, "selected", false)
+        this.currentnodeid = getelse(this.blob, "currentnodeid", "root")
+        this.nodelistblob = getelse(this.blob, "nodelist", {})
+        this.nodelist = {}
+        for(let id in this.nodelistblob) this.nodelist[id] = GameNode(this, this.nodelistblob[id])                
+        this.currentnode = this.nodelist[this.currentnodeid]
         return this.build()
     }
 
@@ -934,11 +959,14 @@ class Studies_ extends e{
         let ids = Object.keys(this.studies)        
         ids.sort((id1,id2) => this.studies[id1].createdat - this.studies[id2].createdat)        
         this.container.x
+        let selectedstudy = null
         for(let id of ids){
             let blob = this.studies[id]
             let study = Study({blob: blob, parentstudies: this})
+            if(study.selected) selectedstudy = study
             this.container.a(study)
         }
+        if(selectedstudy && this.parentboard) this.parentboard.setgamefromstudy(selectedstudy)
     }
 
     request(){
@@ -975,6 +1003,7 @@ class Studies_ extends e{
     constructor(argsopt){
         super("div")
         let args = argsopt || {}     
+        this.parentboard = getelse(args, "parentboard", null)
         this.controlpanel = Div().pad(2).disp("flex").ai("center").jc("space-around")
         this.variantcombo = Select().ff("monospace").fs(17)
         this.controlpanel.a(
@@ -991,6 +1020,17 @@ function Studies(argsopt){return new Studies_(argsopt)}
 ////////////////////////////////////////////////////////////////////
 // board
 class Board_ extends e{
+    setgamefromstudy(study){
+        console.log("setting game from", study)
+        this.study = study
+        if(this.basicboard.variantkey != study.variantkey){
+            console.log("changing variant to", study.variantkey)
+            this.basicboard.variantkey = study.variantkey
+            this.resize(this.width, this.height)
+        }
+        this.basicboard.setfromfen(study.currentnode.fen)
+    }
+
     resize(width, height){
         this.width = width
         this.height = height        
@@ -1003,19 +1043,90 @@ class Board_ extends e{
         this.w(this.width).h(this.height)
     }
 
+    algebmovemade(resobj){        
+        let study = Study({blob: resobj.setstudy})
+        this.setgamefromstudy(study)
+    }
+
+    dragmovecallback(move){
+        let algeb = move.toalgeb()
+        console.log("drag move", algeb, this.study)
+        if(this.study){
+            api({
+                "kind": "makealgebmove",
+                "id": this.study.id,
+                "algeb": algeb
+            }, this.algebmovemade.bind(this))
+        }        
+    }
+
+    back(){
+        if(this.study){
+            api({
+                "kind": "back",
+                "id": this.study.id                
+            }, this.algebmovemade.bind(this))
+        }        
+    }
+
+    del(){
+        if(this.study){
+            api({
+                "kind": "delete",
+                "id": this.study.id                
+            }, this.algebmovemade.bind(this))
+        }        
+    }
+
+    tobegin(){        
+        if(this.study){
+            api({
+                "kind": "tobegin",
+                "id": this.study.id                
+            }, this.algebmovemade.bind(this))
+        }        
+    }
+
+    forward(){
+        if(this.study){
+            api({
+                "kind": "forward",
+                "id": this.study.id                
+            }, this.algebmovemade.bind(this))
+        }        
+    }
+
+    toend(){
+        if(this.study){
+            api({
+                "kind": "toend",
+                "id": this.study.id                
+            }, this.algebmovemade.bind(this))
+        }        
+    }
+
     constructor(argsopt){
         super("div")
         let args = argsopt || {}
         this.width = getelse(args, "width", 1000)
         this.height = getelse(args, "height", 400)        
         this.controlheight = getelse(args, "controlheight", 80)
-        this.basicboard = BasicBoard()
+        this.basicboard = BasicBoard({dragmovecallback: this.dragmovecallback.bind(this)})
         this.guicontainer = Div().disp("flex")
         this.boardcontainer = Div().disp("flex").fd("column")
         this.controlpanel = Div().bc("#ccc")
+        this.navcontrolpanel = Div()
+        this.navcontrolpanel.a(
+            Button("<<", this.tobegin.bind(this)),
+            Button("<", this.back.bind(this)),
+            Button(">", this.forward.bind(this)),
+            Button(">>", this.toend.bind(this)),
+            Button("Del", this.del.bind(this))
+        )
+        this.controlpanel.a(this.navcontrolpanel)        
         this.boardcontainer.a(this.controlpanel, this.basicboard)
         this.gamediv = Div()
-        this.studies = Studies()
+        this.studies = Studies({parentboard: this})
         this.tabpane = TabPane("boardtabpane").settabs([
             Tab("game", "Game", this.gamediv),
             Tab("studies", "Studies", this.studies)
