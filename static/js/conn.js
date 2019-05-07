@@ -1101,6 +1101,9 @@ class Board_ extends e{
         this.treediv.x.a(this.study.tree())
         this.study.currentnode.movediv.scrollIntoView({block: "center", inline: "center", behavior: "smooth"})
         this.pgntext.setText(study.pgn)
+        this.studytoolshook.x
+        this.importlinktextinput = CopyText({dopaste: false}).setText(`${serverroot()}/importstudy/${getuser().code}/${this.study.id}`)
+        this.studytoolshook.a(Labeled("Import link", this.importlinktextinput))
     }
 
     resize(width, height){
@@ -1222,10 +1225,14 @@ class Board_ extends e{
         this.boardcontainer.a(this.controlpanel, this.basicboard)
         this.pgntext = CopyTextArea({pastecallback: this.pgnpastecallback.bind(this)})
         this.treediv = Div().pad(3).bimg("static/img/backgrounds/marble.jpg").mh(1000).mw(2000)
+        this.toolsdiv = Div().pad(3)        
+        this.studytoolshook = Div()
+        this.toolsdiv.a(this.studytoolshook)
         this.studies = Studies({parentboard: this})
         this.tabpane = TabPane("boardtabpane").settabs([
             Tab("game", "Game", this.pgntext),
             Tab("tree", "Tree", this.treediv),
+            Tab("tools", "Tools", this.toolsdiv),
             Tab("studies", "Studies", this.studies)
         ]).selecttab("game", USE_STORED_IF_AVAILABLE)
         this.guicontainer.a(this.boardcontainer, this.tabpane)

@@ -10,6 +10,7 @@ import utils.file
 from utils.logger import log
 from utils.http import geturl
 from utils.study import Study
+from utils.cryptography import encryptalphanum, decryptalphanum
 
 ###################################################################
 
@@ -38,6 +39,7 @@ class User():
 
     def fromblob(self, blob):
         self.uid = blob.get("uid", "anonuser")
+        self.code = encryptalphanum(self.uid)
         self.username = blob.get("username", "Anonymous")
         self.createdat = blob.get("createdat", time.time())
         self.verifiedat = blob.get("verifiedat", None)
@@ -47,6 +49,7 @@ class User():
     def toblob(self):
         return {
             "uid": self.uid,
+            "code": self.code,
             "username": self.username,
             "createdat": self.createdat,
             "verifiedat": self.verifiedat,
@@ -74,6 +77,8 @@ class User():
 class Req():
     def __init__(self, reqobj):
         self.reqobj = reqobj
+        self.queryparams = reqobj.get("queryparams", {})
+        self.task = self.queryparams.get("task", None)
         self.kind = reqobj.get("kind", "dummy")
         self.userblob = reqobj.get("user", {})
         self.user = User(self.userblob)       
@@ -88,7 +93,7 @@ class Req():
         if SERVERLOGIC_VERBOSE:
             log(self, "warning")
 
-        if not db.pathexists("users/" + self.user.uid):    
+        if not db.getpath("users/" + self.user.uid):    
             self.user = User()        
             uid = createuuid()
             self.user.uid = uid
@@ -108,15 +113,13 @@ class Req():
     def studypath(self, study):
         return self.studiespath() + "/" + study.id
 
-###################################################################
-
     def res(self, resobj):
         if not ("user" in resobj):
             resobj["user"] = self.user.toblob()
         return resobj
 
     def __repr__(self):
-        return f"< request [ {self.kind} {self.user} ] >"
+        return f"< request [ {self.kind} | {self.queryparams} | {self.user} ] >"
 
 ###################################################################
 
@@ -129,6 +132,8 @@ def dummy(req):
     }
 
 def connected(req):        
+    if req.task == "importstudy":
+        importstudy(req)
     return {
         "kind": "connectedack"        
     }
@@ -390,6 +395,31 @@ def toend(req):
         "kind": "toenddone",
         "setstudy": study.toblob(nodelist = True)
     }
+
+def importstudy(req):
+    usercode = req.queryparams["usercode"]
+    studyid = req.queryparams["studyid"]
+    uid = decryptalphanum(usercode)
+    log(f"< importing study < {usercode} | {uid} | {studyid} > >", "info")    
+    userpath = "users/" + uid
+    if not db.getpath(userpath):
+        log(f"< import user does not exist < {uid} > >", "error")
+        return
+    studypath = userpath + "/studies/" + studyid
+    studyblob = db.getpath(studypath)
+    if not studyblob:
+        log(f"< import study does not exist < {studyid} > >", "error")
+        return
+    if uid == req.user.uid:
+        log(f"< importing own study < {uid} > >", "warning")    
+        req.id = studyid
+        selectstudy(req)
+        return
+    log(f"< importing study < {studyid} > >", "info")    
+    study = Study(studyblob)
+    req.id = studyid
+    storestudy(req, study)
+    selectstudy(req)
 
 ###################################################################
 

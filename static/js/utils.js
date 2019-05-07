@@ -34,6 +34,12 @@ function md2html(md, def){
 
 ////////////////////////////////////////////////////////////////////
 
+function serverroot(){
+    return document.location.protocol + "//" + document.location.host
+}
+
+////////////////////////////////////////////////////////////////////
+
 //https://stackoverflow.com/questions/521295/seeding-the-random-number-generator-in-javascript
 seed = 1
 function random(){
@@ -320,6 +326,7 @@ class User_{
     constructor(blobarg){
         let blob = blobarg || {}        
         this.uid = getelse(blob, "uid", "anonuser")
+        this.code = getelse(blob, "code", null)
         this.username = getelse(blob, "username", "Anonymous")
         this.createdat = getelse(blob, "createdat", gettimesec())
         this.verifiedat = getelse(blob, "verifiedat", null)
@@ -338,6 +345,7 @@ class User_{
     toblob(){
         return {
             uid: this.uid,
+            code: this.code,
             username: this.username,
             createdat: this.createdat,
             verifiedat: this.verifiedat,
@@ -378,6 +386,7 @@ function api(reqobj, callback){
         if(callback) callback(resobj)
     }
     reqobj.user = getuserblob()    
+    reqobj.queryparams = params
     console.log("->", reqobj.kind, reqobj)
     jsonapi("/jsonapi", reqobj, defaultapicallback)
 }

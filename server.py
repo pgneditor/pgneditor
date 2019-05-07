@@ -60,8 +60,8 @@ class ImportStudy(tornado.web.RequestHandler):
             self.write("too few parameters, usage: /importstudy/[usercode]/[studyid]")
             return
         usercode = parts[paramindex]
-        studyid = parts[paramindex + 1]
-        self.write(f"usercode : {usercode} , studyid : {studyid}")
+        studyid = parts[paramindex + 1]        
+        self.redirect(f"/?task=importstudy&usercode={usercode}&studyid={studyid}")
 
 class ChatSocketHandler(tornado.websocket.WebSocketHandler):
     waiters = set()
