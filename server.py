@@ -28,6 +28,7 @@ class Application(tornado.web.Application):
         handlers = [
             (r"/", MainHandler),
             (r"/jsonapi", JsonApi),
+            (r"/importstudy/.*", ImportStudy),
             (r"/chatsocket", ChatSocketHandler)
         ]
         settings = dict(
@@ -40,6 +41,7 @@ class Application(tornado.web.Application):
 
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
+        print(self.request.__dict__)
         self.render("index.html", messages=ChatSocketHandler.cache)
 
 class JsonApi(tornado.web.RequestHandler):
@@ -48,6 +50,18 @@ class JsonApi(tornado.web.RequestHandler):
         resobj = serverlogic.jsonapi(reqobj)        
         self.set_header("Content-Type", "application/json")
         self.write(json.dumps(resobj))
+
+class ImportStudy(tornado.web.RequestHandler):
+    def get(self):
+        path = self.request.path
+        parts = path.split("/")
+        paramindex = parts.index("importstudy") + 1
+        if ( len(parts) - paramindex ) < 2:
+            self.write("too few parameters, usage: /importstudy/[usercode]/[studyid]")
+            return
+        usercode = parts[paramindex]
+        studyid = parts[paramindex + 1]
+        self.write(f"usercode : {usercode} , studyid : {studyid}")
 
 class ChatSocketHandler(tornado.websocket.WebSocketHandler):
     waiters = set()
