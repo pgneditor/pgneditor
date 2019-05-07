@@ -1102,7 +1102,7 @@ class Board_ extends e{
         this.study.currentnode.movediv.scrollIntoView({block: "center", inline: "center", behavior: "smooth"})
         this.pgntext.setText(study.pgn)
         this.studytoolshook.x
-        this.importlinktextinput = CopyText({dopaste: false}).setText(`${serverroot()}/importstudy/${getuser().code}/${this.study.id}`)
+        this.importlinktextinput = CopyText({dopaste: false}).setText(`${serverroot()}/importstudy/${getuser().code}/${this.study.id}/${this.study.currentnodeid}`)
         this.studytoolshook.a(Labeled("Import link", this.importlinktextinput))
     }
 
@@ -1235,6 +1235,10 @@ class Board_ extends e{
             Tab("tools", "Tools", this.toolsdiv),
             Tab("studies", "Studies", this.studies)
         ]).selecttab("game", USE_STORED_IF_AVAILABLE)
+        if("boardtab" in params){
+            console.log("forcing board tab", params.boardtab)
+            this.tabpane.selecttab(params.boardtab)
+        }
         this.guicontainer.a(this.boardcontainer, this.tabpane)
         this.a(this.guicontainer)
         this.resize(this.width, this.height)

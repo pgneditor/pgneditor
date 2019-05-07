@@ -213,7 +213,7 @@ def getstudies(req):
         "studies": studiesblob
     }
 
-def unselectstudies(req, selectid = None):
+def unselectstudies(req, selectid = None, nodeid = None):
     studies = db.getpath(req.studiespath())
     if not studies:
         return
@@ -226,8 +226,10 @@ def unselectstudies(req, selectid = None):
             storestudy(req, study)
         if selectid == id:
             if SERVERLOGIC_VERBOSE:
-                log(f"< selecting study < {id} > >", "info")
+                log(f"< selecting study < {id} | {nodeid} > >", "info")
             study.selected = True
+            if nodeid:
+                study.selectnodebyid(nodeid)
             storestudy(req, study)
 
 def createstudy(req):
@@ -300,8 +302,8 @@ def editstudytitle(req):
         "kind": "studytitleedited"
     }
 
-def selectstudy(req):
-    unselectstudies(req, selectid = req.id)
+def selectstudy(req, nodeid = None):
+    unselectstudies(req, selectid = req.id, nodeid = nodeid)
     return {
         "kind": "studyselected"
     }
@@ -399,8 +401,9 @@ def toend(req):
 def importstudy(req):
     usercode = req.queryparams["usercode"]
     studyid = req.queryparams["studyid"]
+    nodeid = req.queryparams["nodeid"]
     uid = decryptalphanum(usercode)
-    log(f"< importing study < {usercode} | {uid} | {studyid} > >", "info")    
+    log(f"< importing study < {usercode} | {uid} | {studyid} | {nodeid} > >", "info")    
     userpath = "users/" + uid
     if not db.getpath(userpath):
         log(f"< import user does not exist < {uid} > >", "error")
@@ -411,15 +414,15 @@ def importstudy(req):
         log(f"< import study does not exist < {studyid} > >", "error")
         return
     if uid == req.user.uid:
-        log(f"< importing own study < {uid} > >", "warning")    
+        log(f"< importing own study < {uid} | {nodeid} > >", "warning")    
         req.id = studyid
-        selectstudy(req)
+        selectstudy(req, nodeid = nodeid)
         return
-    log(f"< importing study < {studyid} > >", "info")    
+    log(f"< importing study < {studyid} | {nodeid} > >", "info")    
     study = Study(studyblob)
     req.id = studyid
     storestudy(req, study)
-    selectstudy(req)
+    selectstudy(req, nodeid = nodeid)
 
 ###################################################################
 

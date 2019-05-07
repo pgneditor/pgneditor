@@ -12,6 +12,10 @@ let maintabpane = TabPane("maintabpane").settabs([
     Tab("about", "About", Div().html("Pgn Editor.").mar(10).fs(20)),
     Tab("profile", "Profile", profile)
 ]).selecttab("board", USE_STORED_IF_AVAILABLE).op(0.25).transition("all 1s")
+if("tab" in params){
+    console.log("forcing tab", params.tab)
+    maintabpane.selecttab(params.tab)
+}
 
 app.setcontentelement(maintabpane)
 
