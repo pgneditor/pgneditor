@@ -1555,17 +1555,22 @@ class Iframe_ extends e{
         return this
     }
 
-    resize(width, height){
+    resize(width, height){                
         this.setWidth(width).setHeight(height)
     }
 
-    rendermarkdown(){
+    rendermarkdown(){        
         let contente = this.e.contentDocument.body
-        let content = contente.innerHTML
+        let content = contente.innerHTML        
         content = md2html(content)
         console.log("head", this.e.contentDocument.head)
         this.e.contentDocument.head.innerHTML = `<link rel="stylesheet" href="/static/css/markdown.css" />`
-        contente.innerHTML = content
+        contente.innerHTML = ""
+        let waitdiv = Div().html("Loading content, please wait ...").ff("monospace").c("#007")
+        contente.appendChild(waitdiv.e)
+        setTimeout(function(){
+            contente.innerHTML = content            
+        }.bind(this), 2000)        
     }
 
     domarkdown(){
