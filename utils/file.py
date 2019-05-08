@@ -21,20 +21,26 @@ DO_REMOTE_DB = IS_PROD() or FORCE_REMOTE_DB
 ###################################################################
 
 if DO_REMOTE_DB:
+
+    try:
     
-    ###################################################
+        ###################################################
 
-    import firebase_admin
-    from firebase_admin import credentials
-    from firebase_admin import firestore
+        import firebase_admin
+        from firebase_admin import credentials
+        from firebase_admin import firestore
 
-    ###################################################
+        ###################################################
 
-    cred = credentials.Certificate("firebase/sacckey.json")
-    firebase_admin.initialize_app(cred)
-    db = firestore.client()
+        cred = credentials.Certificate("firebase/sacckey.json")
+        firebase_admin.initialize_app(cred)
+        db = firestore.client()
 
-    ###################################################
+        ###################################################
+
+    except:
+
+        pass
 
 ###################################################################
 
