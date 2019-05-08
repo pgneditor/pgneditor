@@ -387,6 +387,8 @@ class Board_ extends e{
             this.resize(this.width, this.height)
         }
         this.basicboard.setfromfen(study.currentnode.fen)
+        this.basicboard.arrowcontainer.x
+        if(study.currentnode.genuci) this.basicboard.addalgebmovearrow(study.currentnode.genuci)
         let treebuild = this.study.tree()
         this.treediv.x.a(treebuild)        
         this.treediv.resize()

@@ -1247,7 +1247,7 @@ class BasicBoard_ extends e{
     addmovearrow(move, args){        
         let fromc = this.squarecoord(move.fromsq).p(V(this.squaresize/2,this.squaresize/2))
         let toc = this.squarecoord(move.tosq).p(V(this.squaresize/2,this.squaresize/2))
-        this.boardcontainer.a(Arrow(fromc, toc, args))
+        this.arrowcontainer.a(Arrow(fromc, toc, args))
     }
 
     addalgebmovearrow(algeb, args){        
@@ -1407,9 +1407,11 @@ class BasicBoard_ extends e{
         this.outerboardcontainer.bimg(this.backgroundimagepath)
         this.innerboardcontainer.bimg(this.backgroundimagepath)
         this.boardcontainer.bimg(this.backgroundimagepath)
+        this.arrowcontainer = Div().w(this.boardsize).h(this.boardsize).po("absolute")
+        this.arrowcontainer.t(this.innerboardmargin).l(this.innerboardmargin)
         this.piececontainer = Div().w(this.boardsize).h(this.boardsize).po("absolute")
         this.piececontainer.t(this.innerboardmargin).l(this.innerboardmargin)
-        this.innerboardcontainer.a(this.piececontainer)
+        this.innerboardcontainer.a(this.arrowcontainer, this.piececontainer)
         this.x.a(this.maincontainer)
         let turnarrowmiddlex = this.squaresize*8+2*this.innerboardmargin+1.3*this.outerboardmargin
         this.fullboardmargin = this.innerboardmargin + this.outerboardmargin
