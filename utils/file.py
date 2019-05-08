@@ -8,10 +8,33 @@ from traceback import print_exc as pe
 ###################################################################
 
 from utils.logger import log
+from utils.config import IS_PROD
 
 ###################################################################
 
 FILE_VERBOSE = False
+
+FORCE_REMOTE_DB = True
+
+DO_REMOTE_DB = IS_PROD() or FORCE_REMOTE_DB
+
+###################################################################
+
+if DO_REMOTE_DB:
+    
+    ###################################################
+
+    import firebase_admin
+    from firebase_admin import credentials
+    from firebase_admin import firestore
+
+    ###################################################
+
+    cred = credentials.Certificate("firebase/sacckey.json")
+    firebase_admin.initialize_app(cred)
+    db = firestore.client()
+
+    ###################################################
 
 ###################################################################
 
@@ -92,10 +115,28 @@ class Db:
         return ( len(path.split("/")) % 2 ) == 0
 
     def getdocfromdb(self, path):
-        return None
+        if DO_REMOTE_DB:
+            doc_ref = db.document(path)
+            doc = doc_ref.get()
+            if not doc:
+                return None
+            blob = doc.to_dict()
+            return blob
+        else:
+            return None
 
     def getcollfromdb(self, path):
-        return None
+        if DO_REMOTE_DB:
+            coll_ref = db.collection(path)
+            docs = coll_ref.stream()
+            if not docs:
+                return None
+            blob = {}
+            for doc in docs:
+                blob[doc.id] = doc.to_dict()
+            return blob
+        else:
+            return None
 
     def getpathfromdb(self, path):
         if self.isdocpath(path):
@@ -103,10 +144,18 @@ class Db:
         return self.getcollfromdb(path)
 
     def setdocindb(self, path, doc):
-        pass
+        if DO_REMOTE_DB:
+            doc_ref = db.document(path)
+            doc_ref.set(doc)
+        else:
+            pass
 
     def deletedocfromdb(self, path):
-        pass
+        if DO_REMOTE_DB:
+            doc_ref = db.document(path)
+            doc_ref.delete()
+        else:
+            pass
 
     def pathexists(self, path, create = None):
         parts = path.split("/")
