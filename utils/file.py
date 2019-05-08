@@ -5,6 +5,9 @@ import json
 import codecs
 from traceback import print_exc as pe
 import stat
+from threading import Thread
+import time
+from queue import Queue
 
 ###################################################################
 
@@ -18,6 +21,8 @@ FILE_VERBOSE = False
 FORCE_REMOTE_DB = True
 
 DO_REMOTE_DB = IS_PROD() or FORCE_REMOTE_DB
+
+DB_WRITE_LATENCY = 10
 
 ###################################################################
 
@@ -167,10 +172,49 @@ def getlastmod(path):
 
 ###################################################################
 
+class DbWriteJob:
+    def __init__(self, task, path = None, blob = None, deadline = None):
+        self.task = task
+        self.path = path
+        self.blob = blob
+        self.deadline = deadline
+
+###################################################################
+
 class Db:
     def __init__(self, dbpath = "db"):
         self.dbpath = dbpath
         createdir(self.dbpath)
+        self.dbwritequeue = Queue()
+        self.dbwritejobs = {}
+        Thread(target = self.dbwritethread).start()
+        Thread(target = self.dbtickthread).start()
+
+    def flushdb(self):    
+        deletepaths = []
+        for id, job in self.dbwritejobs.items():            
+            if time.time() > job.deadline:
+                print("writing path", job.path)
+                doc_ref = db.document(job.path)
+                doc_ref.set(job.blob)                
+                deletepaths.append(job.path)
+        for path in deletepaths:
+            print("removing path", path)
+            del self.dbwritejobs[path]
+
+    def dbwritethread(self):        
+        while True:
+            job = self.dbwritequeue.get()
+            if job.task == "tick":
+                pass
+            else:
+                self.dbwritejobs[job.path] = job
+            self.flushdb()
+
+    def dbtickthread(self):        
+        while True:
+            self.dbwritequeue.put(DbWriteJob("tick"))
+            time.sleep(DB_WRITE_LATENCY)
 
     def isdocpath(self, path):
         return ( len(path.split("/")) % 2 ) == 0
@@ -206,8 +250,7 @@ class Db:
 
     def setdocindb(self, path, doc):
         if DO_REMOTE_DB:
-            doc_ref = db.document(path)
-            doc_ref.set(doc)
+            self.dbwritequeue.put(DbWriteJob("write", path, doc, time.time() + DB_WRITE_LATENCY))
         else:
             pass
 
