@@ -4,6 +4,7 @@ import os
 import json
 import codecs
 from traceback import print_exc as pe
+import stat
 
 ###################################################################
 
@@ -109,6 +110,60 @@ def read_json_from_file(path, default):
     except:
         pe()
         return default
+
+###################################################################
+
+def os_stats_as_dict(stats, name, isdir):
+    parts = name.split(".")
+    ext = parts[-1]
+    basename = name
+    if len(parts) > 1:
+        basename = ".".join(parts[:-1])
+    return {
+        "name": name,
+        "basename": basename,
+        "ext": ext,
+        "isdir": isdir,
+        "st_mode": stats.st_mode,
+        "st_mode_unix_rwx": stat.filemode(stats.st_mode),
+        "st_ino": stats.st_ino,
+        "st_dev": stats.st_dev,
+        "st_nlink": stats.st_nlink,
+        "st_uid": stats.st_uid,
+        "st_gid": stats.st_gid,
+        "st_size": stats.st_size,
+        "st_atime": stats.st_atime,
+        "st_mtime": stats.st_mtime,
+        "st_ctime": stats.st_ctime
+    }
+
+def dir_listing_as_list(path):
+    try:
+        listing = []
+        for name in os.listdir(path):            
+            currpath = os.path.join(path, name)
+            stats = os.stat(currpath)
+            isdir = os.path.isdir(currpath)
+            listing.append(os_stats_as_dict(stats, name, isdir))
+        return listing
+    except:
+        pe()
+        return []
+
+def dir_listing_as_dict(path):
+    listing = dir_listing_as_list(path)
+    dictionary = {}
+    for item in listing:
+        dictionary[item["name"]] = item
+    return dictionary
+
+def getlastmod(path):
+    try:
+        stats = os.stat(path)
+        mtime = stats.st_mtime
+        return mtime
+    except:
+        return 0
 
 ###################################################################
 
