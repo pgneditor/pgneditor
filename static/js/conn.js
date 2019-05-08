@@ -164,7 +164,7 @@ class GameNode_ extends e{
     }
 
     numberedsan(){
-        if(this.id == "root") return "Root"
+        if(!this.getparent()) return "Root"
         let prefix = this.turn() == "w" ? ".." : "."
         return `${this.getparent().fullmovenumber()}${prefix} ${this.gensan}`
     }
