@@ -6,10 +6,12 @@ app.controlpanel.bc("#ddd")
 let profile = Profile()
 let board = Board()
 
+let aboutiframe = Iframe().setSrc("/docs/about").domarkdown()
+
 let maintabpane = TabPane("maintabpane").settabs([
     Tab("board", "Board", board),    
     Tab("font", "Font", FontExplorer("lichess")),
-    Tab("about", "About", Div().html("Pgn Editor.").mar(10).fs(20)),
+    Tab("about", "About", aboutiframe),
     Tab("profile", "Profile", profile)
 ]).selecttab("board", USE_STORED_IF_AVAILABLE).op(0.25).transition("all 1s")
 if("tab" in params){

@@ -13,6 +13,8 @@ import json
 
 from tornado.options import define, options
 
+import mimetypes
+
 ###################################################################
 
 import serverlogic
@@ -28,18 +30,31 @@ class Application(tornado.web.Application):
     def __init__(self):
         handlers = [
             (r"/", MainHandler),
+            (r"/static/.*", MyStaticFileHandler),
             (r"/jsonapi", JsonApi),
             (r"/importstudy/.*", ImportStudy),
             (r"/test", Test),
+            (r"/docs/.*", Docs),
             (r"/chatsocket", ChatSocketHandler)
         ]
         settings = dict(
             cookie_secret="__TODO:_GENERATE_YOUR_OWN_RANDOM_VALUE_HERE__",
             template_path=os.path.join(os.path.dirname(__file__), "templates"),
-            static_path=os.path.join(os.path.dirname(__file__), "static"),
+            #static_path=os.path.join(os.path.dirname(__file__), "static"),
             xsrf_cookies=False,
-        )
+        )        
         super(Application, self).__init__(handlers, **settings)
+
+class MyStaticFileHandler(tornado.web.RequestHandler):
+    def get(self):        
+        path = self.request.path        
+        filepath = path[1:]
+        if not os.path.isfile(filepath):
+            self.set_status(404)
+            return
+        mimetype = mimetypes.guess_type(path)                
+        self.set_header("Content-Type", mimetype[0])
+        self.write(read_string_from_file(filepath, ""))
 
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
@@ -71,6 +86,12 @@ class ImportStudy(tornado.web.RequestHandler):
 class Test(tornado.web.RequestHandler):
     def get(self):        
         self.write(read_string_from_file("templates/test.html", "test"))
+
+class Docs(tornado.web.RequestHandler):
+    def get(self):        
+        path = self.request.path        
+        parts = path.split("/")
+        self.write(read_string_from_file("docs/" + parts[2] + ".md", "Pgn Editor."))
 
 class ChatSocketHandler(tornado.websocket.WebSocketHandler):
     waiters = set()

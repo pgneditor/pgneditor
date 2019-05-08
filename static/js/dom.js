@@ -1534,4 +1534,47 @@ function FontExplorer(fontfamily){return new FontExplorer_(fontfamily)}
 ////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////
+// iframe
+class Iframe_ extends e{
+    constructor(){
+        super("iframe")
+    }
+
+    setWidth(width){
+        this.sa("width", width)
+        return this
+    }
+
+    setHeight(height){
+        this.sa("height", height - 3)
+        return this
+    }
+
+    setSrc(url){
+        this.sa("src", url)
+        return this
+    }
+
+    resize(width, height){
+        this.setWidth(width).setHeight(height)
+    }
+
+    rendermarkdown(){
+        let contente = this.e.contentDocument.body
+        let content = contente.innerHTML
+        content = md2html(content)
+        console.log("head", this.e.contentDocument.head)
+        this.e.contentDocument.head.innerHTML = `<link rel="stylesheet" href="/static/css/markdown.css" />`
+        contente.innerHTML = content
+    }
+
+    domarkdown(){
+        this.ae("load", this.rendermarkdown.bind(this))
+        return this
+    }
+}
+function Iframe(){return new Iframe_()}
+////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////
 
