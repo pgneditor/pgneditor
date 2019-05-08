@@ -1134,6 +1134,12 @@ VARIANT_ICONS = {
     threeCheck: "&#x002E;"
 }
 
+function getvariantdisplayname(variantkey){
+    let item = VARIANT_KEYS.find(x => x[0] == variantkey)
+    if(!item) return "! Unknown Variant !"
+    return item[1]
+}
+
 function getstartfenforvariantkey(variantkey){
     if(variantkey == "antichess") return ANTICHESS_START_FEN
     if(variantkey == "racingKings") return RACING_KINGS_START_FEN

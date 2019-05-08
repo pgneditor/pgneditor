@@ -16,6 +16,7 @@ from tornado.options import define, options
 ###################################################################
 
 import serverlogic
+from utils.file import read_string_from_file
 
 ###################################################################
 
@@ -29,6 +30,7 @@ class Application(tornado.web.Application):
             (r"/", MainHandler),
             (r"/jsonapi", JsonApi),
             (r"/importstudy/.*", ImportStudy),
+            (r"/test", Test),
             (r"/chatsocket", ChatSocketHandler)
         ]
         settings = dict(
@@ -65,6 +67,10 @@ class ImportStudy(tornado.web.RequestHandler):
         if ( paramindex + 2 ) < len(parts):
             nodeid = parts[paramindex + 2]
         self.redirect(f"/?task=importstudy&usercode={usercode}&studyid={studyid}&nodeid={nodeid}&tab=board&boardtab=tree")
+
+class Test(tornado.web.RequestHandler):
+    def get(self):        
+        self.write(read_string_from_file("templates/test.html", "test"))
 
 class ChatSocketHandler(tornado.websocket.WebSocketHandler):
     waiters = set()
