@@ -347,9 +347,7 @@ class Board_ extends e{
         this.basicboard.setfromfen(study.currentnode.fen)
         let treebuild = this.study.tree()
         this.treediv.x.a(treebuild)        
-        setTimeout(function(){
-            this.treediv.w(this.treediv.e.scrollWidth).h(this.tabpane.contentdiv.e.scrollHeight - getScrollBarWidth())            
-        }.bind(this), 0)
+        this.treediv.resize()
         this.study.currentnode.movediv.scrollIntoView({block: "center", inline: "center", behavior: "smooth"})
         this.pgntext.setText(study.pgn)
         this.studytoolshook.x
@@ -480,6 +478,11 @@ class Board_ extends e{
         this.boardcontainer.a(this.controlpanel, this.basicboard)
         this.pgntext = CopyTextArea({pastecallback: this.pgnpastecallback.bind(this)})
         this.treediv = Div().pad(3).bimg("static/img/backgrounds/marble.jpg")
+        this.treediv.resize = function(){            
+            setTimeout(function(){
+                this.treediv.w(this.treediv.e.scrollWidth).h(this.tabpane.contentdiv.e.scrollHeight)            
+            }.bind(this), 0)
+        }.bind(this)
         this.toolsdiv = Div().pad(3)        
         this.studytoolshook = Div()
         this.toolsdiv.a(this.studytoolshook)
