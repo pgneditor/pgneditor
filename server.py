@@ -53,7 +53,8 @@ class MyStaticFileHandler(tornado.web.RequestHandler):
             self.set_status(404)
             return
         mimetype = mimetypes.guess_type(path)                
-        self.set_header("Content-Type", mimetype[0])
+        if mimetype[0]:
+            self.set_header("Content-Type", mimetype[0])
         with open(filepath, 'rb') as f:
             data = f.read()
             self.write(data)

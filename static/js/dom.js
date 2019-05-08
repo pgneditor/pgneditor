@@ -684,35 +684,6 @@ function Check(){return new CheckBox_()}
 ////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////
-// labeledcheckbox
-class LabeledCheckBox_ extends Div_{
-    constructor(label){
-        super()
-        this.container = Div().disp("flex").bc("#f7f7f7").pad(2).jc("space-around").ai("center").border("dotted", 1, 8, "#777")
-        this.label = Div().html(label).pl(4).pr(2)
-        this.cb = Check()
-        this.container.a(this.label, this.cb)
-        this.disp("inline-block").a(this.container).mar(1)
-    }
-
-    set(value){
-        this.cb.set(value)
-        return this
-    }
-
-    get checked(){
-        return this.cb.checked
-    }
-
-    onchange(handler){
-        this.cb.onchange(handler)                
-        return this
-    }
-}
-function LCheck(label){return new LabeledCheckBox_(label)}
-////////////////////////////////////////////////////////////////////
-
-////////////////////////////////////////////////////////////////////
 // button
 class Button_ extends Input_{
     constructor(caption, handler){
@@ -1497,6 +1468,11 @@ class Labeled_ extends e{
         this.contentdiv = Div().a(element).mr(5)
         this.container.a(this.captiondiv, this.contentdiv)
         this.a(this.container)
+    }
+
+    setLabelWidth(labelwidth){
+        this.captiondiv.w(labelwidth)
+        return this
     }
 }
 function Labeled(caption, element){return new Labeled_(caption, element)}

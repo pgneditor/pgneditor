@@ -93,7 +93,7 @@ function Profile(){return new Profile_()}
 class GameNode_ extends e{
     tree(){
         this.childsdiv.x
-        this.movediv.bc("#eee")
+        this.movediv.bc("#ddd")
         for(let child of this.getchilds()){
             this.childsdiv.a(child.tree())
         }        
@@ -109,6 +109,25 @@ class GameNode_ extends e{
             }                        
         }
         return this
+    }
+
+    getline(){
+        let rootturn = this.parentstudy.rootnode().turn()                
+        let rootfullmovenumber = this.parentstudy.rootnode().fullmovenumber()
+        let origindex = rootturn == "w" ? 0 : 1
+        let sans = this.id.split("_")
+        let line = []
+        for(let i=1; i<sans.length; i++){
+            let san = sans[i]            
+            let moveno = Math.floor(rootfullmovenumber + i/2)
+            if(((i + origindex) % 2) == 1) san = `${moveno}. ${san}`
+            else{
+                if(i==1) san = rootturn == "w" ? `${moveno}. ${san}` : `${moveno}.. ${san}`                
+            }
+            line.push(san)
+        }
+        if(line.length == 0) return "*"
+        return line.join(" ")
     }
 
     getparent(){
@@ -136,10 +155,23 @@ class GameNode_ extends e{
         }, this.nodeselectedbyid.bind(this))
     }
 
+    fullmovenumber(){
+        return feninfo(this.fen).fullmovenumber
+    }
+
+    turn(){
+        return feninfo(this.fen).turn
+    }
+
+    numberedsan(){
+        let prefix = this.turn() == "w" ? ".." : "."
+        return `${this.fullmovenumber()}${prefix} ${this.gensan}`
+    }
+
     constructor(parentstudy, blobopt){
         super("div")
         this.container = Div().disp("flex").ai("center")
-        this.movediv = Div().w(80).h(20).disp("flex").ai("center").jc("space-around").cp().curlyborder()
+        this.movediv = Div().w(90).h(20).disp("flex").ai("center").jc("space-around").cp().curlyborder()
         this.movediv.ae("mousedown", this.movedivclicked.bind(this))
         this.movelabeldiv = Div().ff("monospace").ml(6).mr(6)
         this.movediv.a(this.movelabeldiv).ml(2).mr(2).mt(2).mb(2)
@@ -157,7 +189,9 @@ class GameNode_ extends e{
         this.metrainweight = blob.metrainweight
         this.opptrainweight = blob.opptrainweight
         this.childids = blob.childids
-        this.movelabeldiv.html(this.id == "root" ? "Root" : this.gensan)
+        this.movelabeldiv.html(this.id == "root" ? "Root" : this.numberedsan()).fw("bold").pl(3).pr(3)
+        this.movelabeldiv.bc(this.turn() == "w" ? "#000" : "#fff")
+        this.movelabeldiv.c(this.turn() == "w" ? "#fff" : "#000")
     }
 }
 function GameNode(parentstudy, blobopt){return new GameNode_(parentstudy, blobopt)}
@@ -183,6 +217,10 @@ class Study_ extends e{
 
     rootnode(){
         return this.nodelist["root"]
+    }
+
+    getcurrentnode(){
+        return this.nodelist[this.currentnodeid]
     }
 
     tree(){
@@ -351,12 +389,15 @@ class Board_ extends e{
         this.study.currentnode.movediv.scrollIntoView({block: "center", inline: "center", behavior: "smooth"})
         this.pgntext.setText(study.pgn)
         this.studytoolshook.x
-        let importurl = `${serverroot()}/importstudy/${getuser().code}/${this.study.id}/${this.study.currentnodeid}`
+        let importurl = `${serverroot()}/importstudy/${getuser().code}/${this.study.id}/${this.study.currentnodeid}`                
+        let line = this.study.getcurrentnode().getline()
+        this.linetextinput = CopyText({dopaste: false}).setText(line)
+        this.studytoolshook.a(Labeled("Line", this.linetextinput).setLabelWidth(150).fs(18))
         this.importlinktextinput = CopyText({dopaste: false}).setText(importurl)
         this.embedtextinput = CopyText({dopaste: false}).setText(`<iframe width="800" height="500" src="${importurl}" />`)
-        this.studytoolshook.a(Labeled("Import link", this.importlinktextinput))
-        this.studytoolshook.a(Labeled("Embed", this.embedtextinput))
-        app.log(`${study.title} [ ${study.variantdisplayname()} ]`, "info")
+        this.studytoolshook.a(Labeled("Import link", this.importlinktextinput).setLabelWidth(150).fs(18))
+        this.studytoolshook.a(Labeled("Embed", this.embedtextinput).setLabelWidth(150).fs(18))
+        app.log(`${study.title} [ ${study.variantdisplayname()} ] ${line}`, "info")
     }
 
     resize(width, height){

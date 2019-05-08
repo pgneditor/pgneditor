@@ -40,6 +40,33 @@ function serverroot(){
 
 ////////////////////////////////////////////////////////////////////
 
+function feninfo(fen){
+    info = {
+        rawfen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR",
+        turn: "w",
+        castlingrights: "KQkq",
+        epsquare: "-",
+        halfmoveclock: 0,
+        fullmovenumber: 1
+    }
+
+    try{
+        let parts = fen.split(" ")
+        info.rawfen = parts[0]
+        info.turn = parts[1]
+        info.castlingrights = parts[2]
+        info.epsquare = parts[3]
+        info.halfmoveclock = parseInt(parts[4])
+        if(isNaN(info.halfmoveclock)) info.halfmoveclock = 0
+        info.fullmovenumber = parseInt(parts[5])
+        if(isNaN(info.fullmovenumber)) info.fullmovenumber = 0
+    }catch(err){}
+    
+    return info
+}
+
+////////////////////////////////////////////////////////////////////
+
 //https://stackoverflow.com/questions/521295/seeding-the-random-number-generator-in-javascript
 seed = 1
 function random(){
