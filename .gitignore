@@ -1,4 +1,7 @@
 
+/firebase/*
+!/firebase/ReadMe.md
+
 /db/*
 
 /.vscode/*

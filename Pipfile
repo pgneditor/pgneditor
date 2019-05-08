@@ -10,6 +10,8 @@ tornado = "*"
 certifi = "*"
 urllib3 = "*"
 python-chess = "*"
+heroku3 = "*"
+firebase-admin = "*"
 
 [requires]
 python_version = "3.7"
