@@ -164,9 +164,11 @@ class GameNode_ extends e{
     }
 
     numberedsan(){
-        if(!this.getparent()) return "Root"
+        if(this.id == "root") return "Root"
         let prefix = this.turn() == "w" ? ".." : "."
-        return `${this.getparent().fullmovenumber()}${prefix} ${this.gensan}`
+        let fn = this.fullmovenumber()
+        if(prefix == "..") fn--
+        return `${fn}${prefix} ${this.gensan}`
     }
 
     constructor(parentstudy, blobopt){
@@ -190,9 +192,10 @@ class GameNode_ extends e{
         this.metrainweight = blob.metrainweight
         this.opptrainweight = blob.opptrainweight
         this.childids = blob.childids
-        this.movelabeldiv.html(this.id == "root" ? "Root" : this.numberedsan()).fw("bold").pl(3).pr(3)
+        this.movelabeldiv.html(this.numberedsan()).fw("bold").pl(3).pr(3)
         this.movelabeldiv.bc(this.turn() == "w" ? "#000" : "#fff")
         this.movelabeldiv.c(this.turn() == "w" ? "#fff" : "#000")
+        if(this.id == "root") this.movelabeldiv.bc("#707")
     }
 }
 function GameNode(parentstudy, blobopt){return new GameNode_(parentstudy, blobopt)}
