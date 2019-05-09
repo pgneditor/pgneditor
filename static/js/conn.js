@@ -49,12 +49,19 @@ class Profile_ extends e{
         let user = getuser()
         try{
             let cd = this.parenttab.captiondiv
-            cd.html(user.username).c("#700").fw("normal")
-            if(user.isverified()) cd.c("#070")
+            let username = user.username
+            if(user.privileges.admin) username = username + " [ admin ]"
+            let it = IconText(username, "r")
+            let itcol = "#700"
+            let itfw = "normal"            
+            if(user.isverified()) itcol = "#070"
             if(user.privileges.admin){
-                cd.c("#770").fw("bold")
-                cd.html(user.username + " [ admin ]")
+                itcol = "#770"
+                itfw = "bold"
             }
+            it.captiondiv.c(itcol).fw(itfw)
+            it.icondiv.c(itcol)
+            cd.x.a(it)
         }catch(err){console.log(err)}
         this.x
         this.usernameinput = TextInput().pad(3).w(400)
@@ -539,10 +546,10 @@ class Board_ extends e{
         this.toolsdiv.a(this.studytoolshook)
         this.studies = Studies({parentboard: this})
         this.tabpane = TabPane("boardtabpane").settabs([
-            Tab("game", "Game", this.pgntext),
-            Tab("tree", "Tree", this.treediv),
-            Tab("tools", "Tools", this.toolsdiv),
-            Tab("studies", "Studies", this.studies)
+            Tab("game", "Game", this.pgntext, "C"),
+            Tab("tree", "Tree", this.treediv, "$"),
+            Tab("tools", "Tools", this.toolsdiv, "%"),
+            Tab("studies", "Studies", this.studies, "]")
         ]).selecttab("game", USE_STORED_IF_AVAILABLE)
         if("boardtab" in params){
             console.log("forcing board tab", params.boardtab)

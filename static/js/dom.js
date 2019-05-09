@@ -1000,23 +1000,25 @@ function HeadlogPane(args){return new HeadlogPane_(args)}
 ////////////////////////////////////////////////////////////////////
 // tab
 class Tab_ extends e{
-    setcaption(caption){
+    setcaption(caption, icon){
         this.caption = caption
-        this.captiondiv.html(this.caption)
+        this.icon = icon        
+        if(this.icon) this.captiondiv.x.a(IconText(this.caption, this.icon))
+        else this.captiondiv.html(this.caption)
     }
 
-    constructor(id, caption, contentelement){
-        super("div")
+    constructor(id, caption, contentelement, icon){
+        super("div")        
         this.id = id        
-        this.contentelement = contentelement
+        this.contentelement = contentelement        
         this.disp("flex").ai("center").jc("space-around").bc("#ddd").cp().pad(5)
         this.captiondiv = Div()
-        this.setcaption(caption)
+        this.setcaption(caption, icon)
         this.a(this.captiondiv)
         contentelement.parenttab = this
     }
 }
-function Tab(id, caption, contentelement){return new Tab_(id, caption, contentelement)}
+function Tab(id, caption, contentelement, icon){return new Tab_(id, caption, contentelement, icon)}
 ////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////
@@ -1478,6 +1480,24 @@ class Labeled_ extends e{
     }
 }
 function Labeled(caption, element){return new Labeled_(caption, element)}
+////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////
+// labeled
+class IconText_ extends e{
+    constructor(caption, icon){
+        super("div")
+        this.caption = caption
+        this.icon = icon
+        this.disp("inline-block")
+        this.container = Div().disp("flex").ai("center")
+        this.captiondiv = Div().html(this.caption).ml(4)
+        this.icondiv = Div().ff("lichess").html(this.icon)
+        this.container.a(this.icondiv, this.captiondiv)
+        this.a(this.container)
+    }
+}
+function IconText(caption, icon){return new IconText_(caption, icon)}
 ////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////

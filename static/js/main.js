@@ -9,9 +9,9 @@ let board = Board()
 let aboutiframe = Iframe().setSrc("/docs/about").domarkdown()
 
 let maintabpane = TabPane("maintabpane").settabs([
-    Tab("board", "Board", board),    
-    Tab("font", "Font", FontExplorer("lichess")),
-    Tab("about", "About", aboutiframe),
+    Tab("board", "Board", board, "4"),    
+    Tab("font", "Font", FontExplorer("lichess"), "A"),
+    Tab("about", "About", aboutiframe, "&"),
     Tab("profile", "Profile", profile)
 ]).selecttab("board", USE_STORED_IF_AVAILABLE).op(0.25).transition("all 1s")
 if("tab" in params){
