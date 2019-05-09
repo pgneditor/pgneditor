@@ -3,6 +3,7 @@
 from traceback import print_exc as pe
 import uuid
 import time
+import os
 
 ###################################################################
 
@@ -31,11 +32,30 @@ db = FirestoreDb()
 
 ###################################################################
 
+PRIVILEGES = [
+    "admin",
+    "analyze"
+]
+
 class User():
     def __init__(self, blob = {}):
         if not blob:
             blob = {}
         self.fromblob(blob)
+
+    def canbasic(self, privilege):
+        envname = "CAN" +  privilege.upper()
+        if envname in os.environ:
+            canstr = os.environ[envname]
+            canlist = canstr.split(",")
+            if self.uid in canlist:
+                return True
+        return False
+
+    def can(self, privilege):
+        if self.canbasic("admin"):
+            return True
+        return self.canbasic(privilege)
 
     def fromblob(self, blob):
         self.uid = blob.get("uid", "anonuser")
@@ -45,6 +65,9 @@ class User():
         self.verifiedat = blob.get("verifiedat", None)
         self.lastactiveat = blob.get("lastactiveat", time.time())
         self.verification = blob.get("verification", None)
+        self.privileges = {}
+        for privilege in PRIVILEGES:
+            self.privileges[privilege] = self.can(privilege)
 
     def toblob(self):
         return {
@@ -54,7 +77,8 @@ class User():
             "createdat": self.createdat,
             "verifiedat": self.verifiedat,
             "lastactiveat": self.lastactiveat,
-            "verification": self.verification
+            "verification": self.verification,
+            "privileges": self.privileges
         }
 
     def dbpath(self):
@@ -70,7 +94,7 @@ class User():
         return db.pathexists(self.dbpath())
 
     def __repr__(self):
-        return f"< user [ {self.uid} {self.username} ] >"
+        return f"< user [ {self.uid} | {self.username} | admin : {self.can('admin')} ] >"
 
 ###################################################################
 

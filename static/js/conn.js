@@ -49,8 +49,12 @@ class Profile_ extends e{
         let user = getuser()
         try{
             let cd = this.parenttab.captiondiv
-            cd.html(user.username).c("#700")
+            cd.html(user.username).c("#700").fw("normal")
             if(user.isverified()) cd.c("#070")
+            if(user.privileges.admin){
+                cd.c("#770").fw("bold")
+                cd.html(user.username + " [ admin ]")
+            }
         }catch(err){console.log(err)}
         this.x
         this.usernameinput = TextInput().pad(3).w(400)

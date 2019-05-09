@@ -359,6 +359,7 @@ class User_{
         this.verifiedat = getelse(blob, "verifiedat", null)
         this.lastactiveat = getelse(blob, "lastactiveat", gettimesec())
         this.verification = getelse(blob, "verification", null)
+        this.privileges = getelse(blob, "privileges", {})
     }
 
     isverified(){        
@@ -377,7 +378,8 @@ class User_{
             createdat: this.createdat,
             verifiedat: this.verifiedat,
             lastactiveat: this.lastactiveat,
-            verification: this.verification
+            verification: this.verification,
+            privileges: this.privileges
         }
     }
 }
