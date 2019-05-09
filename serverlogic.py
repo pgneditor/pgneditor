@@ -91,7 +91,7 @@ class User():
         db.setdoc(self.dbpath(), self.toblob())
 
     def indb(self):
-        return db.pathexists(self.dbpath())
+        return db.getpath(self.dbpath())
 
     def __repr__(self):
         return f"< user [ {self.uid} | {self.username} | admin : {self.can('admin')} ] >"
