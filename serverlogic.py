@@ -352,6 +352,16 @@ def parsepgn(req):
         "setstudy": study.toblob(nodelist = True)
     }
 
+def flipstudy(req):
+    log(f"< flipping < {req.id} > >", "info")
+    study = getstudy(req)
+    study.setflip(not study.flip)
+    storestudy(req, study)
+    return {
+        "kind": "studyflipped",
+        "setstudy": study.toblob(nodelist = True)
+    }
+
 def reset(req):
     log(f"< reset < {req.id} > >", "info")
     study = getstudy(req)

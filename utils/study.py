@@ -233,6 +233,9 @@ class Study:
         while self.forward():
             pass
 
+    def setflip(self, flip):
+        self.flip = flip
+
     def fromblob(self, blob):
         self.id = blob.get("id", "default")
         self.title = blob.get("title", "Default study")
@@ -240,6 +243,7 @@ class Study:
         self.createdat = blob.get("createdat", time.time())
         self.selected = blob.get("selected", False)        
         self.currentnodeid = blob.get("currentnodeid", "root")
+        self.flip = blob.get("flip", False)
         nodelistblob = blob.get("nodelist", {})
         self.nodelist = {}
         for id, gamenodeblob in nodelistblob.items():
@@ -261,6 +265,7 @@ class Study:
             "createdat": self.createdat,
             "selected": self.selected,
             "currentnodeid": self.currentnodeid,
+            "flip": self.flip,
             "nodelist": nodelistblob,
             "pgn": pgn
         }

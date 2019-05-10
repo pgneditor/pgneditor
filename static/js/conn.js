@@ -251,6 +251,7 @@ class Study_ extends e{
         this.createdat = getelse(this.blob, "createdat", gettimesec())
         this.selected = getelse(this.blob, "selected", false)
         this.currentnodeid = getelse(this.blob, "currentnodeid", "root")
+        this.flip = getelse(this.blob, "flip", false)
         this.nodelistblob = getelse(this.blob, "nodelist", {})
         this.nodelist = {}
         for(let id in this.nodelistblob) this.nodelist[id] = GameNode(this, this.nodelistblob[id])                
@@ -349,8 +350,8 @@ class Studies_ extends e{
     }
 
     createnew(){
-        let title = window.prompt("Study title:")
-        api({
+        let title = window.prompt("Study title:", `${this.getvariantdisplayname()} study`)
+        if(title) api({
             "kind": "createstudy",
             "title": title,
             "variantkey": this.getvariantkey()
@@ -359,6 +360,10 @@ class Studies_ extends e{
 
     getvariantkey(){
         return this.variantcombo.v()
+    }
+
+    getvariantdisplayname(){
+        return getvariantdisplayname(this.getvariantkey())
     }
 
     setvariantkey(variantkey){
@@ -397,6 +402,7 @@ class Board_ extends e{
             this.basicboard.variantkey = study.variantkey
             this.resize(this.width, this.height)
         }
+        this.basicboard.setflip(this.study.flip)
         this.basicboard.setfromfen(study.currentnode.fen)
         this.basicboard.arrowcontainer.x
         if(study.currentnode.genuci) this.basicboard.addalgebmovearrow(study.currentnode.genuci)
@@ -504,6 +510,10 @@ class Board_ extends e{
         this.algebmovemade(resobj)
     }
 
+    studyflipped(resobj){
+        this.algebmovemade(resobj)
+    }
+
     pgnpastecallback(pgn){
         console.log("pasted", pgn)
         api({
@@ -511,6 +521,13 @@ class Board_ extends e{
             "id": this.study.id,
             "pgn": pgn
         }, this.pgnparsed.bind(this))
+    }
+
+    flip(){
+        api({
+            "kind": "flipstudy",
+            "id": this.study.id
+        }, this.studyflipped.bind(this))
     }
 
     constructor(argsopt){
@@ -530,7 +547,8 @@ class Board_ extends e{
             BoardControlButton("Y", this.back.bind(this), "#070"),
             BoardControlButton("X", this.forward.bind(this), "#070"),
             BoardControlButton("V", this.toend.bind(this), "#007"),            
-            BoardControlButton("L", this.del.bind(this), "#700")
+            BoardControlButton("L", this.del.bind(this), "#700"),
+            BoardControlButton("B", this.flip.bind(this), "#770")
         )
         this.controlpanel.a(this.navcontrolpanel)        
         this.boardcontainer.a(this.controlpanel, this.basicboard)
