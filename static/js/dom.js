@@ -569,9 +569,16 @@ class CopyText_ extends e{
         return this
     }
 
+    textchanged(){
+        if(this.id){
+            localStorage.setItem(this.id, this.textinput.getText())
+        }
+    }
+
     constructor(argsopt){
         super("div")
         let args = argsopt || {}        
+        this.id = args.id
         this.dopaste = getelse(args, "dopaste", true)
         this.docopy = getelse(args, "docopy", true)
         this.disp("flex").ai("center").jc("space-around").bc("#ddd").ac("unselectable")
@@ -584,6 +591,12 @@ class CopyText_ extends e{
         this.pastediv = Div().disp("flex").ai("center").jc("space-around").a(Div().html("Paste")).bc("#fee").cp().fs(10)
         this.pastediv.ae("mousedown", this.paste.bind(this))        
         this.textinput = TextInput().ff("monospace")
+        if(this.id){
+            this.textinput.ae("keyup", this.textchanged.bind(this))
+            this.textinput.ae("change", this.textchanged.bind(this))
+            let origtext = localStorage.getItem(this.id)
+            if(origtext) this.textinput.setText(origtext)
+        }
         this.a(this.textinput)
         if(this.docopy) this.a(this.copydiv)
         if(this.dopaste) this.a(this.pastediv)

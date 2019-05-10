@@ -433,7 +433,17 @@ class Board_ extends e{
         this.embedtextinput = CopyText({dopaste: false}).setText(`<iframe width="800" height="500" src="${importurl}" />`)
         this.studytoolshook.a(Labeled("Import link", this.importlinktextinput).setLabelWidth(150).fs(18))
         this.studytoolshook.a(Labeled("Embed", this.embedtextinput).setLabelWidth(150).fs(18))
+        this.searchusernametextinput = CopyText({id: this.id + "/usernametextinput"})
+        this.studytoolshook.a(Labeled("Search username", this.searchusernametextinput).setLabelWidth(150).fs(18))
         app.log(`${study.title} [ ${study.variantdisplayname()} ] ${line}`, "info")
+        this.studytoolshook.a(IconButton("Search games of user with current moves", "y", this.searchusergames.bind(this), 20).bc("#aff").mar(5).pad(5))
+    }
+
+    searchusergames(){
+        let searchusername = this.searchusernametextinput.getText()
+        let eco = this.study.currentnodeid.replace("root_", "").replace(/_/g, " ")
+        let url = `https://fbserv.herokuapp.com/games.html?username=${searchusername}&eco=${eco}`
+        window.open(url, "_blank")
     }
 
     resize(width, height){
@@ -546,6 +556,7 @@ class Board_ extends e{
     constructor(argsopt){
         super("div")
         let args = argsopt || {}
+        this.id = getelse(args, "id", "board")
         this.width = getelse(args, "width", 1000)
         this.height = getelse(args, "height", 400)        
         this.controlheight = getelse(args, "controlheight", 35)
