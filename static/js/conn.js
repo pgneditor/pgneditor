@@ -295,6 +295,17 @@ class Study_ extends e{
         }, this.studyselected.bind(this))
     }
 
+    studycloned(){
+        if(this.parentstudies) this.parentstudies.request()
+    }
+
+    clone(){
+        api({
+            "kind": "clonestudy",
+            "id": this.id
+        }, this.studycloned.bind(this))
+    }
+
     constructor(argsopt){
         super("div")
         let args = argsopt || {}
@@ -304,9 +315,11 @@ class Study_ extends e{
         this.titlediv = Div().pad(2).ff("monospace").ml(6).fs(16).w(300).ellipsis().cp()
         this.titlediv.ae("mousedown", this.titleclicked.bind(this))
         this.controldiv = Div().disp("flex")
-        this.controldiv.a(
-            Button("Edit title", this.edittitle.bind(this)).bc("#ffa"),
-            Button("Delete", this.delete.bind(this)).bc("#faa")
+        this.controldiv.a(            
+            IconButton("Edit title", "m", this.edittitle.bind(this)).bc("#ffa"),
+            IconButton("Clone", "$", this.clone.bind(this)).bc("#aff"),
+            IconButton("Delete", "L", this.delete.bind(this)).bc("#faa")
+            
         )
         this.container.a(this.variantdiv, this.titlediv, this.controldiv)
         this.a(this.container)
@@ -322,8 +335,8 @@ function Study(argsopt){return new Study_(argsopt)}
 class Studies_ extends e{
     setstudies(resobj){
         this.studies = resobj.studies
-        let ids = Object.keys(this.studies)        
-        ids.sort((id1,id2) => this.studies[id1].createdat - this.studies[id2].createdat)        
+        let ids = Object.keys(this.studies)                
+        ids.sort((id1,id2) => this.studies[id1].createdat - this.studies[id2].createdat)                
         this.container.x
         let selectedstudy = null
         for(let id of ids){
@@ -377,7 +390,7 @@ class Studies_ extends e{
         this.controlpanel = Div().pad(2).disp("flex").ai("center").jc("space-around")
         this.variantcombo = Select().ff("monospace").fs(17)
         this.controlpanel.a(
-            Button("+ Create new", this.createnew.bind(this)).fs(18).bc("#afa").curlyborder().pl(8).pr(8),
+            IconButton("Create new", "O", this.createnew.bind(this), 20).bc("#afa"),
             this.variantcombo
         )
         this.container = Div().pad(2)

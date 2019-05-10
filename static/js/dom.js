@@ -318,8 +318,9 @@ class e{
         return this.html("")
     }
 
-    curlyborder(){
-        return this.bds("solid").bdw(1).bdc("#777").bdr(10)
+    curlyborder(borderradiusopt){
+        let borderradius = borderradiusopt || 10
+        return this.bds("solid").bdw(1).bdc("#777").bdr(borderradius)
     }
 }
 ////////////////////////////////////////////////////////////////////
@@ -1577,6 +1578,33 @@ class Iframe_ extends e{
     }
 }
 function Iframe(){return new Iframe_()}
+////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////
+// content button
+class ContentButton_ extends e{
+    constructor(content, callback){
+        super("div")
+        this.disp("inline-block").bc("#eee").cp().bds("solid").bdw(1).pad(2).bdc("#777").pl(4).pr(4).mar(2).curlyborder(5)
+        this.ae("mousedown", callback)        
+        this.content = content
+        this.a(this.content)
+    }
+}
+function ContentButton(content, callback){return new ContentButton_(content, callback)}
+////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////
+// icon button
+class IconButton_ extends ContentButton_{
+    constructor(caption, icon, callback, fontsizeopt){
+        super(IconText(caption, icon), callback)
+        this.fontsize = fontsizeopt || 14        
+        this.content.fs(this.fontsize)        
+        this.h(this.fontsize).pr(6)
+    }
+}
+function IconButton(caption, icon, callback, fontsizeopt){return new IconButton_(caption, icon, callback, fontsizeopt)}
 ////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////

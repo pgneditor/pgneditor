@@ -272,6 +272,25 @@ def createstudy(req):
         "kind": "studycreated"
     }
 
+def clonestudy(req):    
+    log(f"< cloning study < {req.id} > >", "info")
+    study = getstudy(req)
+    if not study:
+        return {
+            "kind": "clonestudyfailed",
+            "status": "no such study"
+        }
+    study.id = createuuid()
+    study.createdat = time.time()
+    req.id = study.id
+    storestudy(req, study)
+    unselectstudies(req, selectid = req.id)
+    if SERVERLOGIC_VERBOSE:
+        log(f"< cloned study < {req.id} > >", "success")
+    return {
+        "kind": "studycloned"
+    }
+
 def deletestudy(req):
     if req.id == "default":
         return {
