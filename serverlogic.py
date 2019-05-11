@@ -113,6 +113,7 @@ class Req():
         self.nodeid = reqobj.get("nodeid", None)
         self.algeb = reqobj.get("algeb", None)
         self.pgn = reqobj.get("pgn", None)
+        self.moves = reqobj.get("moves", None)
 
         if SERVERLOGIC_VERBOSE:
             log(self, "warning")
@@ -368,6 +369,16 @@ def parsepgn(req):
     storestudy(req, study)
     return {
         "kind": "pgnparsed",
+        "setstudy": study.toblob(nodelist = True)
+    }
+
+def mergemoves(req):
+    log(f"< merging moves < {req.id} | {req.moves} > >", "info")
+    study = getstudy(req)
+    study.mergemoves(req.moves)
+    storestudy(req, study)
+    return {
+        "kind": "movesmerged",
         "setstudy": study.toblob(nodelist = True)
     }
 

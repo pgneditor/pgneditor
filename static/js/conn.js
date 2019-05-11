@@ -429,6 +429,8 @@ class Board_ extends e{
         let line = this.study.getcurrentnode().getline()
         this.linetextinput = CopyText({dopaste: false}).setText(line)
         this.studytoolshook.a(Labeled("Line", this.linetextinput).setLabelWidth(150).fs(18))
+        this.mergetextinput = CopyTextArea({height: 80, pastecallback: this.mergemoves.bind(this)})
+        this.studytoolshook.a(Labeled("Merge moves", this.mergetextinput).setLabelWidth(150).fs(18))
         this.importlinktextinput = CopyText({dopaste: false}).setText(importurl)
         this.embedtextinput = CopyText({dopaste: false}).setText(`<iframe width="800" height="500" src="${importurl}" />`)
         this.studytoolshook.a(Labeled("Import link", this.importlinktextinput).setLabelWidth(150).fs(18))
@@ -437,6 +439,20 @@ class Board_ extends e{
         this.studytoolshook.a(Labeled("Search username", this.searchusernametextinput).setLabelWidth(150).fs(18))
         app.log(`${study.title} [ ${study.variantdisplayname()} ] ${line}`, "info")
         this.studytoolshook.a(IconButton("Search games of user with current moves", "y", this.searchusergames.bind(this), 20).bc("#aff").mar(5).pad(5))
+    }
+
+    movesmerged(resobj){
+        this.algebmovemade(resobj)
+    }
+
+    mergemoves(){
+        let moves = this.mergetextinput.getText()
+        console.log("merge", moves)
+        api({
+            "kind": "mergemoves",
+            "id": this.study.id,
+            "moves": moves
+        }, this.movesmerged.bind(this))
     }
 
     searchusergames(){

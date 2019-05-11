@@ -133,6 +133,15 @@ class Study:
         }        
         self.addgamenoderecursive("root", game)
 
+    def mergemoves(self, moves):
+        pgnio = io.StringIO(moves)
+        try:
+            game = read_game(pgnio)
+        except:
+            print("could not read game")
+            return        
+        self.addgamenoderecursive("root", game)
+
     def reset(self):
         self.nodelist = {
             "root": GameNode(self, {
