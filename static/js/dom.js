@@ -1250,6 +1250,10 @@ class Piece{
 }
 
 class BasicBoard_ extends e{
+    flipcolorname(){
+        return this.flip ? "black" : "white"
+    }
+
     squarefromalgeb(algeb){        
         let file = algeb.charCodeAt(0) - "a".charCodeAt(0)
         let rank = this.LAST_SQUARE - ( algeb.charCodeAt(1) - "1".charCodeAt(0) )

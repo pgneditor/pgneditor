@@ -442,7 +442,7 @@ class Board_ extends e{
     searchusergames(){
         let searchusername = this.searchusernametextinput.getText()
         let eco = this.study.currentnodeid.replace("root_", "").replace(/_/g, " ")
-        let url = `https://fbserv.herokuapp.com/games.html?username=${searchusername}&eco=${eco}`
+        let url = `https://fbserv.herokuapp.com/games.html?username=${searchusername}&eco=${eco}&variant=${this.study.variantkey}&color=${this.basicboard.flipcolorname()}`
         window.open(url, "_blank")
     }
 
@@ -580,7 +580,7 @@ class Board_ extends e{
         this.treediv = Div().pad(3).bimg("static/img/backgrounds/marble.jpg")
         this.treediv.resize = function(){            
             setTimeout(function(){
-                this.treediv.w(this.treediv.e.scrollWidth).h(this.tabpane.contentdiv.e.scrollHeight)            
+                this.treediv.w(this.treediv.e.scrollWidth).h(this.tabpane.contentdiv.e.scrollHeight).mw(2000).mh(1000)            
             }.bind(this), 0)
         }.bind(this)
         this.toolsdiv = Div().pad(3)        
