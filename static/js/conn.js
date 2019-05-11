@@ -441,7 +441,7 @@ class Board_ extends e{
 
     searchusergames(){
         let searchusername = this.searchusernametextinput.getText()
-        let eco = this.study.currentnodeid.replace("root_", "").replace(/_/g, " ").replace(/\+/g, "\\+")
+        let eco = this.study.currentnodeid.replace("root_", "").replace(/_/g, " ")
         let url = `https://fbserv.herokuapp.com/games.html?username=${searchusername}&eco=${eco}&variant=${this.study.variantkey}&color=${this.basicboard.flipcolorname()}&oppkind=human&autocreatecode=true&autostart=true`
         window.open(url, "_blank")
     }
