@@ -6,7 +6,8 @@ app.controlpanel.bc("#ddd")
 let profile = Profile()
 let board = Board()
 
-let aboutiframe = Iframe().setSrc("/docs/about").domarkdown()
+//let aboutiframe = Iframe().setSrc("/docs/about").domarkdown()
+let aboutiframe = Iframe().setSrc("https://lishadowapps-blog.netlify.com/posts/pgn_editor/?nolog=true&hideheader=true")
 
 let maintabpane = TabPane("maintabpane").settabs([
     Tab("board", "Board", board, "4"),    
