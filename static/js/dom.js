@@ -363,6 +363,7 @@ function A(){return new A_()}
 // https://stackoverflow.com/questions/2142535/how-to-clear-the-canvas-for-redrawing
 // https://stackoverflow.com/questions/4839993/how-to-draw-polygons-on-an-html5-canvas
 // https://stackoverflow.com/questions/5998924/how-can-i-rotate-a-shape-in-canvas-html5
+// https://stackoverflow.com/questions/4405336/how-to-copy-contents-of-one-canvas-to-another-canvas-locally
 
 class Canvas_ extends e{
     constructor(){
@@ -1350,9 +1351,34 @@ class BasicBoard_ extends e{
         this.draggedpdiv.op(0.7)
     }
 
+    getpiececanvas(){
+        let piececanvas = Canvas().setWidth(this.boardsize).setHeight(this.boardsize)        
+        for(let pdri of this.piecedivregistry){            
+            let sc = pdri.sc            
+            let light = pdri.light
+            piececanvas.ctx.fillStyle = light ? "#AA33AA" : "#77DDDD"
+            piececanvas.ctx.fillRect(sc.x, sc.y, this.squaresize, this.squaresize)            
+        }
+        piececanvas.ctx.drawImage(this.drawcanvas.e, 0, 0)
+        for(let pdri of this.piecedivregistry){
+            let pdiv = pdri.pdiv            
+            let pc = pdri.pc            
+            if(pdiv){
+                let imgurl = window.getComputedStyle(pdiv.e)["background-image"]
+                imgurl = imgurl.substring(5, imgurl.length - 2)    
+                let img = Img().width(this.piecesize).height(this.piecesize)
+                img.e.src = imgurl                            
+                piececanvas.ctx.drawImage(img.e, pc.x, pc.y, this.piecesize, this.piecesize)
+            }            
+        }
+        return piececanvas
+    }
+
     buildpieces(){                
+        this.piecedivregistry = []
         this.piececontainer.x
         for(let file=0;file<this.NUM_SQUARES;file++) for(let rank=0;rank<this.NUM_SQUARES;rank++){
+            let light = (((file+rank)%2)==1)            
             let sq = new Square(file, rank)                        
             let p = this.pieceatsquare(sq)            
             let sc = this.squarecoord(sq)            
@@ -1361,16 +1387,23 @@ class BasicBoard_ extends e{
             pdropdiv.ae("dragover", this.piecedragover.bind(this))
             pdropdiv.ae("drop", this.piecedrop.bind(this, sq))
             this.piececontainer.a(pdropdiv)
+            let pdiv = null
             if(p.nonempty()){                
-                let pdiv = Div().po("absolute").tl(pc)                
+                pdiv = Div().po("absolute").tl(pc)                
                 pdiv.w(this.piecesize).h(this.piecesize)
                 let klass = getclassforpiece(p, this.piecestyle)                    
                 pdiv.ac(klass).sa("draggable", true)
                 pdiv.ae("dragstart", this.piecedragstart.bind(this, p, sq, pdiv))
                 pdiv.ae("dragover", this.piecedragover.bind(this))
                 pdiv.ae("drop", this.piecedrop.bind(this, sq))
-                this.piececontainer.a(pdiv)
+                this.piececontainer.a(pdiv)                                
             }            
+            this.piecedivregistry.push({
+                pdiv: pdiv,
+                sc: sc,
+                pc: pc,                    
+                light: light
+            })
         }        
         let relturn = this.flip ? this.blackturn : this.whiteturn
         let onturnarrow = relturn ? this.bottomturnarrow : this.topturnarrow

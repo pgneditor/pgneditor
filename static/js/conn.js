@@ -440,6 +440,13 @@ class Board_ extends e{
         this.studytoolshook.a(Labeled("Search username", this.searchusernametextinput).setLabelWidth(150).fs(18))
         app.log(`${study.title} [ ${study.variantdisplayname()} ] ${line}`, "info")
         this.studytoolshook.a(IconButton("Search games of user with current moves", "y", this.searchusergames.bind(this), 20).bc("#aff").mar(5).pad(5))
+        this.dl = A().href("#").download("board.png").html("Export board screenshot").ae("click", this.dlBoard.bind(this)).fs(26)        
+        this.studytoolshook.a(Div().pad(10).a(this.dl))
+    }
+
+    dlBoard(){
+        let boardcanvas = this.basicboard.getpiececanvas()                
+        this.dl.href(boardcanvas.downloadHref("board", "png"))
     }
 
     movesmerged(resobj){
