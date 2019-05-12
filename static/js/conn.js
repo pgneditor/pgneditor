@@ -418,6 +418,7 @@ class Board_ extends e{
         this.basicboard.setflip(this.study.flip)
         this.basicboard.setfromfen(study.currentnode.fen)
         this.basicboard.arrowcontainer.x
+        this.basicboard.drawcanvas.clear()
         if(study.currentnode.genuci) this.basicboard.addalgebmovearrow(study.currentnode.genuci)
         let treebuild = this.study.tree()
         this.treediv.x.a(treebuild)        

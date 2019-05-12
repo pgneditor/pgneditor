@@ -360,17 +360,61 @@ function A(){return new A_()}
 
 ////////////////////////////////////////////////////////////////////
 // canvas
+// https://stackoverflow.com/questions/2142535/how-to-clear-the-canvas-for-redrawing
+// https://stackoverflow.com/questions/4839993/how-to-draw-polygons-on-an-html5-canvas
+// https://stackoverflow.com/questions/5998924/how-can-i-rotate-a-shape-in-canvas-html5
+
 class Canvas_ extends e{
     constructor(){
         super("canvas")
+        this.ctx = this.getContext("2d")
+        this.setWidth(100).setHeight(100)
     }
 
-    width(width){
+    clear(){
+        this.ctx.clearRect(0, 0, this.width, this.height)
+    }
+
+    arrow(from, to, argsopt){
+        let diff = to.m(from)
+        let l = diff.l()
+        let rot = Math.asin((to.y - from.y)/l)        
+        if(to.x < from.x) rot = Math.PI - rot             
+        let args = argsopt || {}
+        let linewidth = getelse(args, "linewidth", 16)
+        let halflinewidth = linewidth / 2
+        let pointheight = getelse(args, "pointheight", 40)
+        let pointwidth = getelse(args, "pointwidth", 30)
+        let halfpointwidth = pointwidth / 2
+        let color = getelse(args, "color", "#ff0")        
+        let lineheight = l - pointheight
+        this.ctx.save()
+        this.ctx.translate(from.x, from.y)
+        this.ctx.rotate(rot)
+        this.ctx.fillStyle = color
+        this.ctx.beginPath()
+        this.ctx.moveTo(0, 0)
+        this.ctx.lineTo(0, halflinewidth)        
+        this.ctx.lineTo(lineheight, halflinewidth)
+        this.ctx.lineTo(lineheight, halflinewidth + halfpointwidth)
+        this.ctx.lineTo(l, 0)
+        this.ctx.lineTo(lineheight, - ( halflinewidth + halfpointwidth ) )
+        this.ctx.lineTo(lineheight, - halflinewidth)
+        this.ctx.lineTo(0, -halflinewidth)        
+        this.ctx.lineTo(0, 0)        
+        this.ctx.closePath()
+        this.ctx.fill()
+        this.ctx.restore()
+    }
+
+    setWidth(width){
+        this.width = width
         this.sa("width", width)
         return this
     }
 
-    height(height){
+    setHeight(height){
+        this.height = height
         this.sa("height", height)
         return this
     }
@@ -1267,7 +1311,8 @@ class BasicBoard_ extends e{
     addmovearrow(move, args){        
         let fromc = this.squarecoord(move.fromsq).p(V(this.squaresize/2,this.squaresize/2))
         let toc = this.squarecoord(move.tosq).p(V(this.squaresize/2,this.squaresize/2))
-        this.arrowcontainer.a(Arrow(fromc, toc, args))
+        //this.arrowcontainer.a(Arrow(fromc, toc, args))
+        this.drawcanvas.arrow(fromc, toc, args)
     }
 
     addalgebmovearrow(algeb, args){        
@@ -1403,36 +1448,46 @@ class BasicBoard_ extends e{
 
     build(){
         this.maincontainer = Div().disp("flex").fd("column")
+        // captured panels
         this.capturedpanels = []
         for(let i=0;i<2;i++){
             let cp = Div().w(this.outerboardsize).h(this.capturedpanelheight).bc("#ccc")
             this.capturedpanels.push(cp)
         }
+        // board containers
         this.outerboardcontainer = Div().w(this.outerboardsize).h(this.outerboardsize).po("relative").bc("#ddd")
+        this.outerboardcontainer.bimg(this.backgroundimagepath)
         this.innerboardcontainer = Div().w(this.innerboardsize).h(this.innerboardsize).po("absolute")
         this.innerboardcontainer.t(this.outerboardmargin).l(this.outerboardmargin).bc("#eee")
+        this.innerboardcontainer.bimg(this.backgroundimagepath)
         this.outerboardcontainer.a(this.innerboardcontainer)
         this.boardcontainer = Div().w(this.boardsize).h(this.boardsize).po("absolute")
         this.boardcontainer.t(this.innerboardmargin).l(this.innerboardmargin).bc("#ffe")
+        this.boardcontainer.bimg(this.backgroundimagepath)
         this.innerboardcontainer.a(this.boardcontainer)
         this.maincontainer.a(this.capturedpanels[0], this.outerboardcontainer, this.capturedpanels[1])
+        // square container
+        this.squarecontainer = Div().w(this.boardsize).h(this.boardsize).po("absolute")
         for(let file=0;file<8;file++) for(let rank=0;rank<8;rank++){
             let sq = new Square(file, rank)
             let sc = this.squarecoord(sq)
             let sqdiv = Div().po("absolute").w(this.squaresize).h(this.squaresize).tl(sc)
             let light = (((file+rank)%2)==1)            
             sqdiv.bc( light ? "#777" : "#fff" ).op(0.2)            
-            this.boardcontainer.a(sqdiv)
+            this.squarecontainer.a(sqdiv)
         }
-        this.outerboardcontainer.bimg(this.backgroundimagepath)
-        this.innerboardcontainer.bimg(this.backgroundimagepath)
-        this.boardcontainer.bimg(this.backgroundimagepath)
-        this.arrowcontainer = Div().w(this.boardsize).h(this.boardsize).po("absolute")
-        this.arrowcontainer.t(this.innerboardmargin).l(this.innerboardmargin)
-        this.piececontainer = Div().w(this.boardsize).h(this.boardsize).po("absolute")
-        this.piececontainer.t(this.innerboardmargin).l(this.innerboardmargin)
-        this.innerboardcontainer.a(this.arrowcontainer, this.piececontainer)
+        this.boardcontainer.a(this.squarecontainer)
+        // arrow container
+        this.arrowcontainer = Div().w(this.boardsize).h(this.boardsize).po("absolute")        
+        // draw container
+        this.drawcontainer = Div().w(this.boardsize).h(this.boardsize).po("absolute")        
+        this.drawcanvas = Canvas().setWidth(this.boardsize).setHeight(this.boardsize)        
+        this.drawcontainer.a(this.drawcanvas)
+        // piece container
+        this.piececontainer = Div().w(this.boardsize).h(this.boardsize).po("absolute")        
+        this.boardcontainer.a(this.arrowcontainer, this.drawcontainer, this.piececontainer)
         this.x.a(this.maincontainer)
+        // turn arrows
         let turnarrowmiddlex = this.squaresize*8+2*this.innerboardmargin+1.3*this.outerboardmargin
         this.fullboardmargin = this.innerboardmargin + this.outerboardmargin
         let bottomturnarrowfrom = V(turnarrowmiddlex, this.squaresize*8+this.fullboardmargin)
