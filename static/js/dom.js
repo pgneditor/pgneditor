@@ -1730,9 +1730,9 @@ class BasicBoard_ extends e{
         this.drawingscanvas.clear()
         for(let drawing of this.drawings){
             if(drawing.kind == "arrow"){
-                let afsq = this.flipawaresquare(this.squarefromalgeb(drawing.fromalgeb))
-                let atosq = this.flipawaresquare(this.squarefromalgeb(drawing.toalgeb))
-                this.drawingscanvas.arrow(this.squaremiddlecoord(afsq), this.squaremiddlecoord(atosq), {color: drawing.color, scalefactor: this.scalefactor})
+                let fsq = this.squarefromalgeb(drawing.fromalgeb)
+                let tosq = this.squarefromalgeb(drawing.toalgeb)
+                this.drawingscanvas.arrow(this.squaremiddlecoord(fsq), this.squaremiddlecoord(tosq), {color: drawing.color, scalefactor: this.scalefactor})
             }
         }
         if(changed && this.drawingschangedcallback) this.drawingschangedcallback(this.drawings)
