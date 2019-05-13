@@ -445,7 +445,7 @@ class Board_ extends e{
     }
 
     dlBoard(){
-        let boardcanvas = this.basicboard.getpiececanvas()                
+        let boardcanvas = this.basicboard.getcanvas()                
         this.dl.href(boardcanvas.downloadHref("board", "png"))
     }
 

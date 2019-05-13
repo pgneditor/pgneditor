@@ -439,6 +439,27 @@ function Canvas(){return new Canvas_()}
 ////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////
+// background canvas
+class BackgroundCanvas_ extends Canvas_{
+    bimgloaded(){
+        let mulx = Math.floor(this.width / this.bimg.naturalWidth) + 1
+        let muly = Math.floor(this.height / this.bimg.naturalHeight) + 1
+        for(let x = 0; x < mulx; x++) for(let y = 0; y < muly; y++){
+            this.ctx.drawImage(this.bimg.e, x * this.bimg.naturalWidth, y * this.bimg.naturalHeight)
+        }
+    }
+
+    constructor(width, height, url){
+        super()
+        this.setWidth(width).setHeight(height)
+        this.bimg = Img().ae("load", this.bimgloaded.bind(this))
+        this.bimg.src = url
+    }
+}
+function BackgroundCanvas(width, height, url){return new BackgroundCanvas_(width, height, url)}
+////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////
 // img
 class Img_ extends e{
     constructor(){
@@ -454,6 +475,13 @@ class Img_ extends e{
         this.sa("height", height)
         return this
     }
+
+    set src(src){
+        this.e.src = src
+    }
+
+    get naturalWidth(){return this.e.naturalWidth}
+    get naturalHeight(){return this.e.naturalHeight}
 }
 function Img(){return new Img_()}
 ////////////////////////////////////////////////////////////////////
@@ -1356,7 +1384,7 @@ class BasicBoard_ extends e{
         for(let pdri of this.piecedivregistry){            
             let sc = pdri.sc            
             let light = pdri.light
-            piececanvas.ctx.fillStyle = light ? "#AA33AA" : "#77DDDD"
+            piececanvas.ctx.fillStyle = light ? this.lightsquarebc(this.squareop) : this.darksquarebc(this.squareop)
             piececanvas.ctx.fillRect(sc.x, sc.y, this.squaresize, this.squaresize)            
         }
         piececanvas.ctx.drawImage(this.drawcanvas.e, 0, 0)
@@ -1372,6 +1400,15 @@ class BasicBoard_ extends e{
             }            
         }
         return piececanvas
+    }
+
+    getcanvas(){
+        let canvas = Canvas().setWidth(this.outerboardsize).setHeight(this.outerboardsize)
+        canvas.ctx.drawImage(this.outerboardcontainerbackgroundcanvas.e, 0, 0)
+        canvas.ctx.drawImage(this.innerboardcontainerbackgroundcanvas.e, this.outerboardmargin, this.outerboardmargin)
+        canvas.ctx.drawImage(this.boardcontainerbackgroundcanvas.e, this.outerboardmargin + this.innerboardmargin, this.outerboardmargin + this.innerboardmargin)
+        canvas.ctx.drawImage(this.getpiececanvas().e, this.outerboardmargin + this.innerboardmargin, this.outerboardmargin + this.innerboardmargin)
+        return canvas
     }
 
     buildpieces(){                
@@ -1443,7 +1480,7 @@ class BasicBoard_ extends e{
     }
 
     settottalheight(totalheight){
-        this.totalheight = totalheight || 400
+        this.totalheight = totalheight || 400        
         this.capturedpanelheight = ( this.variantkey == "crazyhouse" ? 0.1 * this.totalheight : 0 )
         this.outerboardsize = this.totalheight - ( 2 * this.capturedpanelheight )
         this.outerboardmargin = ( 0.02 * this.outerboardsize )
@@ -1489,14 +1526,20 @@ class BasicBoard_ extends e{
         }
         // board containers
         this.outerboardcontainer = Div().w(this.outerboardsize).h(this.outerboardsize).po("relative").bc("#ddd")
-        this.outerboardcontainer.bimg(this.backgroundimagepath)
+        //this.outerboardcontainer.bimg(this.backgroundimagepath)
+        this.outerboardcontainerbackgroundcanvas = BackgroundCanvas(this.outerboardsize, this.outerboardsize, this.backgroundimagepath).po("absolute")        
+        this.outerboardcontainer.a(this.outerboardcontainerbackgroundcanvas)
         this.innerboardcontainer = Div().w(this.innerboardsize).h(this.innerboardsize).po("absolute")
         this.innerboardcontainer.t(this.outerboardmargin).l(this.outerboardmargin).bc("#eee")
-        this.innerboardcontainer.bimg(this.backgroundimagepath)
+        //this.innerboardcontainer.bimg(this.backgroundimagepath)
+        this.innerboardcontainerbackgroundcanvas = BackgroundCanvas(this.innerboardsize + 1, this.innerboardsize + 1, this.backgroundimagepath).po("absolute")        
+        this.innerboardcontainer.a(this.innerboardcontainerbackgroundcanvas)
         this.outerboardcontainer.a(this.innerboardcontainer)
         this.boardcontainer = Div().w(this.boardsize).h(this.boardsize).po("absolute")
         this.boardcontainer.t(this.innerboardmargin).l(this.innerboardmargin).bc("#ffe")
-        this.boardcontainer.bimg(this.backgroundimagepath)
+        //this.boardcontainer.bimg(this.backgroundimagepath)
+        this.boardcontainerbackgroundcanvas = BackgroundCanvas(this.boardsize + 1, this.boardsize + 1, this.backgroundimagepath).po("absolute")        
+        this.boardcontainer.a(this.boardcontainerbackgroundcanvas)
         this.innerboardcontainer.a(this.boardcontainer)
         this.maincontainer.a(this.capturedpanels[0], this.outerboardcontainer, this.capturedpanels[1])
         // square container
@@ -1506,7 +1549,7 @@ class BasicBoard_ extends e{
             let sc = this.squarecoord(sq)
             let sqdiv = Div().po("absolute").w(this.squaresize).h(this.squaresize).tl(sc)
             let light = (((file+rank)%2)==1)            
-            sqdiv.bc( light ? "#777" : "#fff" ).op(0.2)            
+            sqdiv.bc( light ? this.darksquarebc() : this.lightsquarebc() ).op(this.squareop)            
             this.squarecontainer.a(sqdiv)
         }
         this.boardcontainer.a(this.squarecontainer)
@@ -1542,6 +1585,16 @@ class BasicBoard_ extends e{
         this.flip = ( flip ? true : false )
     }
 
+    darksquarebc(opopt){
+        let op = opopt || 1
+        return `rgba(63, 63, 63, ${op})`
+    }
+
+    lightsquarebc(opopt){
+        let op = opopt || 1
+        return `rgba(255, 255, 255, ${op})`
+    }
+
     constructor(argsopt){
         super("div")
         let args = argsopt || {}
@@ -1558,7 +1611,8 @@ class BasicBoard_ extends e{
         this.setflip(args.flip)
         this.fen = args.fen || getstartfenforvariantkey(this.variantkey)
         this.piecefactor = args.piecefactor || 0.9
-        this.piecestyle = args.piecestyle || "alpha"
+        this.piecestyle = args.piecestyle || "alpha"        
+        this.squareop = args.squareop || 0.2
         this.settottalheight(args.totalheight)      
         this.dragmovecallback = args.dragmovecallback  
         this.setfromfen(this.fen)
