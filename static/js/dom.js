@@ -1438,6 +1438,7 @@ class BasicBoard_ extends e{
             piececanvas.ctx.fillRect(sc.x, sc.y, this.squaresize, this.squaresize)            
         }
         piececanvas.ctx.drawImage(this.drawcanvas.e, 0, 0)
+        piececanvas.ctx.drawImage(this.drawingscanvas.e, 0, 0)
         for(let pdri of this.piecedivregistry){
             let pdiv = pdri.pdiv            
             let pc = pdri.pc            
@@ -1456,7 +1457,7 @@ class BasicBoard_ extends e{
         let canvas = Canvas().setWidth(this.outerboardsize).setHeight(this.outerboardsize)
         canvas.ctx.drawImage(this.outerboardcontainerbackgroundcanvas.e, 0, 0)
         canvas.ctx.drawImage(this.innerboardcontainerbackgroundcanvas.e, this.outerboardmargin, this.outerboardmargin)
-        canvas.ctx.drawImage(this.boardcontainerbackgroundcanvas.e, this.outerboardmargin + this.innerboardmargin, this.outerboardmargin + this.innerboardmargin)
+        canvas.ctx.drawImage(this.boardcontainerbackgroundcanvas.e, this.outerboardmargin + this.innerboardmargin, this.outerboardmargin + this.innerboardmargin)        
         canvas.ctx.drawImage(this.getpiececanvas().e, this.outerboardmargin + this.innerboardmargin, this.outerboardmargin + this.innerboardmargin)
         return canvas
     }
