@@ -407,10 +407,11 @@ class Canvas_ extends e{
         let rot = Math.asin((to.y - from.y)/l)        
         if(to.x < from.x) rot = Math.PI - rot             
         let args = argsopt || {}
-        let linewidth = getelse(args, "linewidth", 16)
+        let scalefactor = getelse(args, "scalefactor", 1)
+        let linewidth = getelse(args, "linewidth", 16) * scalefactor
         let halflinewidth = linewidth / 2
-        let pointheight = getelse(args, "pointheight", 40)
-        let pointwidth = getelse(args, "pointwidth", 30)
+        let pointheight = getelse(args, "pointheight", 40) * scalefactor
+        let pointwidth = getelse(args, "pointwidth", 30) * scalefactor
         let halfpointwidth = pointwidth / 2
         let color = getelse(args, "color", "#ff0")        
         let lineheight = l - pointheight
@@ -1124,7 +1125,7 @@ class Tab_ extends e{
         this.id = id        
         this.contentelement = contentelement        
         this.disp("flex").ai("center").jc("space-around").bc("#ddd").cp().pad(5)
-        this.captiondiv = Div()
+        this.captiondiv = Div().ac("unselectable")
         this.setcaption(caption, icon)
         this.a(this.captiondiv)
         contentelement.parenttab = this
@@ -1348,7 +1349,15 @@ class Piece{
     }
 }
 
+const NOMINAL_BASIC_BOARD_SIZE = 500
+
 class BasicBoard_ extends e{
+    setgenuci(genuci){
+        this.genuci = genuci
+        this.drawcanvas.clear()
+        if(this.genuci) this.addalgebmovearrow(this.genuci)
+    }
+
     setdrawkind(drawkind){
         this.drawkind = drawkind
         console.log("drawkind", this.drawkind)
@@ -1378,14 +1387,17 @@ class BasicBoard_ extends e{
         return this.squarecoord(sq).p(V(this.squaresize/2,this.squaresize/2))
     }
 
-    addmovearrow(move, args){        
+    addmovearrow(move, argsopt){        
+        let args = argsopt || {}
         let fromc = this.squaremiddlecoord(move.fromsq)
         let toc = this.squaremiddlecoord(move.tosq)
         //this.arrowcontainer.a(Arrow(fromc, toc, args))
+        args.scalefactor = this.scalefactor
         this.drawcanvas.arrow(fromc, toc, args)
     }
 
-    addalgebmovearrow(algeb, args){        
+    addalgebmovearrow(algeb, argsopt){        
+        let args = argsopt || {}
         let move = this.movefromalgeb(algeb)        
         this.addmovearrow(move, args)
     }
@@ -1539,7 +1551,8 @@ class BasicBoard_ extends e{
         this.outerboardmargin = ( 0.02 * this.outerboardsize )
         this.innerboardsize = this.outerboardsize - ( 2 * this.outerboardmargin )
         this.innerboardmargin = ( 0.01 * this.outerboardsize )
-        this.boardsize = this.innerboardsize - ( 2 * this.innerboardmargin )
+        this.boardsize = this.innerboardsize - ( 2 * this.innerboardmargin )        
+        this.scalefactor = ( this.boardsize / NOMINAL_BASIC_BOARD_SIZE )
         this.squaresize = ( this.boardsize / this.NUM_SQUARES )
         this.piecesize = ( this.squaresize * this.piecefactor )
         this.piecemargin = ( this.squaresize - this.piecesize ) / 2
@@ -1549,6 +1562,8 @@ class BasicBoard_ extends e{
     resize(width, height){
         this.settottalheight(height)
         this.setfromfen(this.fen)
+        this.setgenuci(this.genuci)
+        this.setdrawings(this.drawings)
         return this
     }
 
@@ -1678,7 +1693,7 @@ class BasicBoard_ extends e{
                     this.drawanimationcanvas.clear()
                     this.fillsquare(this.drawanimationcanvas, this.drawfromsq, "rgb(255, 255, 0, 0.5)")
                     this.fillsquare(this.drawanimationcanvas, sq, "rgb(255, 255, 0, 0.5)")
-                    this.drawanimationcanvas.arrow(this.squaremiddlecoord(this.drawfromsq), this.squaremiddlecoord(sq), {color: this.drawcolor})
+                    this.drawanimationcanvas.arrow(this.squaremiddlecoord(this.drawfromsq), this.squaremiddlecoord(sq), {color: this.drawcolor, scalefactor: this.scalefactor})
                 }else{
                     this.drawanimationcanvas.clear()                    
                     this.fillsquare(this.drawanimationcanvas, sq, "rgb(255, 255, 0, 0.5)")
@@ -1717,7 +1732,7 @@ class BasicBoard_ extends e{
             if(drawing.kind == "arrow"){
                 let afsq = this.flipawaresquare(this.squarefromalgeb(drawing.fromalgeb))
                 let atosq = this.flipawaresquare(this.squarefromalgeb(drawing.toalgeb))
-                this.drawingscanvas.arrow(this.squaremiddlecoord(afsq), this.squaremiddlecoord(atosq), {color: drawing.color})
+                this.drawingscanvas.arrow(this.squaremiddlecoord(afsq), this.squaremiddlecoord(atosq), {color: drawing.color, scalefactor: this.scalefactor})
             }
         }
         if(changed && this.drawingschangedcallback) this.drawingschangedcallback(this.drawings)
@@ -1734,6 +1749,7 @@ class BasicBoard_ extends e{
     constructor(argsopt){
         super("div")        
         let args = argsopt || {}
+        this.scalefactor = 1
         this.drawkind = null
         this.drawcolor = "green"
         this.draggedp = undefined
@@ -1884,12 +1900,12 @@ function Iframe(){return new Iframe_()}
 class ContentButton_ extends e{
     constructor(content, callback){
         super("div")        
+        this.ac("unselectable")
         this.disp("inline-block").cp().bds("solid").bdw(1).pad(2).bdc("#777").pl(4).pr(4).mar(2).curlyborder(5)
         if(callback) this.ae("mousedown", callback)        
         this.content = content
         this.a(this.content)
-        this.setselected(false)
-        this.ac("unselectable")
+        this.setselected(false)        
     }
 }
 function ContentButton(content, callback){return new ContentButton_(content, callback)}

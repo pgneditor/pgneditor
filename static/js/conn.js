@@ -420,7 +420,7 @@ class Board_ extends e{
         this.basicboard.setfromfen(this.study.currentnode.fen)
         this.basicboard.arrowcontainer.x
         this.basicboard.drawcanvas.clear()
-        if(study.currentnode.genuci) this.basicboard.addalgebmovearrow(study.currentnode.genuci)
+        this.basicboard.setgenuci(study.currentnode.genuci)
         this.basicboard.setdrawings(this.study.currentnode.drawings)
         let treebuild = this.study.tree()
         this.treediv.x.a(treebuild)        
@@ -587,20 +587,20 @@ class Board_ extends e{
         this.drawmode = !this.drawmode
         this.drawpanelhook.t(0).l(this.basicboard.totalwidth() + 3)
         if(this.drawmode){
-            this.drawpanel = Div().w(290).ta("center").h(this.height).bimg("static/img/backgrounds/marble.jpg").ovf("scroll")
+            this.drawpanel = Div().w(490).ta("center").h(this.height).bimg("static/img/backgrounds/marble.jpg").ovf("scroll")
             this.drawcontrolpanel = Div().pad(3).mar(10).curlyborder().bc("#ddd")
             this.kindgroup = RadioGroup().setid(`${this.id}/drawkindgroup`).setselcallback(this.basicboard.setdrawkind.bind(this.basicboard)).setitems([
                 IconButton("Arrow", "N").setid("arrow"),
                 //IconButton("Circle", "K").setid("circle")
             ])
             this.colorgroup = RadioGroup().setid(`${this.id}/drawcolorgroup`).setselcallback(this.basicboard.setdrawcolor.bind(this.basicboard)).setitems([
-                Button("Green").curlyborder().setselbc("#afa").c("#070").setid("green"),
-                Button("Blue").curlyborder().setselbc("#aaf").c("#007").setid("blue"),
-                Button("Red").curlyborder().setselbc("#faa").c("#700").setid("red")
+                Button("Green").fs(14).curlyborder().setselbc("#afa").c("#070").setid("green"),
+                Button("Blue").fs(14).curlyborder().setselbc("#aaf").c("#007").setid("blue"),
+                Button("Red").fs(14).curlyborder().setselbc("#faa").c("#700").setid("red")
             ])
             this.drawcontrolpanel.a(
                 Labeled("Shape", this.kindgroup).fs(18).mar(3),
-                Labeled("Color", this.colorgroup).fs(18).mar(3),
+                Labeled("Color", this.colorgroup).fs(16).mar(3),
                 IconButton("Delete", "L", this.deletedrawing.bind(this), 18).mar(10).ml(10).bc("#fee")
             )           
             this.drawpanel.a(this.drawcontrolpanel)
