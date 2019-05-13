@@ -114,6 +114,7 @@ class Req():
         self.algeb = reqobj.get("algeb", None)
         self.pgn = reqobj.get("pgn", None)
         self.moves = reqobj.get("moves", None)
+        self.drawings = reqobj.get("drawings", None)
 
         if SERVERLOGIC_VERBOSE:
             log(self, "warning")
@@ -380,6 +381,15 @@ def mergemoves(req):
     return {
         "kind": "movesmerged",
         "setstudy": study.toblob(nodelist = True)
+    }
+
+def setdrawings(req):
+    log(f"< setting drawings < {req.id} | {req.drawings} > >", "info")
+    study = getstudy(req)
+    study.setdrawings(req.drawings)
+    storestudy(req, study)
+    return {
+        "kind": "drawingsset"
     }
 
 def flipstudy(req):

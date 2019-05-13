@@ -69,6 +69,7 @@ class GameNode:
         self.priorityindex = blob.get("priority", 0)
         self.metrainweight = blob.get("metrainweight", 0)
         self.opptrainweight = blob.get("opptrainweight", 0)        
+        self.drawings = blob.get("drawings", [])
         self.childids = blob.get("childids", [])
 
     def toblob(self):
@@ -81,6 +82,7 @@ class GameNode:
             "priorityindex": self.priorityindex,
             "metrainweight": self.metrainweight,
             "opptrainweight": self.opptrainweight,
+            "drawings": self.drawings,
             "childids": self.childids
         }
         
@@ -141,6 +143,9 @@ class Study:
             print("could not read game")
             return        
         self.addgamenoderecursive("root", game)
+
+    def setdrawings(self, drawings):
+        self.currentnode().drawings = drawings
 
     def reset(self):
         self.nodelist = {

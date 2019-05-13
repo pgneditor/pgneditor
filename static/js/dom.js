@@ -3,6 +3,31 @@
 class e{
     constructor(kind){
         this.e = document.createElement(kind)
+        this.selected = false
+        this.id = null
+        this.origbc = "#eee"
+        this.selbc = "#0f0"
+    }
+
+    setid(id){
+        this.id = id
+        return this
+    }
+
+    setselbc(selbc){
+        this.selbc = selbc
+        return this
+    }
+
+    setorigbc(origbc){
+        this.origbc = origbc
+        return this
+    }
+
+    setselected(selected){
+        this.selected = selected        
+        this.bc(this.selected ? this.selbc : this.origbc)        
+        return this
     }
 
     transition(transition){
@@ -376,7 +401,7 @@ class Canvas_ extends e{
         this.ctx.clearRect(0, 0, this.width, this.height)
     }
 
-    arrow(from, to, argsopt){
+    arrow(from, to, argsopt){        
         let diff = to.m(from)
         let l = diff.l()
         let rot = Math.asin((to.y - from.y)/l)        
@@ -1225,6 +1250,7 @@ class Square{
         return `${String.fromCharCode(this.file + 'a'.charCodeAt(0))}${String.fromCharCode(7 - this.rank + '1'.charCodeAt(0))}`
     }
 }
+function Sq(file, rank){return new Square(file, rank)}
 
 class Move{
     constructor(fromsq, tosq, prompiece){
@@ -1323,6 +1349,17 @@ class Piece{
 }
 
 class BasicBoard_ extends e{
+    setdrawkind(drawkind){
+        this.drawkind = drawkind
+        console.log("drawkind", this.drawkind)
+        this.drawfromsq = null
+        this.drawtosq = null
+    }
+
+    setdrawcolor(drawcolor){
+        this.drawcolor = drawcolor
+    }
+
     flipcolorname(){
         return this.flip ? "black" : "white"
     }
@@ -1337,9 +1374,13 @@ class BasicBoard_ extends e{
         return new Move(this.squarefromalgeb(algeb.slice(0,2)), this.squarefromalgeb(algeb.slice(2,4)))
     }
 
+    squaremiddlecoord(sq){
+        return this.squarecoord(sq).p(V(this.squaresize/2,this.squaresize/2))
+    }
+
     addmovearrow(move, args){        
-        let fromc = this.squarecoord(move.fromsq).p(V(this.squaresize/2,this.squaresize/2))
-        let toc = this.squarecoord(move.tosq).p(V(this.squaresize/2,this.squaresize/2))
+        let fromc = this.squaremiddlecoord(move.fromsq)
+        let toc = this.squaremiddlecoord(move.tosq)
         //this.arrowcontainer.a(Arrow(fromc, toc, args))
         this.drawcanvas.arrow(fromc, toc, args)
     }
@@ -1349,12 +1390,17 @@ class BasicBoard_ extends e{
         this.addmovearrow(move, args)
     }
 
-    squarecoord(sq){
+    flipawaresquare(sq){
         let fsq = new Square(sq.file, sq.rank)
         if(this.flip){
             fsq.file = this.LAST_SQUARE - fsq.file
             fsq.rank = this.LAST_SQUARE - fsq.rank
         }
+        return fsq
+    }
+
+    squarecoord(sq){
+        let fsq = this.flipawaresquare(sq)
         return new Vect(fsq.file * this.squaresize, fsq.rank * this.squaresize)
     }
 
@@ -1371,7 +1417,11 @@ class BasicBoard_ extends e{
         return this.rep[this.fileranktorepindex(sq.file, sq.rank)]
     }
 
-    piecedragstart(p, sq, pdiv){        
+    piecedragstart(p, sq, pdiv, ev){                
+        if(this.drawkind){
+            ev.preventDefault()
+            return
+        }
         this.draggedp = p
         this.draggedsq = sq
         pdiv.zi(10)
@@ -1423,6 +1473,7 @@ class BasicBoard_ extends e{
             let pdropdiv = Div().poa().tl(sc).w(this.squaresize).h(this.squaresize)
             pdropdiv.ae("dragover", this.piecedragover.bind(this))
             pdropdiv.ae("drop", this.piecedrop.bind(this, sq))
+            pdropdiv.ae("mousedown", this.squareclicked.bind(this, sq))
             this.piececontainer.a(pdropdiv)
             let pdiv = null
             if(p.nonempty()){                
@@ -1433,6 +1484,7 @@ class BasicBoard_ extends e{
                 pdiv.ae("dragstart", this.piecedragstart.bind(this, p, sq, pdiv))
                 pdiv.ae("dragover", this.piecedragover.bind(this))
                 pdiv.ae("drop", this.piecedrop.bind(this, sq))
+                pdiv.ae("mousedown", this.squareclicked.bind(this, sq))
                 this.piececontainer.a(pdiv)                                
             }            
             this.piecedivregistry.push({
@@ -1516,6 +1568,29 @@ class BasicBoard_ extends e{
         return this.outerboardsize
     }
 
+    squareclicked(sq){
+        if(!this.drawkind){            
+            return
+        }        
+        this.drawanimationcanvas.clear()
+        if(this.drawkind == "arrow"){
+            if(this.drawfromsq){
+                console.log("arrow to", sq)
+                this.drawings.push({
+                    kind: "arrow",
+                    color: this.drawcolor,
+                    fromalgeb: this.drawfromsq.toalgeb(),
+                    toalgeb: sq.toalgeb()
+                })
+                this.setdrawings(this.drawings, true)
+                this.drawfromsq = null
+            }else{
+                this.drawfromsq = sq
+                console.log("arrow from", sq)
+            }
+        }
+    }
+
     build(){
         this.maincontainer = Div().disp("flex").fd("column")
         // captured panels
@@ -1547,7 +1622,7 @@ class BasicBoard_ extends e{
         for(let file=0;file<8;file++) for(let rank=0;rank<8;rank++){
             let sq = new Square(file, rank)
             let sc = this.squarecoord(sq)
-            let sqdiv = Div().poa().w(this.squaresize).h(this.squaresize).tl(sc)
+            let sqdiv = Div().poa().w(this.squaresize).h(this.squaresize).tl(sc)            
             let light = (((file+rank)%2)==1)            
             sqdiv.bc( light ? this.darksquarebc() : this.lightsquarebc() ).op(this.squareop)            
             this.squarecontainer.a(sqdiv)
@@ -1557,11 +1632,15 @@ class BasicBoard_ extends e{
         this.arrowcontainer = Div().w(this.boardsize).h(this.boardsize).poa()        
         // draw container
         this.drawcontainer = Div().w(this.boardsize).h(this.boardsize).poa()        
-        this.drawcanvas = Canvas().setWidth(this.boardsize).setHeight(this.boardsize)        
-        this.drawcontainer.a(this.drawcanvas)
+        this.drawcanvas = Canvas().setWidth(this.boardsize).setHeight(this.boardsize).poa()        
+        this.drawingscanvas = Canvas().setWidth(this.boardsize).setHeight(this.boardsize).poa()                
+        this.drawanimationcanvas = Canvas().setWidth(this.boardsize).setHeight(this.boardsize).poa()                
+        this.drawcontainer.a(this.drawcanvas, this.drawingscanvas, this.drawanimationcanvas)
         // piece container
         this.piececontainer = Div().w(this.boardsize).h(this.boardsize).poa()        
         this.boardcontainer.a(this.arrowcontainer, this.drawcontainer, this.piececontainer)
+        this.boardcontainer.ae("mousemove", this.boardcontainermousemove.bind(this))
+        this.boardcontainer.ae("mouseout", this.boardcontainermouseout.bind(this))  
         this.x.a(this.maincontainer)
         // turn arrows
         let turnarrowmiddlex = this.squaresize*8+2*this.innerboardmargin+1.3*this.outerboardmargin
@@ -1574,6 +1653,41 @@ class BasicBoard_ extends e{
         this.bottomturnarrow = Arrow(bottomturnarrowfrom, bottomturnarrowto, turnarrowargs).disp("none")
         this.topturnarrow = Arrow(topturnarrowfrom, topturnarrowto, turnarrowargs).disp("none")
         this.outerboardcontainer.a(this.bottomturnarrow, this.topturnarrow)
+    }
+
+    boardvect2sq(boardvect){
+        let file = Math.floor(boardvect.x / this.squaresize)
+        let rank = Math.floor(boardvect.y / this.squaresize)
+        return this.flipawaresquare(Sq(file, rank))
+    }
+
+    fillsquare(canvas, sq, fillstyle){
+        let sqc = this.squarecoord(sq)
+        canvas.ctx.fillStyle = fillstyle
+        canvas.ctx.fillRect(sqc.x, sqc.y, this.squaresize, this.squaresize)
+    }
+
+    boardcontainermousemove(ev){
+        if(this.drawkind){
+            let bccr = this.boardcontainer.e.getBoundingClientRect()
+            let boardvect = V(ev.clientX - bccr.x, ev.clientY - bccr.y)
+            let sq = this.boardvect2sq(boardvect)        
+            if(this.drawkind == "arrow"){
+                if(this.drawfromsq){                        
+                    this.drawanimationcanvas.clear()
+                    this.fillsquare(this.drawanimationcanvas, this.drawfromsq, "rgb(255, 255, 0, 0.5)")
+                    this.fillsquare(this.drawanimationcanvas, sq, "rgb(255, 255, 0, 0.5)")
+                    this.drawanimationcanvas.arrow(this.squaremiddlecoord(this.drawfromsq), this.squaremiddlecoord(sq), {color: this.drawcolor})
+                }else{
+                    this.drawanimationcanvas.clear()                    
+                    this.fillsquare(this.drawanimationcanvas, sq, "rgb(255, 255, 0, 0.5)")
+                }
+            }
+        }        
+    }
+
+    boardcontainermouseout(){
+        this.drawanimationcanvas.clear()
     }
 
     buildall(){
@@ -1595,9 +1709,32 @@ class BasicBoard_ extends e{
         return `rgba(255, 255, 255, ${op})`
     }
 
+    setdrawings(drawings, changed){
+        this.drawings = drawings
+        this.drawingscanvas.clear()
+        for(let drawing of this.drawings){
+            if(drawing.kind == "arrow"){
+                let afsq = this.flipawaresquare(this.squarefromalgeb(drawing.fromalgeb))
+                let atosq = this.flipawaresquare(this.squarefromalgeb(drawing.toalgeb))
+                this.drawingscanvas.arrow(this.squaremiddlecoord(afsq), this.squaremiddlecoord(atosq), {color: drawing.color})
+            }
+        }
+        if(changed && this.drawingschangedcallback) this.drawingschangedcallback(this.drawings)
+    }
+
+    deletedrawing(){
+        if(this.drawings.length > 0){
+            let drawing = this.drawings.pop()
+            console.log("deleted drawing", drawing)
+            this.setdrawings(this.drawings, true)
+        }
+    }
+
     constructor(argsopt){
-        super("div")
+        super("div")        
         let args = argsopt || {}
+        this.drawkind = null
+        this.drawcolor = "green"
         this.draggedp = undefined
         this.draggedsq = undefined
         this.draggedpdiv = undefined
@@ -1615,7 +1752,9 @@ class BasicBoard_ extends e{
         this.squareop = args.squareop || 0.2
         this.settottalheight(args.totalheight)      
         this.dragmovecallback = args.dragmovecallback  
+        this.drawingschangedcallback = args.drawingschangedcallback
         this.setfromfen(this.fen)
+        this.setdrawings([])
     }
 }
 function BasicBoard(argsopt){return new BasicBoard_(argsopt)}
@@ -1626,8 +1765,8 @@ function BasicBoard(argsopt){return new BasicBoard_(argsopt)}
 class Labeled_ extends e{
     constructor(caption, element){
         super("div")
-        this.disp("inline-block").bc("#ffe")
-        this.container = Div().disp("flex").curlyborder().pad(3).ai("center").jc("space-around").mar(1)
+        this.disp("inline-block")
+        this.container = Div().disp("flex").curlyborder().pad(3).ai("center").jc("space-around").mar(1).bc("#ffe")
         this.captiondiv = Div().pad(2).pl(8).pr(8).html(caption).ff("monospace").ml(1).mr(6).bc("#eff").curlyborder()
         this.contentdiv = Div().a(element).mr(5)
         this.container.a(this.captiondiv, this.contentdiv)
@@ -1743,11 +1882,13 @@ function Iframe(){return new Iframe_()}
 // content button
 class ContentButton_ extends e{
     constructor(content, callback){
-        super("div")
-        this.disp("inline-block").bc("#eee").cp().bds("solid").bdw(1).pad(2).bdc("#777").pl(4).pr(4).mar(2).curlyborder(5)
-        this.ae("mousedown", callback)        
+        super("div")        
+        this.disp("inline-block").cp().bds("solid").bdw(1).pad(2).bdc("#777").pl(4).pr(4).mar(2).curlyborder(5)
+        if(callback) this.ae("mousedown", callback)        
         this.content = content
         this.a(this.content)
+        this.setselected(false)
+        this.ac("unselectable")
     }
 }
 function ContentButton(content, callback){return new ContentButton_(content, callback)}
@@ -1755,7 +1896,7 @@ function ContentButton(content, callback){return new ContentButton_(content, cal
 
 ////////////////////////////////////////////////////////////////////
 // icon button
-class IconButton_ extends ContentButton_{
+class IconButton_ extends ContentButton_{    
     constructor(caption, icon, callback, fontsizeopt){
         super(IconText(caption, icon), callback)
         this.fontsize = fontsizeopt || 14        
@@ -1764,6 +1905,51 @@ class IconButton_ extends ContentButton_{
     }
 }
 function IconButton(caption, icon, callback, fontsizeopt){return new IconButton_(caption, icon, callback, fontsizeopt)}
+////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////
+// radio group
+class RadioGroup_ extends e{
+    itemclicked(item){
+        this.selid = item.id
+        if(this.id && this.selid) setLocal(this.id, this.selid)
+        if(this.selcallback) this.selcallback(this.selid)
+        this.build()
+    }
+
+    build(){
+        this.container.x
+        for(let item of this.items){
+            this.container.a(item.setselected(this.selid && (item.id == this.selid)))            
+        }
+        return this
+    }
+
+    constructor(){
+        super("div")
+        this.disp("inline-block")
+        this.container = Div().pad(3).pl(4).pr(4).curlyborder().disp("flex").bc("#eee")        
+        this.a(this.container)
+        this.items = []        
+    }
+
+    setitems(items){
+        this.selid = null
+        if(this.id) this.selid = getLocalElse(this.id, items[0].id)        
+        this.items = items
+        if(this.selcallback) this.selcallback(this.selid)
+        for(let item of this.items){
+            item.ae("mousedown", this.itemclicked.bind(this, item))
+        }
+        return this.build()
+    }
+
+    setselcallback(selcallback){
+        this.selcallback = selcallback
+        return this
+    }
+}
+function RadioGroup(){return new RadioGroup_()}
 ////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////
