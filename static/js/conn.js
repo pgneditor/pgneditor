@@ -577,6 +577,19 @@ class Board_ extends e{
         }, this.studyflipped.bind(this))
     }
 
+    switchdraw(){
+        this.drawmode = !this.drawmode
+        this.drawpanelhook.t(0).l(this.basicboard.totalwidth() + 3)
+        if(this.drawmode){
+            this.drawpanel = Div().w(400).h(this.height).bimg("static/img/backgrounds/marble.jpg").ovf("scroll")
+            this.drawpanelhook.a(this.drawpanel)
+            this.switchdrawbutton.bc("#0f0")
+        }else{
+            this.drawpanelhook.x
+            this.switchdrawbutton.bc("#bbb")
+        }
+    }
+
     constructor(argsopt){
         super("div")
         let args = argsopt || {}
@@ -586,9 +599,10 @@ class Board_ extends e{
         this.controlheight = getelse(args, "controlheight", 35)
         this.basicboard = BasicBoard({dragmovecallback: this.dragmovecallback.bind(this)})
         this.guicontainer = Div().disp("flex")
-        this.boardcontainer = Div().disp("flex").fd("column")
+        this.boardcontainer = Div().disp("flex").fd("column").por()
         this.controlpanel = Div().bc("#ccc")
         this.navcontrolpanel = Div().pad(2).bc("#aaa").ta("center")
+        this.switchdrawbutton = BoardControlButton("m", this.switchdraw.bind(this), "#707")
         this.navcontrolpanel.a(
             BoardControlButton("i", this.reset.bind(this), "#f00"),
             BoardControlButton("W", this.tobegin.bind(this), "#007"),
@@ -596,10 +610,14 @@ class Board_ extends e{
             BoardControlButton("X", this.forward.bind(this), "#070"),
             BoardControlButton("V", this.toend.bind(this), "#007"),            
             BoardControlButton("L", this.del.bind(this), "#700"),
-            BoardControlButton("B", this.flip.bind(this), "#770")
+            BoardControlButton("B", this.flip.bind(this), "#770"),
+            this.switchdrawbutton
         )
         this.controlpanel.a(this.navcontrolpanel)        
-        this.boardcontainer.a(this.controlpanel, this.basicboard)
+        this.drawpanelhook = Div().poa()
+        this.boardcontainer.a(this.controlpanel, this.basicboard, this.drawpanelhook)
+        this.drawmode = true
+        this.switchdraw()
         this.pgntext = CopyTextArea({pastecallback: this.pgnpastecallback.bind(this)})
         this.treediv = Div().pad(3).bimg("static/img/backgrounds/marble.jpg")
         this.treediv.resize = function(){            
@@ -621,6 +639,7 @@ class Board_ extends e{
             console.log("forcing board tab", params.boardtab)
             this.tabpane.selecttab(params.boardtab)
         }
+        this.boardcontainer.zi(100)
         this.guicontainer.a(this.boardcontainer, this.tabpane)
         this.a(this.guicontainer)
         this.resize(this.width, this.height)
