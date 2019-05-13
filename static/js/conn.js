@@ -482,6 +482,8 @@ class Board_ extends e{
         this.tabpanewidth = this.width - this.boardwidth
         this.tabpane.resize(this.tabpanewidth, this.height)
         this.w(this.width).h(this.height)
+        this.drawmode = !this.drawmode
+        this.switchdraw()
     }
 
     algebmovemade(resobj){        
@@ -585,7 +587,7 @@ class Board_ extends e{
 
     switchdraw(){
         this.drawmode = !this.drawmode
-        this.drawpanelhook.t(0).l(this.basicboard.totalwidth() + 3)
+        this.drawpanelhook.x.t(0).l(this.basicboard.totalwidth() + 3)
         if(this.drawmode){
             this.drawpanel = Div().w(490).ta("center").h(this.height).bimg("static/img/backgrounds/marble.jpg").ovf("scroll")
             this.drawcontrolpanel = Div().pad(3).mar(10).curlyborder().bc("#ddd")
@@ -605,8 +607,7 @@ class Board_ extends e{
             )           
             this.drawpanel.a(this.drawcontrolpanel)
             this.drawpanelhook.a(this.drawpanel)
-        }else{
-            this.drawpanelhook.x            
+        }else{            
             this.basicboard.setdrawkind(null)
         }
         this.switchdrawbutton.setselected(this.drawmode)
