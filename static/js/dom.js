@@ -1448,9 +1448,8 @@ class BasicBoard_ extends e{
     getpiececanvas(){
         let piececanvas = Canvas().setWidth(this.boardsize).setHeight(this.boardsize)        
         for(let pdri of this.piecedivregistry){            
-            let sc = pdri.sc            
-            let light = pdri.light
-            piececanvas.ctx.fillStyle = light ? this.lightsquarebc(this.squareop) : this.darksquarebc(this.squareop)
+            let sc = pdri.sc                        
+            piececanvas.ctx.fillStyle = pdri.light ? this.lightsquarebc(this.squareop) : this.darksquarebc(this.squareop)
             piececanvas.ctx.fillRect(sc.x, sc.y, this.squaresize, this.squaresize)            
         }
         piececanvas.ctx.drawImage(this.drawcanvas.e, 0, 0)
@@ -1481,8 +1480,7 @@ class BasicBoard_ extends e{
     buildpieces(){                
         this.piecedivregistry = []
         this.piececontainer.x
-        for(let file=0;file<this.NUM_SQUARES;file++) for(let rank=0;rank<this.NUM_SQUARES;rank++){
-            let light = (((file+rank)%2)==1)            
+        for(let file=0;file<this.NUM_SQUARES;file++) for(let rank=0;rank<this.NUM_SQUARES;rank++){            
             let sq = new Square(file, rank)                        
             let p = this.pieceatsquare(sq)            
             let sc = this.squarecoord(sq)            
@@ -1508,7 +1506,7 @@ class BasicBoard_ extends e{
                 pdiv: pdiv,
                 sc: sc,
                 pc: pc,                    
-                light: light
+                light: this.islight(Sq(file, rank))
             })
         }        
         let relturn = this.flip ? this.blackturn : this.whiteturn
@@ -1611,6 +1609,10 @@ class BasicBoard_ extends e{
         }
     }
 
+    islight(sq){
+        return ( ( ( sq.file + sq.rank ) % 2 ) == 0 )            
+    }
+
     build(){
         this.maincontainer = Div().disp("flex").fd("column")
         // captured panels
@@ -1642,9 +1644,8 @@ class BasicBoard_ extends e{
         for(let file=0;file<8;file++) for(let rank=0;rank<8;rank++){
             let sq = new Square(file, rank)
             let sc = this.squarecoord(sq)
-            let sqdiv = Div().poa().w(this.squaresize).h(this.squaresize).tl(sc)            
-            let light = (((file+rank)%2)==1)            
-            sqdiv.bc( light ? this.darksquarebc() : this.lightsquarebc() ).op(this.squareop)            
+            let sqdiv = Div().poa().w(this.squaresize).h(this.squaresize).tl(sc)                        
+            sqdiv.bc( this.islight(sq) ? this.lightsquarebc() : this.darksquarebc() ).op(this.squareop)            
             this.squarecontainer.a(sqdiv)
         }
         this.boardcontainer.a(this.squarecontainer)
