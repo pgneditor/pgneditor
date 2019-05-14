@@ -194,6 +194,7 @@ class GameNode_ extends e{
         if(resobj.kind == "messagesaved"){
             this.message = resobj.message
             this.parentstudy.parentstudies.parentboard.pgntext.setText(resobj.pgn)
+            this.buildmessage()
             console.log("message saved", this.message)            
         }
     }
