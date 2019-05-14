@@ -220,7 +220,7 @@ class GameNode_ extends e{
             this.messagegeardiv.html("c").c("#000")
         }
         if(this.messageopen){
-            this.messagediv.disp("flex")
+            this.messagediv.disp("flex")            
             this.messagediv.scrollcentersmooth()
             this.messagetextinput = CopyTextArea({width: MESSAGE_WIDTH - 10, height: MESSAGE_HEIGHT - 30})
             this.messagecontroldiv = Div().disp("flex").a(
@@ -228,8 +228,8 @@ class GameNode_ extends e{
                 Button("Close", this.closemessage.bind(this)).ml(10)
             )
             this.messagediv.x.a(this.messagetextinput, this.messagecontroldiv)            
-            if(this.message) this.messagetextinput.setText(this.message)
-        }else{
+            if(this.message) this.messagetextinput.setText(this.message)            
+        }else{            
             this.messagediv.disp("none")
             this.movediv.scrollcentersmooth()
         }
@@ -251,18 +251,22 @@ class GameNode_ extends e{
     constructor(parentstudy, blobopt){
         super("div")
         this.container = Div().disp("flex").ai("center")
-        this.movediv = Div().w(MOVEDIV_WIDTH).h(MOVEDIV_HEIGHT).disp("flex").ai("center").jc("space-around").curlyborder()
+        this.movecontainerdiv = Div().disp("flex")
+        this.movediv = Div().w(MOVEDIV_WIDTH).h(MOVEDIV_HEIGHT).disp("flex").ai("center").jc("space-around")
+        this.movediv.curlyborder()
         this.messagegeardiv = Div().ff("lichess").cp().ml(4).mb(1).fs(14)
-        this.messagediv = Div().disp("flex").ai("center").fd("column").jc("space-around").poa().pad(3).ml(10)
-        this.messagediv.w(MESSAGE_WIDTH).h(MESSAGE_HEIGHT).mt(MOVEDIV_HEIGHT).bc("#eee").zi(10).curlyborder()
-        this.por().a(this.messagediv)
+        this.messagehookdiv = Div().por()
+        this.messagediv = Div().disp("flex").ai("center").fd("column").jc("space-around").poa().pad(3).ml(15)
+        this.messagediv.w(MESSAGE_WIDTH).h(MESSAGE_HEIGHT).mt(20).bc("#eee").zi(10).curlyborder()        
+        this.messagehookdiv.a(this.messagediv)
         this.messageopen = false        
         this.messagegeardiv.ae("mousedown", this.messagegeardivclicked.bind(this))
         this.movelabeldiv = Div().ff("monospace").ml(1).mr(6).cp()
         this.movelabeldiv.ae("mousedown", this.movedivclicked.bind(this))
         this.movediv.a(this.messagegeardiv, this.movelabeldiv).ml(2).mr(2).mt(2).mb(2)
+        this.movecontainerdiv.a(this.messagehookdiv, this.movediv)
         this.childsdiv = Div().disp("flex").fd("column")
-        this.container.a(this.movediv, this.childsdiv)
+        this.container.a(this.movecontainerdiv, this.childsdiv)
         this.a(this.container)
         this.parentstudy = parentstudy
         let blob = blobopt || {}
