@@ -400,7 +400,8 @@ def savemessage(req):
         storestudy(req, study)
         return {
             "kind": "messagesaved",
-            "message": req.message
+            "message": req.message,
+            "pgn": study.reportpgn()
         }
     else:
         return {
