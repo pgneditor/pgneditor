@@ -115,6 +115,7 @@ class Req():
         self.pgn = reqobj.get("pgn", None)
         self.moves = reqobj.get("moves", None)
         self.drawings = reqobj.get("drawings", None)
+        self.message = reqobj.get("message", None)
 
         if SERVERLOGIC_VERBOSE:
             log(self, "warning")
@@ -391,6 +392,20 @@ def setdrawings(req):
     return {
         "kind": "drawingsset"
     }
+
+def savemessage(req):
+    log(f"< save message < {req.id} | {req.nodeid} | {req.message} > >", "info")
+    study = getstudy(req)
+    if study.setmessage(req.nodeid, req.message):
+        storestudy(req, study)
+        return {
+            "kind": "messagesaved",
+            "message": req.message
+        }
+    else:
+        return {
+            "kind": "messagesavefailed"
+        }
 
 def flipstudy(req):
     log(f"< flipping < {req.id} > >", "info")

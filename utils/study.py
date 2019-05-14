@@ -60,6 +60,14 @@ class GameNode:
     def getchilds(self):
         return [self.parentstudy.nodelist[childid] for childid in self.childids]
 
+    def comment(self):
+        if self.message:
+            return self.message
+        return ""
+
+    def parsecomment(self, comment):
+        self.message = comment
+
     def fromblob(self, blob):
         self.id = blob.get("id", "root")
         self.parentid = blob.get("parentid", None)
@@ -70,6 +78,7 @@ class GameNode:
         self.metrainweight = blob.get("metrainweight", 0)
         self.opptrainweight = blob.get("opptrainweight", 0)        
         self.drawings = blob.get("drawings", [])
+        self.message = blob.get("message", None)
         self.childids = blob.get("childids", [])
 
     def toblob(self):
@@ -83,6 +92,7 @@ class GameNode:
             "metrainweight": self.metrainweight,
             "opptrainweight": self.opptrainweight,
             "drawings": self.drawings,
+            "message": self.message,
             "childids": self.childids
         }
         
@@ -109,6 +119,7 @@ class Study:
             self.currentnodeid = currentid
             moveuci = childnode.uci()
             if self.makealgebmove(moveuci):
+                self.currentnode().parsecomment(childnode.comment)
                 self.addgamenoderecursive(self.currentnodeid, childnode)
             else:
                 print("could not make move", moveuci)
@@ -132,7 +143,8 @@ class Study:
                 "id": "root",
                 "fen": gamerootfen 
             })
-        }        
+        }       
+        self.rootnode().parsecomment(game.comment)
         self.addgamenoderecursive("root", game)
 
     def mergemoves(self, moves):
@@ -146,6 +158,14 @@ class Study:
 
     def setdrawings(self, drawings):
         self.currentnode().drawings = drawings
+
+    def setmessage(self, nodeid, message):
+        try:
+            self.nodelist[nodeid].message = message
+            return True
+        except:
+            print("could not set message for", nodeid)
+            return False
 
     def reset(self):
         self.nodelist = {
@@ -161,13 +181,15 @@ class Study:
             move = chess.Move.from_uci(childnode.genuci)
             gamenode.add_variation(move)
             childgamenode = gamenode[move]
+            childgamenode.comment = childnode.comment()
             self.addmovesrecursive(childnode, childgamenode)
         return gamenode
 
     def reportpgn(self):
         rootboard = self.getrootboard()
         game = Game()
-        game.setup(rootboard)
+        game.setup(rootboard)        
+        game.comment = self.rootnode().comment()
         game = self.addmovesrecursive(self.rootnode(), game)
         exporter = StringExporter(headers=True, variations=True, comments=True)
         pgn = game.accept(exporter)

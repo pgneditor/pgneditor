@@ -1,0 +1,1 @@
+rmdir db /s /q

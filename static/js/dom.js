@@ -76,7 +76,11 @@ class e{
 	scrollIntoView(param){
 		this.e.scrollIntoView(param)
 		return this
-	}
+    }
+    
+    scrollcentersmooth(){
+        return this.scrollIntoView({block: "center", inline: "center", behavior: "smooth"})
+    }
 
     select(){
         this.e.select()

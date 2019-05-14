@@ -1,4 +1,12 @@
 ////////////////////////////////////////////////////////////////////
+// conf
+const MESSAGE_WIDTH = 400
+const MESSAGE_HEIGHT = 300
+const MOVEDIV_HEIGHT = 20
+const MOVEDIV_WIDTH = 100
+////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////
 // profile
 class Profile_ extends e{
     constructor(){
@@ -182,13 +190,77 @@ class GameNode_ extends e{
         return `${fn}${prefix} ${this.gensan}`
     }
 
+    messagesaved(resobj){        
+        if(resobj.kind == "messagesaved"){
+            this.message = resobj.message
+            console.log("message saved", this.message)            
+        }
+    }
+
+    savemessage(){
+        let message = this.messagetextinput.getText()        
+        this.closemessage()
+        api({
+            "kind": "savemessage",
+            "id": this.parentstudy.id,
+            "nodeid": this.id,
+            "message": message
+        }, this.messagesaved.bind(this))
+    }
+
+    closemessage(){
+        this.messageopen = false
+        this.buildmessage()
+    }
+
+    buildmessage(){
+        if(this.message){
+            this.messagegeardiv.html("d").c("#00f")
+        }else{
+            this.messagegeardiv.html("c").c("#000")
+        }
+        if(this.messageopen){
+            this.messagediv.disp("flex")
+            this.messagediv.scrollcentersmooth()
+            this.messagetextinput = CopyTextArea({width: MESSAGE_WIDTH - 10, height: MESSAGE_HEIGHT - 30})
+            this.messagecontroldiv = Div().disp("flex").a(
+                Button("Save", this.savemessage.bind(this)),
+                Button("Close", this.closemessage.bind(this)).ml(10)
+            )
+            this.messagediv.x.a(this.messagetextinput, this.messagecontroldiv)            
+            if(this.message) this.messagetextinput.setText(this.message)
+        }else{
+            this.messagediv.disp("none")
+            this.movediv.scrollcentersmooth()
+        }
+    }
+
+    hideothermessages(){        
+        for(let gamenode of Object.values(this.parentstudy.nodelist)){            
+                gamenode.messageopen = false
+                gamenode.messagediv.disp("none")
+        }
+    }
+
+    messagegeardivclicked(){
+        if(!this.messageopen) this.hideothermessages()
+        this.messageopen = !this.messageopen                
+        this.buildmessage()
+    }
+
     constructor(parentstudy, blobopt){
         super("div")
         this.container = Div().disp("flex").ai("center")
-        this.movediv = Div().w(90).h(20).disp("flex").ai("center").jc("space-around").cp().curlyborder()
-        this.movediv.ae("mousedown", this.movedivclicked.bind(this))
-        this.movelabeldiv = Div().ff("monospace").ml(6).mr(6)
-        this.movediv.a(this.movelabeldiv).ml(2).mr(2).mt(2).mb(2)
+        this.movediv = Div().w(MOVEDIV_WIDTH).h(MOVEDIV_HEIGHT).disp("flex").ai("center").jc("space-around").curlyborder()
+        this.messagegeardiv = Div().ff("lichess").cp().ml(4).mb(1).fs(14)
+        this.messagediv = Div().disp("flex").ai("center").fd("column").jc("space-around").poa().pad(3).ml(10)
+        this.messagediv.w(MESSAGE_WIDTH).h(MESSAGE_HEIGHT).mt(MOVEDIV_HEIGHT).bc("#eee").zi(10).curlyborder()
+        this.por().a(this.messagediv)
+        this.messageopen = false        
+        this.messagegeardiv.ae("mousedown", this.messagegeardivclicked.bind(this))
+        this.movelabeldiv = Div().ff("monospace").ml(1).mr(6).cp()
+        this.movelabeldiv.ae("mousedown", this.movedivclicked.bind(this))
+        this.movediv.a(this.messagegeardiv, this.movelabeldiv).ml(2).mr(2).mt(2).mb(2)
         this.childsdiv = Div().disp("flex").fd("column")
         this.container.a(this.movediv, this.childsdiv)
         this.a(this.container)
@@ -204,10 +276,13 @@ class GameNode_ extends e{
         this.opptrainweight = blob.opptrainweight
         this.childids = blob.childids
         this.drawings = blob.drawings
+        this.message = blob.message
         this.movelabeldiv.html(this.numberedsan()).fw("bold").pl(3).pr(3)
         this.movelabeldiv.bc(this.turn() == "w" ? "#000" : "#fff")
         this.movelabeldiv.c(this.turn() == "w" ? "#fff" : "#000")
         if(this.id == "root") this.movelabeldiv.bc("#707")
+        this.ac("unselectable")
+        this.buildmessage()
     }
 }
 function GameNode(parentstudy, blobopt){return new GameNode_(parentstudy, blobopt)}
@@ -252,7 +327,7 @@ class Study_ extends e{
         this.createdat = getelse(this.blob, "createdat", gettimesec())
         this.selected = getelse(this.blob, "selected", false)
         this.currentnodeid = getelse(this.blob, "currentnodeid", "root")
-        this.flip = getelse(this.blob, "flip", false)
+        this.flip = getelse(this.blob, "flip", false)        
         this.nodelistblob = getelse(this.blob, "nodelist", {})
         this.nodelist = {}
         for(let id in this.nodelistblob) this.nodelist[id] = GameNode(this, this.nodelistblob[id])                
@@ -425,7 +500,7 @@ class Board_ extends e{
         let treebuild = this.study.tree()
         this.treediv.x.a(treebuild)        
         this.treediv.resize()
-        this.study.currentnode.movediv.scrollIntoView({block: "center", inline: "center", behavior: "smooth"})
+        this.study.currentnode.messagegeardiv.scrollcentersmooth()
         this.pgntext.setText(study.pgn)
         this.studytoolshook.x
         let importurl = `${serverroot()}/importstudy/${getuser().code}/${this.study.id}/${this.study.currentnodeid}`                
