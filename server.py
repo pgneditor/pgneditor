@@ -30,6 +30,7 @@ class Application(tornado.web.Application):
     def __init__(self):
         handlers = [
             (r"/", MainHandler),
+            (r"/gif.worker.js", GifWorker),
             (r"/static/.*", MyStaticFileHandler),
             (r"/jsonapi", JsonApi),
             (r"/importstudy/.*", ImportStudy),
@@ -44,6 +45,12 @@ class Application(tornado.web.Application):
             xsrf_cookies=False,
         )        
         super(Application, self).__init__(handlers, **settings)
+
+class GifWorker(tornado.web.RequestHandler):
+    def get(self):        
+        with open("static/js/gif.worker.js", 'rb') as f:
+            data = f.read()
+            self.write(data)
 
 class MyStaticFileHandler(tornado.web.RequestHandler):
     def get(self):        

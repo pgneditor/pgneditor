@@ -525,6 +525,33 @@ class Board_ extends e{
         this.studytoolshook.a(IconButton("Search games of user with current moves", "y", this.searchusergames.bind(this), 20).bc("#aff").mar(5).pad(5))
         this.dl = A().href("#").download("board.png").html("Export board screenshot").ae("click", this.dlBoard.bind(this)).fs(26)        
         this.studytoolshook.a(Div().pad(10).a(this.dl))
+        this.studytoolshook.a(
+            IconButton("Init GIF", "i", this.initgif.bind(this), 24).ml(5).bc("#faa"),
+            IconButton("Add frame", "O", this.addframe.bind(this), 24).ml(15).bc("#afa"),
+            IconButton("Render", "F", this.rendergif.bind(this), 24).ml(15).bc("#ffa")
+        )
+    }
+
+    initgif(){
+        this.gif = new GIF({
+            workers: 2,
+            quality: 10
+        })
+
+        this.gif.on('finished', function(blob) {
+            window.open(URL.createObjectURL(blob));
+        })
+        
+        console.log("created gif", this.gif)
+    }
+
+    addframe(){
+        let boardcanvas = this.basicboard.getcanvas()
+        this.gif.addFrame(boardcanvas.e, {delay: 1000})
+    }
+
+    rendergif(){
+        this.gif.render()
     }
 
     dlBoard(){
@@ -709,6 +736,7 @@ class Board_ extends e{
 
     constructor(argsopt){
         super("div")
+        this.initgif()
         let args = argsopt || {}
         this.id = getelse(args, "id", "board")
         this.width = getelse(args, "width", 1000)
