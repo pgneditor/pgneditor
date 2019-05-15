@@ -550,7 +550,7 @@ class Board_ extends e{
     }
 
     getcanvas(){
-        if(this.withcommentscheck){
+        if(this.withcommentscheck.checked){
             let boardcanvas = this.basicboard.getcanvas()            
             let bcw = boardcanvas.getWidth()
             let bch = boardcanvas.getHeight()
