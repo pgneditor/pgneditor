@@ -283,6 +283,7 @@ class GameNode_ extends e{
         this.childids = blob.childids
         this.drawings = blob.drawings
         this.message = blob.message
+        this.duration = blob.duration
         this.movelabeldiv.html(this.numberedsan()).fw("bold").pl(3).pr(3)
         this.movelabeldiv.bc(this.turn() == "w" ? "#000" : "#fff")
         this.movelabeldiv.c(this.turn() == "w" ? "#fff" : "#000")
@@ -525,11 +526,14 @@ class Board_ extends e{
         this.studytoolshook.a(IconButton("Search games of user with current moves", "y", this.searchusergames.bind(this), 20).bc("#aff").mar(5).pad(5))
         this.dl = A().href("#").download("board.png").html("Export board screenshot").ae("click", this.dlBoard.bind(this)).fs(26)        
         this.studytoolshook.a(Div().pad(10).a(this.dl))
+        this.withcommentscheck = Check({id: `${this.id}/withcommentscheck`})
         this.studytoolshook.a(
             IconButton("Init GIF", "i", this.initgif.bind(this), 24).ml(5).bc("#faa"),
             IconButton("Add frame", "O", this.addframe.bind(this), 24).ml(15).bc("#afa"),
-            IconButton("Render", "F", this.rendergif.bind(this), 24).ml(15).bc("#ffa")
+            IconButton("Render", "F", this.rendergif.bind(this), 24).ml(15).bc("#ffa"),
+            Div().mt(5).a(Labeled("Add comments to frame", this.withcommentscheck))
         )
+        if(this.durationtextinput) this.durationtextinput.setText(`${this.study.currentnode.duration}`)
     }
 
     initgif(){
@@ -545,9 +549,33 @@ class Board_ extends e{
         console.log("created gif", this.gif)
     }
 
+    getcanvas(){
+        if(this.withcommentscheck){
+            let boardcanvas = this.basicboard.getcanvas()            
+            let bcw = boardcanvas.getWidth()
+            let bch = boardcanvas.getHeight()
+            let framecanvas = Canvas().setWidth(2 * bcw).setHeight(bch)
+            framecanvas.ctx.drawImage(boardcanvas.e, 0, 0)
+            let commentcanvas = Canvas().setWidth(bcw).setHeight(bch)
+            commentcanvas.ctx.fillStyle = "#FFFFFF"
+            commentcanvas.ctx.fillRect(0, 0, bcw, bch)
+            commentcanvas.ctx.textBaseline = "top"
+            commentcanvas.ctx.fillStyle = "#000000"
+            this.commentfontsize = 40
+            this.commentmargin = 15
+            commentcanvas.ctx.font = `${this.commentfontsize}px serif`
+            let message = this.study.currentnode.message
+            if(message) commentcanvas.renderText(message, bcw - 2 * this.commentmargin, 45, this.commentmargin, this.commentmargin)
+            framecanvas.ctx.drawImage(commentcanvas.e, bcw, 0)
+            return framecanvas
+        }else{
+            return this.basicboard.getcanvas()
+        }
+    }
+
     addframe(){
-        let boardcanvas = this.basicboard.getcanvas()
-        this.gif.addFrame(boardcanvas.e, {delay: 1000})
+        let framecanvas = this.getcanvas()
+        this.gif.addFrame(framecanvas.e, {delay: this.study.currentnode.duration})
     }
 
     rendergif(){
@@ -555,7 +583,7 @@ class Board_ extends e{
     }
 
     dlBoard(){
-        let boardcanvas = this.basicboard.getcanvas()                
+        let boardcanvas = this.getcanvas()                
         this.dl.href(boardcanvas.downloadHref("board", "png"))
     }
 
@@ -708,10 +736,12 @@ class Board_ extends e{
                 Button("Blue").fs(14).curlyborder().setselbc("#aaf").c("#007").setid("blue"),
                 Button("Red").fs(14).curlyborder().setselbc("#faa").c("#700").setid("red")
             ])
+            this.durationtextinput = TextInput().pad(2).pl(5).fs(16).fw("bold").onchange(this.durationchanged.bind(this)).setText(`${this.study.currentnode.duration}`)
             this.drawcontrolpanel.a(
                 Labeled("Shape", this.kindgroup).fs(18).mar(3),
                 Labeled("Color", this.colorgroup).fs(16).mar(3),
-                IconButton("Delete", "L", this.deletedrawing.bind(this), 18).mar(10).ml(10).bc("#fee")
+                Labeled("Frame duration", this.durationtextinput).fs(14).mar(3),
+                Div().a(IconButton("Delete", "L", this.deletedrawing.bind(this), 18).mar(10).ml(10).bc("#fee"))
             )           
             this.drawpanel.a(this.drawcontrolpanel)
             this.drawpanelhook.a(this.drawpanel)
@@ -719,6 +749,24 @@ class Board_ extends e{
             this.basicboard.setdrawkind(null)
         }
         this.switchdrawbutton.setselected(this.drawmode)
+    }
+
+    durationsaved(resobj){
+        if(resobj.kind == "durationsaved"){
+            let duration = resobj.duration
+            //this.durationtextinput.setText(`${duration}`)
+        }
+    }
+
+    durationchanged(){
+        let duration = parseInt(this.durationtextinput.getText())
+        if(isNaN(duration)) duration = 1000
+        api({
+            "kind": "saveduration",
+            "id": this.study.id,
+            "nodeid": this.study.currentnodeid,
+            "duration": duration
+        }, this.durationsaved.bind(this))
     }
 
     drawingsset(resobj){

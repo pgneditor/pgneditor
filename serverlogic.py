@@ -116,6 +116,7 @@ class Req():
         self.moves = reqobj.get("moves", None)
         self.drawings = reqobj.get("drawings", None)
         self.message = reqobj.get("message", None)
+        self.duration = reqobj.get("duration", None)
 
         if SERVERLOGIC_VERBOSE:
             log(self, "warning")
@@ -406,6 +407,20 @@ def savemessage(req):
     else:
         return {
             "kind": "messagesavefailed"
+        }
+
+def saveduration(req):
+    log(f"< save duration < {req.id} | {req.nodeid} | {req.duration} > >", "info")
+    study = getstudy(req)
+    if study.setduration(req.nodeid, req.duration):
+        storestudy(req, study)
+        return {
+            "kind": "durationsaved",
+            "duration": req.duration
+        }
+    else:
+        return {
+            "kind": "durationsavefailed"
         }
 
 def flipstudy(req):

@@ -79,6 +79,7 @@ class GameNode:
         self.opptrainweight = blob.get("opptrainweight", 0)        
         self.drawings = blob.get("drawings", [])
         self.message = blob.get("message", None)
+        self.duration = blob.get("duration", 1000)
         self.childids = blob.get("childids", [])
 
     def toblob(self):
@@ -93,6 +94,7 @@ class GameNode:
             "opptrainweight": self.opptrainweight,
             "drawings": self.drawings,
             "message": self.message,
+            "duration": self.duration,
             "childids": self.childids
         }
         
@@ -165,6 +167,14 @@ class Study:
             return True
         except:
             print("could not set message for", nodeid)
+            return False
+
+    def setduration(self, nodeid, duration):
+        try:
+            self.nodelist[nodeid].duration = duration
+            return True
+        except:
+            print("could not set duration for", nodeid)
             return False
 
     def reset(self):

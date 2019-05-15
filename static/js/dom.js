@@ -401,8 +401,43 @@ class Canvas_ extends e{
         this.setWidth(100).setHeight(100)
     }
 
+    // https://stackoverflow.com/questions/2936112/text-wrap-in-a-canvas-element
+    getLines(text, maxWidth) {
+        let words = text.split(" ")
+        let lines = []
+        let currentLine = words[0]
+    
+        for (let i = 1; i < words.length; i++) {
+            var word = words[i]
+            var width = this.ctx.measureText(currentLine + " " + word).width
+            if (width < maxWidth) {
+                currentLine += " " + word
+            } else {
+                lines.push(currentLine)
+                currentLine = word
+            }
+        }
+        lines.push(currentLine)
+        return lines
+    }
+
+    renderText(text, maxwidth, lineheight, x, y){
+        let lines = this.getLines(text, maxwidth)
+        for(let i in lines){
+            this.ctx.fillText(lines[i], x, y + i * lineheight)
+        }
+    }
+
     clear(){
         this.ctx.clearRect(0, 0, this.width, this.height)
+    }
+
+    getHeight(){
+        return this.e.height
+    }
+
+    getWidth(){
+        return this.e.width
     }
 
     arrow(from, to, argsopt){        
@@ -559,19 +594,42 @@ class Input_ extends e{
 ////////////////////////////////////////////////////////////////////
 // textinput
 class TextInput_ extends Input_{
-    constructor(){
+    constructor(argsopt){        
         super("text")
+        let args = argsopt || {}
+        let id = getelse(args, "id", null)
+        this.defaultvalue = getelse(args, "defaultvalue", "")
+        this.setid(id)
+        this.ae("change", this.defaultchangehandler.bind(this))
+        this.ae("keyup", this.defaultchangehandler.bind(this))
+        if(this.id) this.setText(getLocal(this.id, this.defaultvalue))
+        this.handlechange = true
+    }
+
+    defaultchangehandler(){
+        if(this.handlechange){
+            if(this.id) setLocal(this.id, this.getText())
+            if(this.changehandler) this.changehandler()
+        }
+    }
+
+    onchange(changehandler){
+        this.changehandler = changehandler
+        return this
     }
 
     setText(text){
-        return this.sv(text)
+        this.handlechange = false
+        this.sv(text)
+        this.handlechange = true
+        return this
     }
 
     getText(){
         return this.v()
     }
 }
-function TextInput(){return new TextInput_()}
+function TextInput(argsopt){return new TextInput_(argsopt)}
 ////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////
@@ -780,12 +838,19 @@ function CopyTextArea(args){return new CopyTextArea_(args)}
 ////////////////////////////////////////////////////////////////////
 // checkbox
 class CheckBox_ extends Input_{
-    constructor(){
+    constructor(argsopt){
         super("checkbox")
+        let args = argsopt || {}
+        let id = getelse(args, "id", null)
+        this.setid(id)
+        this.defaultvalue = getelse(args, "defaultvalue", false)        
+        if(this.id) this.set(getLocalElse(this.id, this.defaultvalue))
+        this.ae("change", this.defaultchangehandler.bind(this))        
     }
 
     set(value){
         this.e.checked = value
+        if(this.id) setLocal(this.id, value)
         return this
     }
 
@@ -793,11 +858,19 @@ class CheckBox_ extends Input_{
         return this.e.checked
     }
 
-    onchange(handler){
-        return this.ae("change", handler)
+    defaultchangehandler(){
+        if(this.id) setLocal(this.id, this.checked)
+        if(this.changehandler){
+            this.changehandler()
+        }
+    }
+
+    onchange(changehandler){
+        this.changehandler = changehandler
+        return this
     }
 }
-function Check(){return new CheckBox_()}
+function Check(argsopt){return new CheckBox_(argsopt)}
 ////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////
