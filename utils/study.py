@@ -2,6 +2,7 @@
 
 import time
 import re
+import random
 
 ###################################################################
 
@@ -61,36 +62,60 @@ class CommentParseResult:
 
 LICHESS_DRAWING_MATCHER = re.compile(r"(\[%(...) (.*?)\])")
 
-def parsecomment(comment):
-    matches = re.findall(LICHESS_DRAWING_MATCHER, comment)
-    drawings = []
-    for item in matches:
-        full = item[0]
-        kind = item[1]
-        coords = item[2].split(",")
-        comment = comment.replace(full, "")
-        for coord in coords:
-            color = coord[0]
-            color = "green"
-            if color == "R":
-                color = "red"
-            coord = coord[1:]
-            if kind == "csl":
-                drawings.append({
-                    "kind": "circlemark",
-                    "algeb": coord,
-                    "color": color
-                })
-            elif kind == "cal":
-                drawings.append({
-                    "kind": "arrow",
-                    "fromalgeb": coord[0:2],
-                    "toalgeb": coord[2:4],
-                    "color": color
-                })
-    return CommentParseResult(comment, drawings)
+def drawingstolichesscomment(drawingsblob):
+    try:
+        arrows = []
+        circles = []
+        for drawing in drawingsblob:
+            kind = drawing["kind"]
+            colorletter = "G"
+            if drawing["color"] == "red":
+                colorletter = "R"
+            if kind == "arrow":
+                arrows.append(colorletter + drawing["fromalgeb"] + drawing["toalgeb"])
+            if kind == "circlemark":
+                circles.append(colorletter + drawing["algeb"])
+        blob = ""
+        if len(circles) > 0:
+            blob += "[%csl " + ",".join(circles) + "]"
+        if len(arrows) > 0:
+            blob += "[%cal " + ",".join(arrows) + "]"
+        return blob
+    except:
+        return ""
 
-print(parsecomment("pure comment [%csl Gg5,Ge5,Gd4,Rh4] some [%cal Gf3e5,Gf3g5,Ge2e3] other comment"))
+def parselichesscomment(comment):
+    try:
+        matches = re.findall(LICHESS_DRAWING_MATCHER, comment)
+        drawings = []
+        purecomment = comment
+        for item in matches:
+            full = item[0]
+            kind = item[1]
+            coords = item[2].split(",")
+            purecomment = purecomment.replace(full, "")
+            for coord in coords:
+                colorletter = coord[0]
+                color = "green"
+                if colorletter == "R":
+                    color = "red"
+                coord = coord[1:]
+                if kind == "csl":
+                    drawings.append({
+                        "kind": "circlemark",
+                        "algeb": coord,
+                        "color": color
+                    })
+                elif kind == "cal":
+                    drawings.append({
+                        "kind": "arrow",
+                        "fromalgeb": coord[0:2],
+                        "toalgeb": coord[2:4],
+                        "color": color
+                    })
+        return CommentParseResult(purecomment, drawings)
+    except:       
+        return CommentParseResult(comment, [])
 
 ###################################################################
 
@@ -103,12 +128,16 @@ class GameNode:
         return [self.parentstudy.nodelist[childid] for childid in self.childids]
 
     def comment(self):
+        comment = ""
         if self.message:
-            return self.message
-        return ""
+            comment += self.message
+        comment += drawingstolichesscomment(self.drawings)
+        return comment
 
     def parsecomment(self, comment):
-        self.message = comment
+        plcr = parselichesscomment(comment)
+        self.message = plcr.message
+        self.drawings = plcr.drawings
 
     def fromblob(self, blob):
         self.id = blob.get("id", "root")
