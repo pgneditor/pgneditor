@@ -734,18 +734,24 @@ class Board_ extends e{
             this.drawcontrolpanel = Div().pad(3).mar(10).curlyborder().bc("#ddd")
             this.kindgroup = RadioGroup().setid(`${this.id}/drawkindgroup`).setselcallback(this.basicboard.setdrawkind.bind(this.basicboard)).setitems([
                 IconButton("Arrow", "N").setid("arrow"),
-                //IconButton("Circle", "K").setid("circle")
+                IconButton("Circle Mark", "K").setid("circlemark")
             ])
             this.colorgroup = RadioGroup().setid(`${this.id}/drawcolorgroup`).setselcallback(this.basicboard.setdrawcolor.bind(this.basicboard)).setitems([
                 Button("Green").fs(14).curlyborder().setselbc("#afa").c("#070").setid("green"),
                 Button("Blue").fs(14).curlyborder().setselbc("#aaf").c("#007").setid("blue"),
                 Button("Red").fs(14).curlyborder().setselbc("#faa").c("#700").setid("red")
             ])
+            this.thicknessgroup = RadioGroup().setid(`${this.id}/drawthicknessgroup`).setselcallback(this.basicboard.setdrawthickness.bind(this.basicboard)).setitems([
+                Button("Medium").fs(14).curlyborder().fw("normal").setid("medium"),                
+                Button("Thin").fs(14).curlyborder().fw("normal").c("#777").setid("thin"),
+                Button("Thick").fs(14).curlyborder().fw("bold").setid("thick")
+            ])
             this.durationtextinput = TextInput().pad(2).pl(5).fs(16).fw("bold").onchange(this.durationchanged.bind(this)).setText(`${this.study.currentnode.duration}`)
             this.drawcontrolpanel.a(
-                Labeled("Shape", this.kindgroup).fs(18).mar(3),
-                Labeled("Color", this.colorgroup).fs(16).mar(3),
-                Labeled("Frame duration", this.durationtextinput).fs(14).mar(3),
+                Labeled("Shape", this.kindgroup).fs(18).mar(1),
+                Labeled("Color", this.colorgroup).fs(16).mar(1),
+                Labeled("Thickness", this.thicknessgroup).fs(16).mar(1),
+                Labeled("Frame duration", this.durationtextinput).fs(14).mar(1),
                 Div().a(IconButton("Delete", "L", this.deletedrawing.bind(this), 18).mar(10).ml(10).bc("#fee"))
             )                       
             this.drawingsorganizer = ListOrganizer().ml(10).mr(10).onchange(this.drawingsorganizerchanged.bind(this))

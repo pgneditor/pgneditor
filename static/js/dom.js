@@ -445,6 +445,12 @@ class Canvas_ extends e{
         return this.e.width
     }
 
+    circle(x, y, r){
+        this.ctx.beginPath()
+        this.ctx.arc(x, y, r, 0, 2 * Math.PI, false)
+        this.ctx.stroke()
+    }
+
     arrow(from, to, argsopt){        
         let diff = to.m(from)
         let l = diff.l()
@@ -1451,6 +1457,10 @@ class BasicBoard_ extends e{
         this.drawcolor = drawcolor
     }
 
+    setdrawthickness(drawthickness){
+        this.drawthickness = drawthickness
+    }
+
     flipcolorname(){
         return this.flip ? "black" : "white"
     }
@@ -1664,26 +1674,45 @@ class BasicBoard_ extends e{
         return this.outerboardsize
     }
 
+    getdrawingblob(){
+        if(this.drawkind == "arrow"){
+            return({
+                kind: "arrow",
+                color: this.drawcolor,
+                thickness: this.drawthickness,
+                fromalgeb: this.drawfromsq.toalgeb(),
+                toalgeb: this.drawcurrentsq.toalgeb()
+            })
+        } else if(this.drawkind == "circlemark"){
+            return({
+                kind: "circlemark",
+                color: this.drawcolor,            
+                thickness: this.drawthickness,    
+                algeb: this.drawcurrentsq.toalgeb()
+            })
+        }
+    }
+
     squareclicked(sq){
         if(!this.drawkind){            
             return
         }        
         this.drawanimationcanvas.clear()
+        this.drawcurrentsq = sq
         if(this.drawkind == "arrow"){
             if(this.drawfromsq){
                 console.log("arrow to", sq)
-                this.drawings.push({
-                    kind: "arrow",
-                    color: this.drawcolor,
-                    fromalgeb: this.drawfromsq.toalgeb(),
-                    toalgeb: sq.toalgeb()
-                })
+                this.drawings.push(this.getdrawingblob())
                 this.setdrawings(this.drawings, true)
                 this.drawfromsq = null
             }else{
                 this.drawfromsq = sq
                 console.log("arrow from", sq)
             }
+        } else if(this.drawkind == "circlemark"){
+            console.log("circle mark", sq)
+            this.drawings.push(this.getdrawingblob())
+            this.setdrawings(this.drawings, true)
         }
     }
 
@@ -1771,16 +1800,16 @@ class BasicBoard_ extends e{
             let bccr = this.boardcontainer.e.getBoundingClientRect()
             let boardvect = V(ev.clientX - bccr.x, ev.clientY - bccr.y)
             let sq = this.boardvect2sq(boardvect)        
+            this.drawcurrentsq = sq            
             if(this.drawkind == "arrow"){
                 if(this.drawfromsq){                        
                     this.drawanimationcanvas.clear()
                     this.fillsquare(this.drawanimationcanvas, this.drawfromsq, "rgb(255, 255, 0, 0.5)")
-                    this.fillsquare(this.drawanimationcanvas, sq, "rgb(255, 255, 0, 0.5)")
-                    this.drawanimationcanvas.arrow(this.squaremiddlecoord(this.drawfromsq), this.squaremiddlecoord(sq), {color: this.drawcolor, scalefactor: this.scalefactor})
+                    this.drawdrawing(this.getdrawingblob(), this.drawanimationcanvas)
                 }else{
-                    this.drawanimationcanvas.clear()                    
-                    this.fillsquare(this.drawanimationcanvas, sq, "rgb(255, 255, 0, 0.5)")
+                    this.drawanimationcanvas.clear()
                 }
+                this.fillsquare(this.drawanimationcanvas, this.drawcurrentsq, "rgb(255, 255, 0, 0.5)")
             }
         }        
     }
@@ -1808,15 +1837,38 @@ class BasicBoard_ extends e{
         return `rgba(255, 255, 255, ${op})`
     }
 
+    drawdrawing(drawing, targetcanvasopt){
+        let targetcanvas = targetcanvasopt || this.drawingscanvas
+        let arrowscalefactor = 1
+        let linewidth = 5
+        if(drawing.thickness == "thin"){
+            linewidth = 2
+            arrowscalefactor = 0.6
+        }
+        if(drawing.thickness == "thick"){
+            linewidth = 10
+            arrowscalefactor = 1.5
+        }
+        let color = drawing.color || "green"
+        this.drawingscanvas.ctx.lineWidth = linewidth
+        this.drawingscanvas.ctx.strokeStyle = drawing.color
+        this.drawingscanvas.ctx.fillStyle = drawing.color
+        if(drawing.kind == "arrow"){
+            let fsq = this.squarefromalgeb(drawing.fromalgeb)
+            let tosq = this.squarefromalgeb(drawing.toalgeb)
+            targetcanvas.arrow(this.squaremiddlecoord(fsq), this.squaremiddlecoord(tosq), {color: color, scalefactor: this.scalefactor * arrowscalefactor})
+        }else if(drawing.kind == "circlemark"){
+            let sq = this.squarefromalgeb(drawing.algeb)
+            let smc = this.squaremiddlecoord(sq)                
+            targetcanvas.circle(smc.x, smc.y, this.squaresize / 2.3)
+        }
+    }
+
     setdrawings(drawings, changed){
         this.drawings = drawings
         this.drawingscanvas.clear()
         for(let drawing of this.drawings){
-            if(drawing.kind == "arrow"){
-                let fsq = this.squarefromalgeb(drawing.fromalgeb)
-                let tosq = this.squarefromalgeb(drawing.toalgeb)
-                this.drawingscanvas.arrow(this.squaremiddlecoord(fsq), this.squaremiddlecoord(tosq), {color: drawing.color, scalefactor: this.scalefactor})
-            }
+            this.drawdrawing(drawing)
         }
         if(changed && this.drawingschangedcallback) this.drawingschangedcallback(this.drawings)
     }
@@ -2058,28 +2110,35 @@ class Drawing_ extends e{
     repr(){
         if(this.kind == "arrow"){
             return `arrow ${this.fromalgeb} -> ${this.toalgeb}`
+        } else if (this.kind == "circlemark"){
+            return `circle mark ${this.algeb}`
         }
         return "?"
     }
 
     build(){
         this.container.html(this.repr()).c(this.color)
+        if(this.thickness == "thick") this.container.fw("bold")
+        if(this.thickness == "thin") this.container.op(0.8)
+        this.fs(18)
         return this
     }
 
     fromblob(blob){
         this.blob = blob
         this.kind = this.blob.kind
+        this.algeb = this.blob.algeb
         this.fromalgeb = this.blob.fromalgeb
         this.toalgeb = this.blob.toalgeb
-        this.color = this.blob.color
+        this.color = this.blob.color || "green"
+        this.thickness = this.blob.thickness || "medium"
         return this.build()
     }
 
     constructor(blob){
         super("div")
         this.disp("inline-block")
-        this.container = Div().pad(2).curlyborder().bc("#ffe").pl(8).pr(8).fw("bold").ff("monospace")
+        this.container = Div().pad(2).curlyborder().bc("#ffe").pl(8).pr(8).ff("monospace")
         this.a(this.container)
         this.fromblob(blob)
     }
