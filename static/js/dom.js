@@ -1067,8 +1067,23 @@ class Select_ extends e{
         super("select")
     }
 
-    setoptions(options, selected){
+    defaultchangehandler(){
+        if(this.id) setLocal(this.id, this.v())
+    }
+
+    setid(id){
+        this.id = id
+        this.ae("change", this.defaultchangehandler.bind(this))
+        return this
+    }
+
+    setoptions(options, setselected){
         this.x
+        let selected = setselected
+        if(this.id){
+            selected = getLocalElse(this.id, selected)
+            setLocal(this.id, selected)
+        }
         for(let keyvalue of options){
             let key = keyvalue[0]
             let value = keyvalue[1]

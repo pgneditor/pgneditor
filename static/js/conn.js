@@ -296,8 +296,10 @@ class GameNode_ extends e{
             for(let nagstr in NAGS){
                 let nag = parseInt(nagstr)                
                 let symbol = NAGS[nag]
-                let check = Check().set(this.nags.includes(nag)).onchange(this.nagchangehandler.bind(this, nag))
-                this.nagsdiv.a(Labeled(symbol, check).w(100))
+                let check = Check().w(20).h(20).set(this.nags.includes(nag)).onchange(this.nagchangehandler.bind(this, nag))
+                let l = Labeled(symbol, check).w(100)
+                l.captiondiv.w(35).fs(20).ff("monospace")
+                this.nagsdiv.a(l)
             }
             this.nagsdiv.a(Div().mt(10).a(Button("Close", this.closenags.bind(this)).w(MESSAGE_WIDTH - 10).h(40)))
             this.nagsdiv.scrollcentersmooth()            
@@ -341,7 +343,7 @@ class GameNode_ extends e{
         this.nagsgeardiv = Div().ml(2).mr(4).ff("monospace").bc("#aff").mw(10).mh(10).cp()
         this.nagsgeardiv.ae("mousedown", this.nagsgeardivclicked.bind(this))
         this.nagshookdiv = Div().por()
-        this.nagsdiv = Div().w(MESSAGE_WIDTH).h(MESSAGE_HEIGHT).mt(20).bc("#eee").zi(10).curlyborder().poa().pad(10)
+        this.nagsdiv = Div().w(MESSAGE_WIDTH).h(MESSAGE_HEIGHT + 40).mt(20).bc("#eee").zi(10).curlyborder().poa().pad(10)
         this.nagshookdiv.a(this.nagsdiv)
         this.movediv.a(this.messagegeardiv, this.movelabeldiv, this.nagsgeardiv).ml(2).mr(2).mt(2).mb(2)
         this.movecontainerdiv.a(this.messagehookdiv, this.nagshookdiv, this.movediv)
@@ -612,10 +614,24 @@ class Board_ extends e{
         this.studytoolshook.a(
             IconButton("Init GIF", "i", this.initgif.bind(this), 24).ml(5).bc("#faa"),
             IconButton("Add frame", "O", this.addframe.bind(this), 24).ml(15).bc("#afa"),
-            IconButton("Render", "F", this.rendergif.bind(this), 24).ml(15).bc("#ffa"),
-            Div().mt(5).a(Labeled("Add comments to frame", this.withcommentscheck))
+            IconButton("Render", "F", this.rendergif.bind(this), 24).ml(15).bc("#ffa"),            
         )
         if(this.durationtextinput) this.durationtextinput.setText(`${this.study.currentnode.duration}`)
+        this.maxboardsizeselect = Select().setid(`${this.id}/maxboardsizeselect`).setoptions([
+            [200, 200],
+            [300, 300],
+            [400, 400],
+            [500, 500],
+            [600, 600],
+            [700, 700],
+            [800, 800],
+            [900, 900],
+            [1000, 1000]
+        ], 1000)
+        this.studytoolshook.a(Div().mt(5).a(
+            Labeled("Add comments to frame", this.withcommentscheck),
+            Labeled("Max board size", this.maxboardsizeselect)
+        ))
     }
 
     initgif(){
@@ -694,6 +710,8 @@ class Board_ extends e{
         this.width = width
         this.height = height        
         this.basicboardheight = this.height - this.controlheight
+        this.maxboardsize = getLocalElse(`${this.id}/maxboardsizeselect`, 1000)
+        if(this.basicboardheight > this.maxboardsize) this.basicboardheight = this.maxboardsize
         this.basicboard.resize(null, this.basicboardheight)
         this.boardwidth = this.basicboard.totalwidth()
         this.controlpanel.w(this.boardwidth).h(this.controlheight)
