@@ -1,6 +1,7 @@
 ###################################################################
 
 import time
+import re
 
 ###################################################################
 
@@ -49,6 +50,47 @@ def getvariantboard(variantkey = "standard"):
             variantkey = "KOTH"
         VariantBoard = find_variant(variantkey)
         return VariantBoard()
+
+class CommentParseResult:
+    def __init__(self, message, drawings):
+        self.message = message
+        self.drawings = drawings
+
+    def __repr__(self):
+        return f"< CommentParseResult < {self.message} | {self.drawings} > >"
+
+LICHESS_DRAWING_MATCHER = re.compile(r"(\[%(...) (.*?)\])")
+
+def parsecomment(comment):
+    matches = re.findall(LICHESS_DRAWING_MATCHER, comment)
+    drawings = []
+    for item in matches:
+        full = item[0]
+        kind = item[1]
+        coords = item[2].split(",")
+        comment = comment.replace(full, "")
+        for coord in coords:
+            color = coord[0]
+            color = "green"
+            if color == "R":
+                color = "red"
+            coord = coord[1:]
+            if kind == "csl":
+                drawings.append({
+                    "kind": "circlemark",
+                    "algeb": coord,
+                    "color": color
+                })
+            elif kind == "cal":
+                drawings.append({
+                    "kind": "arrow",
+                    "fromalgeb": coord[0:2],
+                    "toalgeb": coord[2:4],
+                    "color": color
+                })
+    return CommentParseResult(comment, drawings)
+
+print(parsecomment("pure comment [%csl Gg5,Ge5,Gd4,Rh4] some [%cal Gf3e5,Gf3g5,Ge2e3] other comment"))
 
 ###################################################################
 
