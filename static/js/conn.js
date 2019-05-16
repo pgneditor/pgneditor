@@ -504,6 +504,7 @@ class Board_ extends e{
         this.basicboard.drawcanvas.clear()
         this.basicboard.setgenuci(study.currentnode.genuci)
         this.basicboard.setdrawings(this.study.currentnode.drawings)
+        this.builddrawingsorganizer()
         let treebuild = this.study.tree()
         this.treediv.x.a(treebuild)        
         this.treediv.resize()
@@ -722,7 +723,7 @@ class Board_ extends e{
     }
 
     builddrawingsorganizer(){        
-        this.drawingsorganizer.setitems(this.basicboard.drawings.slice().reverse().map(blob => Drawing(blob)))
+        if(this.drawingsorganizer) this.drawingsorganizer.setitems(this.basicboard.drawings.slice().reverse().map(blob => Drawing(blob)))
     }
 
     switchdraw(){

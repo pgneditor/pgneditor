@@ -2111,7 +2111,7 @@ class ListOrganizerElement_ extends e{
         super("div")    
         this.parentorganizer = parentorganizer    
         this.item = item
-        this.disp("inline-block")
+        this.disp("inline-block").mar(1).ml(2).mr(2)
         this.ae("dragstart", this.dragstart.bind(this))
         this.ae("dragover", this.dragover.bind(this))
         this.ae("drop", this.drop.bind(this))
