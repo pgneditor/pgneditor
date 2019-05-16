@@ -872,7 +872,7 @@ class CheckBox_ extends Input_{
     defaultchangehandler(){
         if(this.id) setLocal(this.id, this.checked)
         if(this.changehandler){
-            this.changehandler()
+            this.changehandler(this.checked)
         }
     }
 
@@ -1306,6 +1306,40 @@ VARIANT_ICONS = {
     kingOfTheHill: "&#x0028;",
     racingKings: "&#xE00A;",
     threeCheck: "&#x002E;"
+}
+
+NAGS = {
+    1: "!",
+    2: "?",
+    3: "‼",
+    4: "⁇",
+    5: "⁉",
+    6: "⁈",
+    7: "□",
+    10: "=",
+    13: "∞",
+    14: "⩲",
+    15: "⩱",
+    16: "±",
+    17: "∓",
+    18: "+ −",
+    19: "− +",
+    21: "⨀",
+    22: "⨀",
+    32: "⟳",
+    33: "⟳",
+    36: "→",
+    37: "→",
+    40: "↑",
+    41: "↑",
+    44: "=∞",
+    45: "=∞",
+    132: "⇆",
+    133: "⇆",
+    138: "🕑",
+    139: "🕑",
+    140: "∆",
+    146: "N"
 }
 
 function getvariantdisplayname(variantkey){

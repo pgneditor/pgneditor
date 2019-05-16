@@ -151,6 +151,7 @@ class GameNode:
         self.drawings = blob.get("drawings", [])
         self.message = blob.get("message", None)
         self.duration = blob.get("duration", 1000)
+        self.nags = blob.get("nags", [])
         self.childids = blob.get("childids", [])
 
     def toblob(self):
@@ -166,6 +167,7 @@ class GameNode:
             "drawings": self.drawings,
             "message": self.message,
             "duration": self.duration,
+            "nags": self.nags,
             "childids": self.childids
         }
         
@@ -193,6 +195,7 @@ class Study:
             moveuci = childnode.uci()
             if self.makealgebmove(moveuci):
                 self.currentnode().parsecomment(childnode.comment)
+                self.currentnode().nags = list(childnode.nags)
                 self.addgamenoderecursive(self.currentnodeid, childnode)
             else:
                 print("could not make move", moveuci)
@@ -240,6 +243,14 @@ class Study:
             print("could not set message for", nodeid)
             return False
 
+    def setnags(self, nodeid, nags):
+        try:
+            self.nodelist[nodeid].nags = nags
+            return True
+        except:            
+            print("could not set nags for", nodeid)
+            return False
+
     def setduration(self, nodeid, duration):
         try:
             self.nodelist[nodeid].duration = duration
@@ -263,6 +274,7 @@ class Study:
             gamenode.add_variation(move)
             childgamenode = gamenode[move]
             childgamenode.comment = childnode.comment()
+            childgamenode.nags = set(childnode.nags)
             self.addmovesrecursive(childnode, childgamenode)
         return gamenode
 

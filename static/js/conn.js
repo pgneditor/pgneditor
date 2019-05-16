@@ -239,8 +239,8 @@ class GameNode_ extends e{
 
     hideothermessages(){        
         for(let gamenode of Object.values(this.parentstudy.nodelist)){            
-                gamenode.messageopen = false
-                gamenode.messagediv.disp("none")
+            gamenode.messageopen = false
+            gamenode.messagediv.disp("none")
         }
     }
 
@@ -250,11 +250,83 @@ class GameNode_ extends e{
         this.buildmessage()
     }
 
+    nagsstr(){
+        let nagstrs = []
+        for(let nag of this.nags){
+            if(nag in NAGS){
+                nagstrs.push(NAGS[nag])
+            } else {
+                nagstrs.push(`$${nag}`)
+            }
+        }
+        return nagstrs.join(" ")
+    }
+
+    nagssaved(resobj){
+        if(resobj.kind == "nagssaved"){
+            this.nags = resobj.nags
+            this.parentstudy.parentstudies.parentboard.pgntext.setText(resobj.pgn)
+            this.buildnags()
+            console.log("nags saved", this.nags)            
+        }
+    }
+
+    nagchangehandler(nag, value){
+        if(value){
+            if(!this.nags.includes(nag)) this.nags.push(nag)
+        } else {
+            this.nags = this.nags.filter(x => x != nag)
+        }
+        api({
+            "kind": "savenags",
+            "id": this.parentstudy.id,
+            "nodeid": this.id,
+            "nags": this.nags
+        }, this.nagssaved.bind(this))
+    }
+
+    closenags(){
+        this.nagsgeardivclicked()
+    }
+
+    buildnags(){        
+        if(this.nagsopen){
+            this.nagsdiv.disp("block")
+            this.nagsdiv.x            
+            for(let nagstr in NAGS){
+                let nag = parseInt(nagstr)                
+                let symbol = NAGS[nag]
+                let check = Check().set(this.nags.includes(nag)).onchange(this.nagchangehandler.bind(this, nag))
+                this.nagsdiv.a(Labeled(symbol, check).w(100))
+            }
+            this.nagsdiv.a(Div().mt(10).a(Button("Close", this.closenags.bind(this)).w(MESSAGE_WIDTH - 10).h(40)))
+            this.nagsdiv.scrollcentersmooth()            
+        }else{            
+            this.nagsdiv.disp("none")
+            this.movediv.scrollcentersmooth()
+        }
+        console.log("setting nags", this.nagsstr())
+        this.nagsgeardiv.html(this.nagsstr())
+    }
+
+    hideothernags(){        
+        for(let gamenode of Object.values(this.parentstudy.nodelist)){            
+            gamenode.nagsopen = false
+            gamenode.nagsdiv.disp("none")
+        }
+    }
+
+    nagsgeardivclicked(){
+        if(!this.nagsopen) this.hideothernags()
+        this.nagsopen = !this.nagsopen
+        this.buildnags()
+    }
+
     constructor(parentstudy, blobopt){
         super("div")
         this.container = Div().disp("flex").ai("center")
         this.movecontainerdiv = Div().disp("flex")
-        this.movediv = Div().w(MOVEDIV_WIDTH).h(MOVEDIV_HEIGHT).disp("flex").ai("center").jc("space-around")
+        this.movediv = Div().mw(MOVEDIV_WIDTH).h(MOVEDIV_HEIGHT).disp("flex").ai("center").jc("space-around")
         this.movediv.curlyborder()
         this.messagegeardiv = Div().ff("lichess").cp().ml(4).mb(1).fs(14)
         this.messagehookdiv = Div().por()
@@ -262,11 +334,17 @@ class GameNode_ extends e{
         this.messagediv.w(MESSAGE_WIDTH).h(MESSAGE_HEIGHT).mt(20).bc("#eee").zi(10).curlyborder()        
         this.messagehookdiv.a(this.messagediv)
         this.messageopen = false        
+        this.nagsopen = false
         this.messagegeardiv.ae("mousedown", this.messagegeardivclicked.bind(this))
-        this.movelabeldiv = Div().ff("monospace").ml(1).mr(6).cp()
+        this.movelabeldiv = Div().ff("monospace").ml(1).mr(1).cp()
         this.movelabeldiv.ae("mousedown", this.movedivclicked.bind(this))
-        this.movediv.a(this.messagegeardiv, this.movelabeldiv).ml(2).mr(2).mt(2).mb(2)
-        this.movecontainerdiv.a(this.messagehookdiv, this.movediv)
+        this.nagsgeardiv = Div().ml(2).mr(4).ff("monospace").bc("#aff").mw(10).mh(10).cp()
+        this.nagsgeardiv.ae("mousedown", this.nagsgeardivclicked.bind(this))
+        this.nagshookdiv = Div().por()
+        this.nagsdiv = Div().w(MESSAGE_WIDTH).h(MESSAGE_HEIGHT).mt(20).bc("#eee").zi(10).curlyborder().poa().pad(10)
+        this.nagshookdiv.a(this.nagsdiv)
+        this.movediv.a(this.messagegeardiv, this.movelabeldiv, this.nagsgeardiv).ml(2).mr(2).mt(2).mb(2)
+        this.movecontainerdiv.a(this.messagehookdiv, this.nagshookdiv, this.movediv)
         this.childsdiv = Div().disp("flex").fd("column")
         this.container.a(this.movecontainerdiv, this.childsdiv)
         this.a(this.container)
@@ -284,12 +362,15 @@ class GameNode_ extends e{
         this.drawings = blob.drawings
         this.message = blob.message
         this.duration = blob.duration
+        this.nags = blob.nags || []
         this.movelabeldiv.html(this.numberedsan()).fw("bold").pl(3).pr(3)
         this.movelabeldiv.bc(this.turn() == "w" ? "#000" : "#fff")
         this.movelabeldiv.c(this.turn() == "w" ? "#fff" : "#000")
+        this.nagsgeardiv.html(this.nagsstr())
         if(this.id == "root") this.movelabeldiv.bc("#707")
         this.ac("unselectable")
         this.buildmessage()
+        this.buildnags()
     }
 }
 function GameNode(parentstudy, blobopt){return new GameNode_(parentstudy, blobopt)}
