@@ -721,6 +721,10 @@ class Board_ extends e{
         this.basicboard.deletedrawing()
     }
 
+    builddrawingsorganizer(){        
+        this.drawingsorganizer.setitems(this.basicboard.drawings.slice().reverse().map(blob => Drawing(blob)))
+    }
+
     switchdraw(){
         this.drawmode = !this.drawmode
         this.drawpanelhook.x.t(0).l(this.basicboard.totalwidth() + 3)
@@ -742,13 +746,21 @@ class Board_ extends e{
                 Labeled("Color", this.colorgroup).fs(16).mar(3),
                 Labeled("Frame duration", this.durationtextinput).fs(14).mar(3),
                 Div().a(IconButton("Delete", "L", this.deletedrawing.bind(this), 18).mar(10).ml(10).bc("#fee"))
-            )           
-            this.drawpanel.a(this.drawcontrolpanel)
+            )                       
+            this.drawingsorganizer = ListOrganizer().ml(10).mr(10).onchange(this.drawingsorganizerchanged.bind(this))
+            this.builddrawingsorganizer()
+            this.drawpanel.a(this.drawcontrolpanel, this.drawingsorganizer)
             this.drawpanelhook.a(this.drawpanel)
         }else{            
             this.basicboard.setdrawkind(null)
         }
         this.switchdrawbutton.setselected(this.drawmode)
+    }
+
+    drawingsorganizerchanged(){
+        let newdrawings = this.drawingsorganizer.items.slice().reverse().map(item => item.blob)
+        console.log("drawings reorganized", newdrawings)
+        this.drawingschanged(newdrawings)
     }
 
     durationsaved(resobj){
@@ -770,11 +782,13 @@ class Board_ extends e{
     }
 
     drawingsset(resobj){
-        console.log("drawings set", resobj)
+        console.log("drawings set", resobj)        
     }
 
     drawingschanged(drawings){
         console.log("drawings changed", drawings)
+        this.basicboard.setdrawings(drawings)        
+        this.builddrawingsorganizer()
         api({
             "kind": "setdrawings",
             "id": this.study.id,

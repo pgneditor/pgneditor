@@ -242,6 +242,11 @@ class e{
         return this
     }
 
+    cm(){
+        this.e.style.cursor = "move"
+        return this
+    }
+
     po(position){
         this.e.style.position = position
         return this
@@ -2045,6 +2050,129 @@ class RadioGroup_ extends e{
     }
 }
 function RadioGroup(){return new RadioGroup_()}
+////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////
+// drawing
+class Drawing_ extends e{
+    repr(){
+        if(this.kind == "arrow"){
+            return `arrow ${this.fromalgeb} -> ${this.toalgeb}`
+        }
+        return "?"
+    }
+
+    build(){
+        this.container.html(this.repr()).c(this.color)
+        return this
+    }
+
+    fromblob(blob){
+        this.blob = blob
+        this.kind = this.blob.kind
+        this.fromalgeb = this.blob.fromalgeb
+        this.toalgeb = this.blob.toalgeb
+        this.color = this.blob.color
+        return this.build()
+    }
+
+    constructor(blob){
+        super("div")
+        this.disp("inline-block")
+        this.container = Div().pad(2).curlyborder().bc("#ffe").pl(8).pr(8).fw("bold").ff("monospace")
+        this.a(this.container)
+        this.fromblob(blob)
+    }
+}
+function Drawing(blob){return new Drawing_(blob)}
+////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////
+// list organizer
+class ListOrganizerElement_ extends e{
+    deleteitem(){
+        this.parentorganizer.deleteitem(this.item)
+    }
+
+    dragstart(){
+        this.parentorganizer.draggeditem = this.item
+    }
+
+    dragover(ev){
+        ev.preventDefault()
+    }
+
+    drop(ev){
+        ev.preventDefault()
+        this.parentorganizer.droppedto(this.item)
+    }
+
+    constructor(parentorganizer, item){
+        super("div")    
+        this.parentorganizer = parentorganizer    
+        this.item = item
+        this.disp("inline-block")
+        this.ae("dragstart", this.dragstart.bind(this))
+        this.ae("dragover", this.dragover.bind(this))
+        this.ae("drop", this.drop.bind(this))
+        this.container = Div().disp("flex").ai("center").pad(2).pl(4).pr(4).bc("#eee").curlyborder().sa("draggable", true).cm()        
+        this.container.a(
+            this.item,
+            Button("L", this.deleteitem.bind(this)).ff("lichess")
+        )
+        this.a(this.container)
+    }
+}
+function ListOrganizerElement(parentorganizer, item){return new ListOrganizerElement_(parentorganizer, item)}
+
+class ListOrganizer_ extends e{
+    droppedto(item){
+        let fromi = this.items.indexOf(this.draggeditem)
+        let toi = this.items.indexOf(item)
+        arraymove(this.items, fromi, toi)
+        this.build()        
+        this.defaultchangehandler()
+    }
+
+    deleteitem(item){
+        this.items = this.items.filter(x => x != item)
+        this.build()        
+        this.defaultchangehandler()
+    }
+
+    build(){
+        this.container.x
+        for(let item of this.items){
+            this.container.a(ListOrganizerElement(this, item))
+        }
+        return this
+    }
+
+    constructor(){
+        super("div")
+        this.disp("inline-block")
+        this.curlyborder()
+        this.items = []
+        this.container = Div().pad(2)
+        this.a(this.container)
+        this.build()
+    }
+
+    defaultchangehandler(){        
+        if(this.changehandler) this.changehandler()
+    }
+
+    onchange(changehandler){
+        this.changehandler = changehandler
+        return this
+    }
+
+    setitems(items){
+        this.items = items
+        return this.build()
+    }
+}
+function ListOrganizer(){return new ListOrganizer_()}
 ////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////
