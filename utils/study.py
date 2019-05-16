@@ -62,6 +62,8 @@ class CommentParseResult:
 
 LICHESS_DRAWING_MATCHER = re.compile(r"(\[%(...) (.*?)\])")
 
+COMMENT_SINGLE_LINE_MATCHER = re.compile(r"\s+")
+
 def drawingstolichesscomment(drawingsblob):
     try:
         arrows = []
@@ -132,6 +134,7 @@ class GameNode:
         if self.message:
             comment += self.message
         comment += drawingstolichesscomment(self.drawings)
+        comment = re.sub(COMMENT_SINGLE_LINE_MATCHER, " ", comment)
         return comment
 
     def parsecomment(self, comment):
