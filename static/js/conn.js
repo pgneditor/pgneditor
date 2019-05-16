@@ -619,8 +619,11 @@ class Board_ extends e{
         if(this.durationtextinput) this.durationtextinput.setText(`${this.study.currentnode.duration}`)
         this.maxboardsizeselect = Select().setid(`${this.id}/maxboardsizeselect`).setoptions([
             [200, 200],
+            [250, 250],
             [300, 300],
+            [350, 350],
             [400, 400],
+            [450, 450],
             [500, 500],
             [600, 600],
             [700, 700],
@@ -728,7 +731,9 @@ class Board_ extends e{
     }
 
     dragmovecallback(move){
-        let algeb = move.toalgeb()
+        let prompiece = this.prompieceselect.v()
+        this.buildprompieceselect()
+        let algeb = move.toalgeb() + prompiece        
         console.log("drag move", algeb, this.study)
         if(this.study){
             api({
@@ -902,6 +907,18 @@ class Board_ extends e{
         }, this.drawingsset.bind(this))
     }
 
+    buildprompieceselect(){
+        this.prompieceselect = Select().setoptions([
+            ["", "Promote"],
+            ["q", "Queen"],
+            ["r", "Rook"],
+            ["b", "Bishop"],
+            ["n", "Knight"],
+            ["k", "King"]
+        ], "")
+        this.prompieceselecthook.x.a(this.prompieceselect)
+    }
+
     constructor(argsopt){
         super("div")
         this.initgif()
@@ -917,9 +934,9 @@ class Board_ extends e{
         this.guicontainer = Div().disp("flex")
         this.boardcontainer = Div().disp("flex").fd("column").por()
         this.controlpanel = Div().bc("#ccc")
-        this.navcontrolpanel = Div().pad(2).bc("#aaa").ta("center")
-        this.switchdrawbutton = BoardControlButton("m", this.switchdraw.bind(this), "#707")
-        this.navcontrolpanel.a(
+        this.navcontrolpanel = Div().pad(2).bc("#aaa").disp("flex").ai("center").jc("space-around")
+        this.switchdrawbutton = BoardControlButton("m", this.switchdraw.bind(this), "#707")        
+        this.buttoncontrolpanel = Div().disp("flex").ai("center").a(
             BoardControlButton("i", this.reset.bind(this), "#f00"),
             BoardControlButton("W", this.tobegin.bind(this), "#007"),
             BoardControlButton("Y", this.back.bind(this), "#070"),
@@ -928,6 +945,12 @@ class Board_ extends e{
             BoardControlButton("L", this.del.bind(this), "#700"),
             BoardControlButton("B", this.flip.bind(this), "#770"),
             this.switchdrawbutton
+        )
+        this.prompieceselecthook = Div()
+        this.buildprompieceselect()
+        this.navcontrolpanel.a(
+            this.prompieceselecthook,            
+            this.buttoncontrolpanel
         )
         this.controlpanel.a(this.navcontrolpanel)        
         this.drawpanelhook = Div().poa()
