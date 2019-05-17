@@ -583,6 +583,7 @@ class Board_ extends e{
         }
         this.basicboard.setflip(this.study.flip)
         this.basicboard.setfromfen(this.study.currentnode.fen)
+        this.fentext.setText(this.study.currentnode.fen)
         this.basicboard.arrowcontainer.x
         this.basicboard.drawcanvas.clear()
         this.basicboard.setgenuci(study.currentnode.genuci)
@@ -723,6 +724,9 @@ class Board_ extends e{
         this.w(this.width).h(this.height)
         this.drawmode = !this.drawmode
         this.switchdraw()
+        this.fentext = CopyText({pastecallback: this.fenpastecallback.bind(this), height: 15, width: this.basicboard.totalwidth() - 60})
+        this.fentext.setText(this.basicboard.fen)
+        this.fentexthook.x.a(this.fentext)
     }
 
     algebmovemade(resobj){        
@@ -832,14 +836,19 @@ class Board_ extends e{
 
     switchdraw(){
         this.drawmode = !this.drawmode
-        this.drawpanelhook.x.t(0).l(this.basicboard.totalwidth() + 3)
-        if(this.drawmode){
-            this.drawpanel = Div().w(490).ta("center").h(this.height).bimg("static/img/backgrounds/marble.jpg").ovf("scroll")
+        this.drawcontrolmargin = 40
+        this.drawpanelwidth = 450
+        this.drawlabeledwidth = this.drawpanelwidth - 55
+        this.groupwidth = 220
+        this.labelwidth = 100
+        this.drawpanelhook.x.t(this.drawcontrolmargin).l(this.basicboard.totalwidth() + 3)
+        if(this.drawmode){            
+            this.drawpanel = Div().w(this.drawpanelwidth).ta("center").h(this.height - this.drawcontrolmargin).bimg("static/img/backgrounds/marble.jpg").ovf("scroll")
             this.drawcontrolpanel = Div().pad(3).mar(10).curlyborder().bc("#ddd")
             this.kindgroup = RadioGroup().setid(`${this.id}/drawkindgroup`).setselcallback(this.basicboard.setdrawkind.bind(this.basicboard)).setitems([
-                IconButton("Arrow", "N").setid("arrow"),
-                IconButton("Circle Mark", "K").setid("circlemark")
-            ])
+                IconButton("Arrow", "N", null, 18).setid("arrow"),
+                IconButton("Circle", "K", null, 18).setid("circlemark")
+            ]).fs(18)
             this.colorgroup = RadioGroup().setid(`${this.id}/drawcolorgroup`).setselcallback(this.basicboard.setdrawcolor.bind(this.basicboard)).setitems([
                 Button("Green").fs(14).curlyborder().setselbc("#afa").c("#070").setid("green"),
                 Button("Blue").fs(14).curlyborder().setselbc("#aaf").c("#007").setid("blue"),
@@ -851,11 +860,23 @@ class Board_ extends e{
                 Button("Thick").fs(14).curlyborder().fw("bold").setid("thick")
             ])
             this.durationtextinput = TextInput().pad(2).pl(5).fs(16).fw("bold").onchange(this.durationchanged.bind(this)).setText(`${this.study.currentnode.duration}`)
+            this.shapelabeled = Labeled("Shape", this.kindgroup).fs(20).mar(1).w(this.drawlabeledwidth)
+            this.shapelabeled.captiondiv.w(this.labelwidth)
+            this.kindgroup.w(this.groupwidth)
+            this.colorlabeled = Labeled("Color", this.colorgroup).fs(16).mar(1).w(this.drawlabeledwidth)
+            this.colorlabeled.captiondiv.w(this.labelwidth)
+            this.colorgroup.w(this.groupwidth)
+            this.thicknesslabeled = Labeled("Thickness", this.thicknessgroup).fs(16).mar(1).w(this.drawlabeledwidth)
+            this.thicknesslabeled.captiondiv.w(this.labelwidth)
+            this.thicknessgroup.w(this.groupwidth)
+            this.framedurationlabeled = Labeled("Duration", this.durationtextinput).fs(16).mar(1).w(this.drawlabeledwidth)
+            this.framedurationlabeled.captiondiv.w(this.labelwidth)
+            this.durationtextinput.w(this.groupwidth - 10)
             this.drawcontrolpanel.a(
-                Labeled("Shape", this.kindgroup).fs(18).mar(1),
-                Labeled("Color", this.colorgroup).fs(16).mar(1),
-                Labeled("Thickness", this.thicknessgroup).fs(16).mar(1),
-                Labeled("Frame duration", this.durationtextinput).fs(14).mar(1),
+                this.shapelabeled,
+                this.colorlabeled,
+                this.thicknesslabeled,
+                this.framedurationlabeled,
                 Div().a(IconButton("Delete", "L", this.deletedrawing.bind(this), 18).mar(10).ml(10).bc("#fee"))
             )                       
             this.drawingsorganizer = ListOrganizer().ml(10).mr(10).onchange(this.drawingsorganizerchanged.bind(this))
@@ -909,7 +930,7 @@ class Board_ extends e{
 
     buildprompieceselect(){
         this.prompieceselect = Select().setoptions([
-            ["", "Promote"],
+            ["", "Prom"],
             ["q", "Queen"],
             ["r", "Rook"],
             ["b", "Bishop"],
@@ -919,6 +940,29 @@ class Board_ extends e{
         this.prompieceselecthook.x.a(this.prompieceselect)
     }
 
+    fenpastecallback(){
+        let fen = this.fentext.getText()        
+        let pgn = `[FEN "${fen}"]`
+        console.log("fen pasted", fen, "parsing", pgn)
+        api({
+            "kind": "parsepgn",
+            "id": this.study.id,
+            "pgn": pgn
+        }, this.pgnparsed.bind(this))
+    }
+
+    openurl(url){
+        window.open(url, "_blank")
+    }
+
+    analyzelichess(){
+        this.openurl(`https://lichess.org/analysis/${this.basicboard.variantkey}/${this.basicboard.fen}`)
+    }
+
+    analyzefbserv(){
+        this.openurl(`https://fbserv2.herokuapp.com/analysis/${this.basicboard.variantkey}/${this.basicboard.fen}`)
+    }
+
     constructor(argsopt){
         super("div")
         this.initgif()
@@ -926,7 +970,7 @@ class Board_ extends e{
         this.id = getelse(args, "id", "board")
         this.width = getelse(args, "width", 1000)
         this.height = getelse(args, "height", 400)        
-        this.controlheight = getelse(args, "controlheight", 35)
+        this.controlheight = getelse(args, "controlheight", 56)
         this.basicboard = BasicBoard({
             dragmovecallback: this.dragmovecallback.bind(this),
             drawingschangedcallback: this.drawingschanged.bind(this)
@@ -952,7 +996,14 @@ class Board_ extends e{
             this.prompieceselecthook,            
             this.buttoncontrolpanel
         )
-        this.controlpanel.a(this.navcontrolpanel)        
+        this.fencontrolpanel = Div().pad(1).bc("#bbb").disp("flex").ai("center").jc("space-around").mt(2)
+        this.fentexthook = Div()        
+        this.fencontrolpanel.a(
+            this.fentexthook,
+            Button(" L ", this.analyzelichess.bind(this)).fs(10).pad(0),
+            Button(" F ", this.analyzefbserv.bind(this)).fs(10).pad(0)
+        )
+        this.controlpanel.a(this.navcontrolpanel, this.fencontrolpanel)        
         this.drawpanelhook = Div().poa()
         this.boardcontainer.a(this.controlpanel, this.basicboard, this.drawpanelhook)
         this.drawmode = true

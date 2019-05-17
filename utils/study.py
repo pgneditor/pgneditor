@@ -223,6 +223,7 @@ class Study:
                 "fen": gamerootfen 
             })
         }       
+        self.currentnodeid = "root"
         self.rootnode().parsecomment(game.comment)
         self.addgamenoderecursive("root", game)
 

@@ -2129,7 +2129,7 @@ class RadioGroup_ extends e{
     constructor(){
         super("div")
         this.disp("inline-block")
-        this.container = Div().pad(3).pl(4).pr(4).curlyborder().disp("flex").bc("#eee")        
+        this.container = Div().pad(3).pl(4).pr(4).curlyborder().disp("flex").bc("#eee").ai("center").jc("space-around")
         this.a(this.container)
         this.items = []        
     }
