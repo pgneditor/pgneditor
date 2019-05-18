@@ -130,6 +130,15 @@ class GameNode_ extends e{
         return this
     }
 
+    maxtrainweight(kind){
+        let maxweight = 0
+        for(let childid of this.childids){
+            let weight = this.parentstudy.nodelist[childid][kind + "trainweight"]
+            if(weight > maxweight) maxweight = weight
+        }
+        return maxweight
+    }
+
     getline(){
         let rootturn = this.parentstudy.rootnode().turn()                
         let rootfullmovenumber = this.parentstudy.rootnode().fullmovenumber()
@@ -841,12 +850,18 @@ class Board_ extends e{
                     if(mymoveweight == maxweight){
 
                     }else{
-                        window.alert("Good move, but keep in mind, there is a better move !")                    
+                        window.alert("Good move, but keep in mind, there is a better move !")
                     }
                 }else{
                     this.basicboard.setfromfen(this.basicboard.fen)
-                    window.alert("Wrong move !")                    
-                    return
+                    if(maxweight > 0){                        
+                        window.alert("Wrong move !")                    
+                        return
+                    }else{
+                        window.alert("Line completed. Well done !")                        
+                        this.tobegin()
+                        return
+                    }
                 }
             }
         }
@@ -879,10 +894,14 @@ class Board_ extends e{
 
     tobegin(){        
         if(this.study){
-            api({
-                "kind": "tobegin",
-                "id": this.study.id                
-            }, this.algebmovemade.bind(this))
+            if(this.study.currentnodeid == "root"){
+                console.log("tobegin ignored, already at root")
+            }else{
+                api({
+                    "kind": "tobegin",
+                    "id": this.study.id                
+                }, this.algebmovemade.bind(this))
+            }            
         }        
     }
 
@@ -1177,7 +1196,9 @@ class Board_ extends e{
                 for(let childid of this.study.currentnode.childids){
                     let child = this.study.nodelist[childid]
                     if(child.opptrainweight > 0){
-                        for(let i=0;i<child.opptrainweight;i++) candidates.push(child)
+                        if(child.maxtrainweight("me") > 0){
+                            for(let i=0;i<child.opptrainweight;i++) candidates.push(child)
+                        }                        
                     }
                 }
                 if(candidates.length > 0){                    
@@ -1189,6 +1210,19 @@ class Board_ extends e{
                         "id": this.study.id,
                         "algeb": selected.genuci
                     }, this.algebmovemade.bind(this))
+                }else{
+                    window.alert("Line completed. Well done !")                    
+                    this.tobegin()
+                    return
+                }
+            }else{
+                console.log("checking")
+                if(this.study.currentnode.maxtrainweight("me") > 0){                    
+                    
+                }else{
+                    window.alert("Line completed. Well done !")                                        
+                    this.tobegin()
+                    return
                 }
             }            
         }
