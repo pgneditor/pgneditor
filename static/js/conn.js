@@ -176,11 +176,7 @@ class GameNode_ extends e{
     }
 
     movedivclicked(){
-        api({
-            "kind": "selectnodebyid",
-            "id": this.parentstudy.id,
-            "nodeid": this.id
-        }, this.nodeselectedbyid.bind(this))
+        this.parentstudy.parentstudies.parentboard.selectnodebyid(this.parentstudy.id, this.id, this.nodeselectedbyid.bind(this))
     }
 
     fullmovenumber(){
@@ -624,11 +620,7 @@ class BookItem_ extends e{
 
     sandivclicked(){
         console.log("book move clicked", this.san)
-        api({
-            "kind": "selectnodebyid",
-            "id": this.parentboard.study.id,
-            "nodeid": this.nodeid
-        }, this.nodeselectedbyid.bind(this))
+        this.parentboard.selectnodebyid(this.parentboard.study.id, this.nodeid, this.nodeselectedbyid.bind(this))
     }
 
     constructor(parentboard, blob){
@@ -713,6 +705,10 @@ class Board_ extends e{
             Labeled("Max board size", this.maxboardsizeselect)
         ))
         this.buildbook()
+        if(!(this.trainroot in this.study.nodelist)){
+            this.trainroot = "root"
+            this.settrainrootlabel()
+        }
         this.dotrain()
     }
 
@@ -859,7 +855,7 @@ class Board_ extends e{
                         return
                     }else{
                         window.alert("Line completed. Well done !")                        
-                        this.tobegin()
+                        this.traintobegin()
                         return
                     }
                 }
@@ -890,6 +886,15 @@ class Board_ extends e{
                 "id": this.study.id                
             }, this.algebmovemade.bind(this))
         }        
+    }
+
+    selectnodebyid(id, nodeid, callbackopt){
+        let callback = callbackopt || this.algebmovemade.bind(this)
+        api({
+            "kind": "selectnodebyid",
+            "id": id,
+            "nodeid": nodeid
+        }, callback)
     }
 
     tobegin(){        
@@ -1097,6 +1102,7 @@ class Board_ extends e{
         super("div")
         this.initgif()
         let args = argsopt || {}
+        this.trainroot = "root"
         this.id = getelse(args, "id", "board")
         this.width = getelse(args, "width", 1000)
         this.height = getelse(args, "height", 400)        
@@ -1188,7 +1194,15 @@ class Board_ extends e{
     }
 
     dotrain(){
+        let checktrainroot = this.checktrainroot
+        this.checktrainroot = false
         if(this.study && this.trainon()){
+            if(checktrainroot){
+                if(this.study.currentnodeid != this.trainroot){
+                    this.traintobegin()
+                    return
+                }
+            }
             let turn = this.study.currentnode.turn()
             if(this.opptrainturn()){
                 console.log("opp train turn", turn)            
@@ -1212,7 +1226,7 @@ class Board_ extends e{
                     }, this.algebmovemade.bind(this))
                 }else{
                     window.alert("Line completed. Well done !")                    
-                    this.tobegin()
+                    this.traintobegin()
                     return
                 }
             }else{
@@ -1221,14 +1235,27 @@ class Board_ extends e{
                     
                 }else{
                     window.alert("Line completed. Well done !")                                        
-                    this.tobegin()
+                    this.traintobegin()
                     return
                 }
             }            
         }
     }
 
+    traintobegin(){
+        if(this.trainroot in this.study.nodelist){
+            if(this.study.currentnodeid == this.trainroot){
+                console.log("train to begin ignored, already at train root")
+            }else{
+                this.selectnodebyid(this.study.id, this.trainroot)
+            }            
+        }else{
+            this.tobegin()
+        }
+    }
+
     trainmodechanged(){
+        this.checktrainroot = true
         this.trainmode = this.trainmodeselect.v()
         console.log("train mode changed to", this.trainmode)
         if(((this.trainmode == "w")&&(this.basicboard.flip))||((this.trainmode == "b")&&(!this.basicboard.flip))){
@@ -1238,6 +1265,17 @@ class Board_ extends e{
         }        
     }
 
+    settrainroot(){
+        if(this.study){
+            this.trainroot = this.study.currentnodeid
+            this.settrainrootlabel()
+        }
+    }
+
+    settrainrootlabel(){
+        this.trainrootlabel.html(this.trainroot.replace(/_/g, " "))
+    }
+
     buildtraindiv(){
         this.trainmodeselect = Select().setoptions([
             ["none", "Training off"],
@@ -1245,7 +1283,17 @@ class Board_ extends e{
             ["b", "Train black"]
         ], this.trainmode).fs(20).ff("monospace").pad(2).onchange(this.trainmodechanged.bind(this))
         this.traindiv.x
-        this.traindiv.a(this.trainmodeselect)
+        this.trainrootdiv = Div().mt(10).ml(5)
+        this.trainrootlabel = Div().ff("monospace")
+        this.settrainrootlabel()
+        this.trainrootdiv.a(
+            Div().a(Labeled("Train root", this.trainrootlabel)),
+            Button("Set train root to current position", this.settrainroot.bind(this)).mt(5).ml(5)
+        )
+        this.traindiv.a(
+            this.trainmodeselect,
+            this.trainrootdiv
+        )
     }
 
     init(){
