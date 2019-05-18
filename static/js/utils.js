@@ -341,6 +341,26 @@ function elapsedday(time1ms, time2ms){
 ////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////
+
+function downloadcontent(filename, content){
+    filename = filename.replace(/ /g, "_")
+    filename = filename.toLowerCase()
+    let file = new Blob([content])
+    let a = document.createElement("a")
+    let url = URL.createObjectURL(file)
+    a.href = url
+    a.download = filename
+    document.body.appendChild(a)        
+    a.click()
+    setTimeout(function() {
+        document.body.removeChild(a)
+        window.URL.revokeObjectURL(url)
+    }, 0)
+}
+
+////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////
 // local storage
 
 function getLocalElse(key, defaultvalue){

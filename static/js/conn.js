@@ -482,6 +482,10 @@ class Study_ extends e{
         }, this.studycloned.bind(this))
     }
 
+    download(){
+        downloadcontent(this.title, this.pgn)
+    }
+
     constructor(argsopt){
         super("div")
         let args = argsopt || {}
@@ -494,6 +498,7 @@ class Study_ extends e{
         this.controldiv.a(            
             IconButton("Edit title", "m", this.edittitle.bind(this)).bc("#ffa"),
             IconButton("Clone", "$", this.clone.bind(this)).bc("#aff"),
+            IconButton("Download", "x", this.download.bind(this)).bc("#faf"),
             IconButton("Delete", "L", this.delete.bind(this)).bc("#faa")
             
         )
