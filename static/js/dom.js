@@ -1575,11 +1575,12 @@ class BasicBoard_ extends e{
         return this.rep[this.fileranktorepindex(sq.file, sq.rank)]
     }
 
-    piecedragstart(p, sq, pdiv, ev){                
+    piecedragstart(p, sq, pdiv, ev){                        
+        ev.dataTransfer.setData('text/plain', null)
         if(this.drawkind){
             ev.preventDefault()
             return
-        }
+        }        
         this.draggedp = p
         this.draggedsq = sq
         pdiv.zi(10)
@@ -2207,7 +2208,8 @@ class ListOrganizerElement_ extends e{
         this.parentorganizer.deleteitem(this.item)
     }
 
-    dragstart(){
+    dragstart(ev){
+        ev.dataTransfer.setData('text/plain', null)
         this.parentorganizer.draggeditem = this.item
     }
 
