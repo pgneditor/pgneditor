@@ -453,6 +453,7 @@ class Study_ extends e{
     }
 
     delete(){
+        if(!textconfirm("delete this study", "delete")) return
         api({
             "kind": "deletestudy",
             "id": this.id
@@ -929,6 +930,7 @@ class Board_ extends e{
     }
 
     reset(){
+        if(!textconfirm("reset the study and delete all moves", "reset")) return
         if(this.study){
             api({
                 "kind": "reset",
