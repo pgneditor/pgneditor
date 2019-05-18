@@ -483,7 +483,7 @@ class Study_ extends e{
     }
 
     download(){
-        downloadcontent(this.title, this.pgn)
+        downloadcontent(this.title + ".pgn", this.pgn)
     }
 
     constructor(argsopt){
