@@ -306,8 +306,7 @@ class GameNode_ extends e{
         }else{            
             this.nagsdiv.disp("none")
             this.movediv.scrollcentersmooth()
-        }
-        console.log("setting nags", this.nagsstr())
+        }        
         this.nagsgeardiv.html(this.nagsstr())
     }
 
@@ -572,6 +571,69 @@ function BoardControlButton(text, callback, color){
     return Button(text, callback).ff("lichess").c(color).fs(20)
 }
 
+class WeightSelector_ extends e{    
+    trainweightset(resobj){
+        console.log("train weight set", resobj)
+        if(resobj.kind == "trainweightset"){
+            this.parentbookitem.parentboard.pgntext.setText(resobj.pgn)
+        }        
+    }
+
+    weightchanged(value){
+        api({
+            "kind": "settrainweight",
+            "id": this.parentbookitem.parentboard.study.id,
+            "nodeid": this.parentbookitem.nodeid,
+            "weightkind": this.kind,
+            "weight": parseInt(value)
+        }, this.trainweightset.bind(this))
+    }
+
+    constructor(parentbookitem, kind){
+        super("div")
+        this.kind = kind
+        this.key = this.kind + "trainweight"
+        this.weight = parentbookitem.blob[this.key]                
+        this.parentbookitem = parentbookitem
+        this.disp("flex").ai("center").jc("space-around").pad(2).fs(24).w(100).cp().bc("#ddd").mar(3).ta("center").ff("momospace")
+        this.weightselect = Select().setoptions([...Array(11).keys()].map(x => [x, x]), this.weight).onchange(this.weightchanged.bind(this)).fs(16)
+        this.a(this.weightselect)
+    }
+}
+function WeightSelector(parentbookitem, kind){return new WeightSelector_(parentbookitem, kind)}
+
+class BookItem_ extends e{
+    nodeselectedbyid(resobj){
+        let study = Study({blob: resobj.setstudy, parentstudies: this.parentboard.studies})
+        this.parentboard.setgamefromstudy(study)
+    }
+
+    sandivclicked(){
+        console.log("book move clicked", this.san)
+        api({
+            "kind": "selectnodebyid",
+            "id": this.parentboard.study.id,
+            "nodeid": this.nodeid
+        }, this.nodeselectedbyid.bind(this))
+    }
+
+    constructor(parentboard, blob){
+        super("div").mar(2).disp("flex").bc("#eee")
+        this.blob = blob
+        this.parentboard = parentboard
+        this.san = blob.gensan        
+        this.nodeid = blob.id
+        this.sandiv = Div().pad(2).fs(24).w(100).html(this.san).cp().bc("#ddd").mar(3).ta("center").c("#007").fw("bold")
+        this.sandiv.ae("mousedown", this.sandivclicked.bind(this))                
+        this.a(
+            this.sandiv,
+            WeightSelector(this, "me"),
+            WeightSelector(this, "opp")
+        )
+    }
+}
+function BookItem(parentboard, blob){return new BookItem_(parentboard, blob)}
+
 class Board_ extends e{
     setgamefromstudy(study){
         console.log("setting game from", study)
@@ -636,6 +698,16 @@ class Board_ extends e{
             Labeled("Add comments to frame", this.withcommentscheck),
             Labeled("Max board size", this.maxboardsizeselect)
         ))
+        this.buildbook()
+    }
+
+    buildbook(){
+        this.bookdiv.x
+        for(let childid of this.study.currentnode.childids){
+            let child = this.study.nodelist[childid]
+            let bookitem = BookItem(this, child)
+            this.bookdiv.a(bookitem)
+        }
     }
 
     initgif(){
@@ -1019,9 +1091,11 @@ class Board_ extends e{
         this.studytoolshook = Div()
         this.toolsdiv.a(this.studytoolshook)
         this.studies = Studies({parentboard: this})
+        this.bookdiv = Div().pad(3)
         this.tabpane = TabPane("boardtabpane").settabs([
             Tab("game", "Game", this.pgntext, "C"),
             Tab("tree", "Tree", this.treediv, "$"),
+            Tab("book", "Book", this.bookdiv, "?"),
             Tab("tools", "Tools", this.toolsdiv, "%"),
             Tab("studies", "Studies", this.studies, "]")
         ]).selecttab("game", USE_STORED_IF_AVAILABLE)

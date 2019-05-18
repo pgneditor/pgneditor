@@ -118,6 +118,8 @@ class Req():
         self.message = reqobj.get("message", None)
         self.nags = reqobj.get("nags", None)
         self.duration = reqobj.get("duration", None)
+        self.weightkind = reqobj.get("weightkind", "me")
+        self.weight = reqobj.get("weight", 0)
 
         if SERVERLOGIC_VERBOSE:
             log(self, "warning")
@@ -423,6 +425,22 @@ def savenags(req):
     else:
         return {
             "kind": "nagssavefailed"
+        }
+
+def settrainweight(req):
+    log(f"< set train weight < {req.id} | {req.nodeid} | {req.weightkind} | {req.weight} > >", "info")
+    study = getstudy(req)
+    if study.settrainweight(req.nodeid, req.weightkind, req.weight):
+        storestudy(req, study)
+        return {
+            "kind": "trainweightset",
+            "weightkind": req.weightkind,
+            "weight": req.weight,
+            "pgn": study.reportpgn()
+        }
+    else:
+        return {
+            "kind": "settrainweightfailed"
         }
 
 def saveduration(req):

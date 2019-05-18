@@ -10,6 +10,7 @@ import io
 import chess
 from chess.variant import find_variant
 from chess.pgn import Game, StringExporter, read_game
+from traceback import print_exc as pe
 
 ###################################################################
 
@@ -53,12 +54,14 @@ def getvariantboard(variantkey = "standard"):
         return VariantBoard()
 
 class CommentParseResult:
-    def __init__(self, message, drawings):
+    def __init__(self, message, drawings, metrainweight, opptrainweight):
         self.message = message
         self.drawings = drawings
+        self.metrainweight = metrainweight
+        self.opptrainweight = opptrainweight
 
     def __repr__(self):
-        return f"< CommentParseResult < {self.message} | {self.drawings} > >"
+        return f"< CommentParseResult < {self.message} | {self.drawings} | {self.metrainweight} | {self.opptrainweight} > >"
 
 LICHESS_DRAWING_MATCHER = re.compile(r"(\[%(...) (.*?)\])")
 
@@ -91,33 +94,39 @@ def parselichesscomment(comment):
         matches = re.findall(LICHESS_DRAWING_MATCHER, comment)
         drawings = []
         purecomment = comment
+        metrainweight = 0
+        opptrainweight = 0
         for item in matches:
             full = item[0]
             kind = item[1]
             coords = item[2].split(",")
             purecomment = purecomment.replace(full, "")
             for coord in coords:
-                colorletter = coord[0]
-                color = "green"
-                if colorletter == "R":
-                    color = "red"
-                coord = coord[1:]
-                if kind == "csl":
-                    drawings.append({
-                        "kind": "circlemark",
-                        "algeb": coord,
-                        "color": color
-                    })
-                elif kind == "cal":
-                    drawings.append({
-                        "kind": "arrow",
-                        "fromalgeb": coord[0:2],
-                        "toalgeb": coord[2:4],
-                        "color": color
-                    })
-        return CommentParseResult(purecomment, drawings)
+                if kind == "trn":
+                    metrainweight = int(coords[0])
+                    opptrainweight = int(coords[1])
+                else:
+                    colorletter = coord[0]
+                    color = "green"
+                    if colorletter == "R":
+                        color = "red"
+                    coord = coord[1:]
+                    if kind == "csl":
+                        drawings.append({
+                            "kind": "circlemark",
+                            "algeb": coord,
+                            "color": color
+                        })
+                    elif kind == "cal":
+                        drawings.append({
+                            "kind": "arrow",
+                            "fromalgeb": coord[0:2],
+                            "toalgeb": coord[2:4],
+                            "color": color
+                        })
+        return CommentParseResult(purecomment, drawings, metrainweight, opptrainweight)
     except:       
-        return CommentParseResult(comment, [])
+        return CommentParseResult(comment, [], 0, 0)
 
 ###################################################################
 
@@ -125,6 +134,21 @@ class GameNode:
     def __init__(self, parentstudy, blob = {}):
         self.parentstudy = parentstudy
         self.fromblob(blob)
+
+    def settrainweight(self, weightkind, weight):
+        try:
+            if ( ( weightkind == "me" ) or ( weightkind == "opp" ) ) and ( ( weight >= 0 ) and ( weight <= 10 ) ):
+                if weightkind == "me":
+                    self.metrainweight = weight
+                elif weightkind == "opp":
+                    self.opptrainweight = weight
+                return True
+            else:
+                print("wrong parameters for setting train weight", weightkind, weight)
+                return False
+        except:
+            print("problem setting train weight", weightkind, weight)
+            return False
 
     def getchilds(self):
         return [self.parentstudy.nodelist[childid] for childid in self.childids]
@@ -134,6 +158,8 @@ class GameNode:
         if self.message:
             comment += self.message
         comment += drawingstolichesscomment(self.drawings)
+        if ( self.metrainweight > 0 ) or ( self.opptrainweight > 0 ):
+            comment += f"[%trn {self.metrainweight},{self.opptrainweight}]"
         comment = re.sub(COMMENT_SINGLE_LINE_MATCHER, " ", comment)
         return comment
 
@@ -141,6 +167,8 @@ class GameNode:
         plcr = parselichesscomment(comment)
         self.message = plcr.message
         self.drawings = plcr.drawings
+        self.metrainweight = plcr.metrainweight
+        self.opptrainweight = plcr.opptrainweight
 
     def fromblob(self, blob):
         self.id = blob.get("id", "root")
@@ -253,6 +281,13 @@ class Study:
             return True
         except:            
             print("could not set nags for", nodeid)
+            return False
+
+    def settrainweight(self, nodeid, weightkind, weight):
+        try:            
+            return self.nodelist[nodeid].settrainweight(weightkind, weight)
+        except:            
+            print("could not set weight for", nodeid, weightkind, weight)
             return False
 
     def setduration(self, nodeid, duration):

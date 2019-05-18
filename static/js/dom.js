@@ -1065,15 +1065,21 @@ function Option(){return new Option_()}
 class Select_ extends e{
     constructor(){
         super("select")
+        this.ae("change", this.defaultchangehandler.bind(this))
     }
 
     defaultchangehandler(){
         if(this.id) setLocal(this.id, this.v())
+        if(this.changehandler) this.changehandler(this.v())
+    }
+
+    onchange(changehandler){
+        this.changehandler = changehandler
+        return this
     }
 
     setid(id){
-        this.id = id
-        this.ae("change", this.defaultchangehandler.bind(this))
+        this.id = id        
         return this
     }
 
@@ -1496,8 +1502,7 @@ class BasicBoard_ extends e{
     }
 
     setdrawkind(drawkind){
-        this.drawkind = drawkind
-        console.log("drawkind", this.drawkind)
+        this.drawkind = drawkind        
         this.drawfromsq = null
         this.drawtosq = null
     }
