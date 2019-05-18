@@ -182,6 +182,11 @@ class GameNode_ extends e{
         return feninfo(this.fen).turn
     }
 
+    oppturn(){
+        let turn = feninfo(this.fen).turn
+        return turn == "w" ? "b" : "w"
+    }
+
     numberedsan(){
         if(this.id == "root") return "Root"
         let prefix = this.turn() == "w" ? ".." : "."
@@ -699,11 +704,14 @@ class Board_ extends e{
             Labeled("Max board size", this.maxboardsizeselect)
         ))
         this.buildbook()
+        this.dotrain()
     }
 
     buildbook(){
         this.bookdiv.x
-        for(let childid of this.study.currentnode.childids){
+        let sortedids = this.study.currentnode.childids.slice()
+        sortedids.sort((ida, idb) => this.study.nodelist[idb].metrainweight - this.study.nodelist[ida].metrainweight)
+        for(let childid of sortedids){
             let child = this.study.nodelist[childid]
             let bookitem = BookItem(this, child)
             this.bookdiv.a(bookitem)
@@ -811,6 +819,37 @@ class Board_ extends e{
         this.buildprompieceselect()
         let algeb = move.toalgeb() + prompiece        
         console.log("drag move", algeb, this.study)
+        if(this.trainon()){
+            if(this.metrainturn()){
+                console.log("me train turn")
+                let maxweight = 0
+                let moveok = false
+                let mymoveweight = 0
+                for(let childid of this.study.currentnode.childids){
+                    let child = this.study.nodelist[childid]
+                    let moveweight = child.metrainweight
+                    if(moveweight > 0){                        
+                        if(child.genuci == algeb){
+                            moveok = true
+                            mymoveweight = moveweight
+                        }
+                    }
+                    if(moveweight > maxweight) maxweight = moveweight
+                }
+                console.log(mymoveweight, maxweight)
+                if(moveok){
+                    if(mymoveweight == maxweight){
+
+                    }else{
+                        window.alert("Good move, but keep in mind, there is a better move !")                    
+                    }
+                }else{
+                    this.basicboard.setfromfen(this.basicboard.fen)
+                    window.alert("Wrong move !")                    
+                    return
+                }
+            }
+        }
         if(this.study){
             api({
                 "kind": "makealgebmove",
@@ -1092,10 +1131,14 @@ class Board_ extends e{
         this.toolsdiv.a(this.studytoolshook)
         this.studies = Studies({parentboard: this})
         this.bookdiv = Div().pad(3)
+        this.traindiv = Div().pad(3)
+        this.trainmode = "none"
+        this.buildtraindiv()
         this.tabpane = TabPane("boardtabpane").settabs([
             Tab("game", "Game", this.pgntext, "C"),
             Tab("tree", "Tree", this.treediv, "$"),
             Tab("book", "Book", this.bookdiv, "?"),
+            Tab("train", "Train", this.traindiv, "-"),
             Tab("tools", "Tools", this.toolsdiv, "%"),
             Tab("studies", "Studies", this.studies, "]")
         ]).selecttab("game", USE_STORED_IF_AVAILABLE)
@@ -1107,6 +1150,68 @@ class Board_ extends e{
         this.guicontainer.a(this.boardcontainer, this.tabpane)
         this.a(this.guicontainer)
         this.resize(this.width, this.height)
+    }
+
+    trainon(){
+        return this.trainmode != "none"
+    }
+
+    trainturn(){
+        return ( this.trainmode == this.study.currentnode.turn() )
+    }
+
+    opptrainturn(){
+        return ( this.trainmode == this.study.currentnode.oppturn() )
+    }
+
+    metrainturn(){
+        return ( this.trainmode == this.study.currentnode.turn() )
+    }
+
+    dotrain(){
+        if(this.study && this.trainon()){
+            let turn = this.study.currentnode.turn()
+            if(this.opptrainturn()){
+                console.log("opp train turn", turn)            
+                let candidates = []
+                for(let childid of this.study.currentnode.childids){
+                    let child = this.study.nodelist[childid]
+                    if(child.opptrainweight > 0){
+                        for(let i=0;i<child.opptrainweight;i++) candidates.push(child)
+                    }
+                }
+                if(candidates.length > 0){                    
+                    let ri = Math.floor(Math.random() * candidates.length)
+                    let selected = candidates[ri]
+                    console.log("selected", ri, selected)
+                    api({
+                        "kind": "makealgebmove",
+                        "id": this.study.id,
+                        "algeb": selected.genuci
+                    }, this.algebmovemade.bind(this))
+                }
+            }            
+        }
+    }
+
+    trainmodechanged(){
+        this.trainmode = this.trainmodeselect.v()
+        console.log("train mode changed to", this.trainmode)
+        if(((this.trainmode == "w")&&(this.basicboard.flip))||((this.trainmode == "b")&&(!this.basicboard.flip))){
+            this.flip()
+        }else{
+            this.dotrain()
+        }        
+    }
+
+    buildtraindiv(){
+        this.trainmodeselect = Select().setoptions([
+            ["none", "Training off"],
+            ["w", "Train white"],
+            ["b", "Train black"]
+        ], this.trainmode).fs(20).ff("monospace").pad(2).onchange(this.trainmodechanged.bind(this))
+        this.traindiv.x
+        this.traindiv.a(this.trainmodeselect)
     }
 
     init(){
