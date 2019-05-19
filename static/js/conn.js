@@ -1227,6 +1227,7 @@ class Board_ extends e{
 
     drawingsset(resobj){
         console.log("drawings set", resobj)        
+        this.setpgn(resobj.pgn)
     }
 
     drawingschanged(drawings){

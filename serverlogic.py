@@ -409,7 +409,8 @@ def setdrawings(req):
     study.setdrawings(req.drawings)
     storestudy(req, study)
     return {
-        "kind": "drawingsset"
+        "kind": "drawingsset",
+        "pgn": study.reportpgn()
     }
 
 def savemessage(req):
