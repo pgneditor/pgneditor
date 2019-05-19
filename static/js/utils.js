@@ -379,9 +379,14 @@ function setLocal(key, value){
 
 ////////////////////////////////////////////////////////////////////
 
-function textconfirm(message, text){
-    let input = window.prompt(`Are you sure you want to ${message}? Type in "${text}" to confirm:`, "")
-    return input == text
+function textconfirm(message, text, soft){
+    let confirmquestion = `Are you sure you want to ${message}?`
+    if(soft){
+        return window.confirm(confirmquestion)
+    }else{
+        let input = window.prompt(`${confirmquestion} Type in "${text}" to confirm:`, "")
+        return input == text
+    }    
 }
 
 ////////////////////////////////////////////////////////////////////

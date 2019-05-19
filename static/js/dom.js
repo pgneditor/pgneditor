@@ -2164,9 +2164,9 @@ function RadioGroup(){return new RadioGroup_()}
 class Drawing_ extends e{
     repr(){
         if(this.kind == "arrow"){
-            return `arrow ${this.fromalgeb} -> ${this.toalgeb}`
+            return `arrow<br>${this.fromalgeb} -> ${this.toalgeb}`
         } else if (this.kind == "circlemark"){
-            return `circle mark ${this.algeb}`
+            return `circle<br>${this.algeb}`
         }
         return "?"
     }
@@ -2193,7 +2193,7 @@ class Drawing_ extends e{
     constructor(blob){
         super("div")
         this.disp("inline-block")
-        this.container = Div().pad(2).curlyborder().bc("#ffe").pl(8).pr(8).ff("monospace")
+        this.container = Div().pad(2).curlyborder().bc("#ffe").pl(8).pr(8).ff("monospace").w(130)
         this.a(this.container)
         this.fromblob(blob)
     }

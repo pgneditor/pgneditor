@@ -109,7 +109,22 @@ function Profile(){return new Profile_()}
 
 ////////////////////////////////////////////////////////////////////
 // game node
+const MAX_TREE_COUNT_DEPTH = 50
 class GameNode_ extends e{
+    measuretreerecursive(depth){
+        if(depth > MAX_TREE_COUNT_DEPTH) return 0        
+        let nodes = 0
+        for(let childid of this.childids){            
+            nodes ++
+            nodes += this.parentstudy.nodelist[childid].measuretreerecursive(depth + 1)
+        }
+        return nodes
+    }
+
+    measuretree(){
+        return this.measuretreerecursive(0) + 1
+    }
+
     tree(){
         this.childsdiv.x
         this.movediv.bc("#ddd")
@@ -390,6 +405,10 @@ function GameNode(parentstudy, blobopt){return new GameNode_(parentstudy, blobop
 ////////////////////////////////////////////////////////////////////
 // study
 class Study_ extends e{
+    treesize(){
+        return this.rootnode().measuretree()
+    }
+
     variantdisplayname(){
         return getvariantdisplayname(this.variantkey)
     }
@@ -436,7 +455,11 @@ class Study_ extends e{
     }
 
     titleedited(resobj){
-        if(this.parentstudies) this.parentstudies.request()
+        console.log("title edited", resobj)
+        if(this.parentstudies){
+            this.parentstudies.request()
+            this.parentstudies.parentboard.selectnodebyid()
+        }
     }
 
     edittitle(){
@@ -452,8 +475,8 @@ class Study_ extends e{
         if(this.parentstudies) this.parentstudies.request()
     }
 
-    delete(){
-        if(!textconfirm("delete this study", "delete")) return
+    delete(){        
+        if(!textconfirm(`delete this study`, "delete")) return
         api({
             "kind": "deletestudy",
             "id": this.id
@@ -646,7 +669,15 @@ class BookItem_ extends e{
 }
 function BookItem(parentboard, blob){return new BookItem_(parentboard, blob)}
 
+////////////////////////////////////////////////////////////////////
+const SOFT_CONFIRM_TREE_SIZE_LIMIT = 10
+const HARD_CONFIRM_TREE_SIZE_LIMIT = 50
+
 class Board_ extends e{
+    maxboardsizechanged(){
+        this.rebuild()
+    }
+
     setgamefromstudy(study){
         console.log("setting game from", study)
         this.study = study
@@ -692,20 +723,7 @@ class Board_ extends e{
             IconButton("Render", "F", this.rendergif.bind(this), 24).ml(15).bc("#ffa"),            
         )
         if(this.durationtextinput) this.durationtextinput.setText(`${this.study.currentnode.duration}`)
-        this.maxboardsizeselect = Select().setid(`${this.id}/maxboardsizeselect`).setoptions([
-            [200, 200],
-            [250, 250],
-            [300, 300],
-            [350, 350],
-            [400, 400],
-            [450, 450],
-            [500, 500],
-            [600, 600],
-            [700, 700],
-            [800, 800],
-            [900, 900],
-            [1000, 1000]
-        ], 1000)
+        this.maxboardsizeselect = Select().setid(`${this.id}/maxboardsizeselect`).setoptions([...Array(27).keys()].map(x => [200 + 50 * x, 200 + 50 *x]), 1000).onchange(this.maxboardsizechanged.bind(this))
         this.studytoolshook.a(Div().mt(5).a(
             Labeled("Add comments to frame", this.withcommentscheck),
             Labeled("Max board size", this.maxboardsizeselect)
@@ -715,7 +733,24 @@ class Board_ extends e{
             this.trainroot = "root"
             this.settrainrootlabel()
         }
+
+        console.log("tree size", this.currenttreesize, this.studytreesize)
+
+        ////////////////////////////////////////////////////////////////////
         this.dotrain()
+        ////////////////////////////////////////////////////////////////////
+    }
+
+    get currenttreesize(){
+        return this.currentnode.measuretree()
+    }
+
+    get studytreesize(){
+        return this.study.treesize()
+    }
+
+    get currentnode(){
+        return this.study.currentnode
     }
 
     buildbook(){
@@ -820,6 +855,10 @@ class Board_ extends e{
         this.fentexthook.x.a(this.fentext)
     }
 
+    rebuild(){
+        this.resize(this.width, this.height)
+    }
+
     algebmovemade(resobj){        
         let study = Study({blob: resobj.setstudy, parentstudies: this.studies})
         this.setgamefromstudy(study)
@@ -886,6 +925,8 @@ class Board_ extends e{
     }
 
     del(){
+        let currenttreesize = this.currenttreesize
+        if(currenttreesize >= SOFT_CONFIRM_TREE_SIZE_LIMIT) if(!textconfirm(`delete line with ${currenttreesize} move(s)`, "delete", currenttreesize < HARD_CONFIRM_TREE_SIZE_LIMIT)) return
         if(this.study){
             api({
                 "kind": "delete",
@@ -894,7 +935,9 @@ class Board_ extends e{
         }        
     }
 
-    selectnodebyid(id, nodeid, callbackopt){
+    selectnodebyid(idopt, nodeidopt, callbackopt){
+        let id = idopt || this.study.id
+        let nodeid = nodeidopt || this.study.currentnodeid
         let callback = callbackopt || this.algebmovemade.bind(this)
         api({
             "kind": "selectnodebyid",
@@ -935,7 +978,8 @@ class Board_ extends e{
     }
 
     reset(){
-        if(!textconfirm("reset the study and delete all moves", "reset")) return
+        let studytreesize = this.studytreesize
+        if(studytreesize >= SOFT_CONFIRM_TREE_SIZE_LIMIT) if(!textconfirm(`reset the study and delete ${studytreesize} move(s)`, "reset", studytreesize < HARD_CONFIRM_TREE_SIZE_LIMIT)) return
         if(this.study){
             api({
                 "kind": "reset",
@@ -979,14 +1023,14 @@ class Board_ extends e{
     switchdraw(){
         this.drawmode = !this.drawmode
         this.drawcontrolmargin = 40
-        this.drawpanelwidth = 450
+        this.drawpanelwidth = 460
         this.drawlabeledwidth = this.drawpanelwidth - 55
         this.groupwidth = 220
         this.labelwidth = 100
         this.drawpanelhook.x.t(this.drawcontrolmargin).l(this.basicboard.totalwidth() + 3)
         if(this.drawmode){            
             this.drawpanel = Div().w(this.drawpanelwidth).ta("center").h(this.height - this.drawcontrolmargin).bimg("static/img/backgrounds/marble.jpg").ovf("scroll")
-            this.drawcontrolpanel = Div().pad(3).mar(10).curlyborder().bc("#ddd")
+            this.drawcontrolpanel = Div().pad(3).mar(10).mb(5).curlyborder().bc("#ddd")
             this.kindgroup = RadioGroup().setid(`${this.id}/drawkindgroup`).setselcallback(this.basicboard.setdrawkind.bind(this.basicboard)).setitems([
                 IconButton("Arrow", "N", null, 18).setid("arrow"),
                 IconButton("Circle", "K", null, 18).setid("circlemark")
@@ -1002,7 +1046,7 @@ class Board_ extends e{
                 Button("Thick").fs(14).curlyborder().fw("bold").setid("thick")
             ])
             this.durationtextinput = TextInput().pad(2).pl(5).fs(16).fw("bold").onchange(this.durationchanged.bind(this)).setText(`${this.study.currentnode.duration}`)
-            this.shapelabeled = Labeled("Shape", this.kindgroup).fs(20).mar(1).w(this.drawlabeledwidth)
+            this.shapelabeled = Labeled("Shape", this.kindgroup).fs(24).mar(1).w(this.drawlabeledwidth)
             this.shapelabeled.captiondiv.w(this.labelwidth)
             this.kindgroup.w(this.groupwidth)
             this.colorlabeled = Labeled("Color", this.colorgroup).fs(16).mar(1).w(this.drawlabeledwidth)
@@ -1019,7 +1063,7 @@ class Board_ extends e{
                 this.colorlabeled,
                 this.thicknesslabeled,
                 this.framedurationlabeled,
-                Div().a(IconButton("Delete", "L", this.deletedrawing.bind(this), 18).mar(10).ml(10).bc("#fee"))
+                Div().a(IconButton("Delete", "L", this.deletedrawing.bind(this), 20).pad(5).w(this.drawpanelwidth - 70).mar(2).bc("#fbb"))
             )                       
             this.drawingsorganizer = ListOrganizer().ml(10).mr(10).onchange(this.drawingsorganizerchanged.bind(this))
             this.builddrawingsorganizer()
