@@ -111,6 +111,13 @@ function Profile(){return new Profile_()}
 // game node
 const MAX_TREE_COUNT_DEPTH = 500
 class GameNode_ extends e{
+    algebmovenodeid(algeb){
+        for(let nodeid of this.childids){
+            if(this.parentstudy.nodelist[nodeid].genuci == algeb) return nodeid
+        }
+        return null
+    }
+
     toendid(){
         let forwardid = this.forwardid()
         if(forwardid) return this.parentstudy.nodelist[forwardid].toendid()
@@ -643,6 +650,9 @@ class WeightSelector_ extends e{
             "weightkind": this.kind,
             "weight": parseInt(value)
         }, this.trainweightset.bind(this))
+        let weightnode = this.parentbookitem.parentboard.study.nodelist[this.parentbookitem.nodeid]        
+        weightnode[this.kind + "trainweight"] = parseInt(value)
+        console.log("weightnode", weightnode)
     }
 
     constructor(parentbookitem, kind){
@@ -907,26 +917,52 @@ class Board_ extends e{
                     }else{
                         window.alert("Good move, but keep in mind, there is a better move !")
                     }
-                }else{
-                    this.basicboard.setfromfen(this.basicboard.fen)
+                }else{                    
                     if(maxweight > 0){                        
+                        this.basicboard.setfromfen(this.basicboard.fen)
                         window.alert("Wrong move !")                    
                         return
                     }else{
-                        window.alert("Line completed. Well done !")                        
-                        this.traintobegin()
+                        setTimeout(function(){
+                            window.alert("Line completed. Well done !")
+                            this.traintobegin()
+                        }.bind(this))                                        
                         return
                     }
                 }
             }
         }
+        this.makealgebmove(algeb)
+    }
+
+    makealgebmove(algeb){
         if(this.study){
-            api({
-                "kind": "makealgebmove",
-                "id": this.study.id,
-                "algeb": algeb
-            }, this.algebmovemade.bind(this))
-        }        
+            if(LOCKED_UPDATE_MODE){
+                api({
+                    "kind": "makealgebmove",
+                    "id": this.study.id,
+                    "algeb": algeb
+                }, this.algebmovemade.bind(this))
+            }else{
+                let algebmovenodeid = this.currentnode.algebmovenodeid(algeb)
+                if(algebmovenodeid){
+                    api({
+                        "kind": "setcurrentnode",
+                        "id": this.study.id,                
+                        "nodeid": algebmovenodeid
+                    }, this.currentnodeset.bind(this))
+                    this.study.setcurrentnode(algebmovenodeid)
+                    this.setgamefromstudy(this.study)
+                }else{
+                    // fall back to locked update mode
+                    api({
+                        "kind": "makealgebmove",
+                        "id": this.study.id,
+                        "algeb": algeb
+                    }, this.algebmovemade.bind(this))
+                }
+            }
+        }
     }
 
     currentnodeset(resobj){
@@ -1353,14 +1389,12 @@ class Board_ extends e{
                     let ri = Math.floor(Math.random() * candidates.length)
                     let selected = candidates[ri]
                     console.log("selected", ri, selected)
-                    api({
-                        "kind": "makealgebmove",
-                        "id": this.study.id,
-                        "algeb": selected.genuci
-                    }, this.algebmovemade.bind(this))
+                    this.makealgebmove(selected.genuci)
                 }else{
-                    window.alert("Line completed. Well done !")                    
-                    this.traintobegin()
+                    setTimeout(function(){
+                        window.alert("Line completed. Well done !")
+                        this.traintobegin()
+                    }.bind(this))                                        
                     return
                 }
             }else{
@@ -1368,8 +1402,10 @@ class Board_ extends e{
                 if(this.study.currentnode.maxtrainweight("me") > 0){                    
                     
                 }else{
-                    window.alert("Line completed. Well done !")                                        
-                    this.traintobegin()
+                    setTimeout(function(){
+                        window.alert("Line completed. Well done !")
+                        this.traintobegin()
+                    }.bind(this))                                        
                     return
                 }
             }            
