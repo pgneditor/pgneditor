@@ -109,20 +109,20 @@ function Profile(){return new Profile_()}
 
 ////////////////////////////////////////////////////////////////////
 // game node
-const MAX_TREE_COUNT_DEPTH = 50
+const MAX_TREE_COUNT_DEPTH = 500
 class GameNode_ extends e{
     measuretreerecursive(depth){
         if(depth > MAX_TREE_COUNT_DEPTH) return 0        
-        let nodes = 0
-        for(let childid of this.childids){            
-            nodes ++
-            nodes += this.parentstudy.nodelist[childid].measuretreerecursive(depth + 1)
-        }
+        let nodes = 1
+        for(let childid of this.childids){                                    
+            nodes += this.parentstudy.nodelist[childid].measuretreerecursive(depth + 1)            
+        }        
         return nodes
     }
 
-    measuretree(){
-        return this.measuretreerecursive(0) + 1
+    measuretree(){        
+        let size = this.measuretreerecursive(0) + 1        
+        return size
     }
 
     tree(){
