@@ -638,7 +638,7 @@ class WeightSelector_ extends e{
     trainweightset(resobj){
         console.log("train weight set", resobj)
         if(resobj.kind == "trainweightset"){
-            this.parentbookitem.parentboard.pgntext.setText(resobj.pgn)
+            this.parentbookitem.parentboard.setpgn(resobj.pgn)
         }        
     }
 
@@ -698,6 +698,13 @@ const HARD_CONFIRM_TREE_SIZE_LIMIT = 50
 const LOCKED_UPDATE_MODE = false
 
 class Board_ extends e{
+    setpgn(pgn){
+        this.pgntext.setText(pgn)
+        if(this.study){
+            this.study.pgn = pgn
+        }
+    }
+
     maxboardsizechanged(){
         this.rebuild()
     }
