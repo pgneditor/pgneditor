@@ -368,6 +368,21 @@ def makealgebmove(req):
         "setstudy": study.toblob(nodelist = True)
     }
 
+def setcurrentnode(req):
+    log(f"< setting current node < {req.id} | {req.nodeid} > >", "info")
+    study = getstudy(req)
+    if study.selectnodebyid(req.nodeid):
+        storestudy(req, study)
+        return {
+            "kind": "currentnodeset",
+            "currentnodeid": study.currentnodeid
+        }
+    else:
+        return {
+            "kind": "setcurrentnodefailed",
+            "nodeid": req.nodeid
+        }
+
 def parsepgn(req):
     log(f"< parsing pgn < {req.id} | {req.pgn} > >", "info")
     study = getstudy(req)

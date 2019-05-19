@@ -355,6 +355,8 @@ class Study:
     def selectnodebyid(self, id):
         if id in self.nodelist:
             self.currentnodeid = id
+            return True
+        return False
 
     def back(self):
         currentnode = self.currentnode()

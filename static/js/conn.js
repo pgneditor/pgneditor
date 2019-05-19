@@ -111,6 +111,22 @@ function Profile(){return new Profile_()}
 // game node
 const MAX_TREE_COUNT_DEPTH = 500
 class GameNode_ extends e{
+    toendid(){
+        let forwardid = this.forwardid()
+        if(forwardid) return this.parentstudy.nodelist[forwardid].toendid()
+        return this.id
+    }
+
+    forwardid(){
+        if(this.childids.length == 0) return null
+        return this.childids[0]
+    }
+
+    backid(){
+        if(!this.parentid) return null
+        return this.parentid
+    }
+
     measuretreerecursive(depth){
         if(depth > MAX_TREE_COUNT_DEPTH) return 0        
         let nodes = 0
@@ -186,13 +202,8 @@ class GameNode_ extends e{
         return this.childids.map(childid => this.parentstudy.nodelist[childid])
     }
 
-    nodeselectedbyid(resobj){
-        let study = Study({blob: resobj.setstudy, parentstudies: this.parentstudy.parentstudies})
-        this.parentstudy.parentstudies.parentboard.setgamefromstudy(study)
-    }
-
     movedivclicked(){
-        this.parentstudy.parentstudies.parentboard.selectnodebyid(this.parentstudy.id, this.id, this.nodeselectedbyid.bind(this))
+        this.parentstudy.parentstudies.parentboard.selectnodebyid(this.parentstudy.id, this.id)
     }
 
     fullmovenumber(){
@@ -406,6 +417,11 @@ function GameNode(parentstudy, blobopt){return new GameNode_(parentstudy, blobop
 ////////////////////////////////////////////////////////////////////
 // study
 class Study_ extends e{
+    setcurrentnode(nodeid){
+        this.currentnodeid = nodeid
+        this.currentnode = this.nodelist[this.currentnodeid]
+    }
+
     treesize(){
         return this.rootnode().measuretree()
     }
@@ -643,14 +659,9 @@ class WeightSelector_ extends e{
 function WeightSelector(parentbookitem, kind){return new WeightSelector_(parentbookitem, kind)}
 
 class BookItem_ extends e{
-    nodeselectedbyid(resobj){
-        let study = Study({blob: resobj.setstudy, parentstudies: this.parentboard.studies})
-        this.parentboard.setgamefromstudy(study)
-    }
-
     sandivclicked(){
         console.log("book move clicked", this.san)
-        this.parentboard.selectnodebyid(this.parentboard.study.id, this.nodeid, this.nodeselectedbyid.bind(this))
+        this.parentboard.selectnodebyid(this.parentboard.study.id, this.nodeid)
     }
 
     constructor(parentboard, blob){
@@ -673,6 +684,8 @@ function BookItem(parentboard, blob){return new BookItem_(parentboard, blob)}
 ////////////////////////////////////////////////////////////////////
 const SOFT_CONFIRM_TREE_SIZE_LIMIT = 10
 const HARD_CONFIRM_TREE_SIZE_LIMIT = 50
+
+const LOCKED_UPDATE_MODE = false
 
 class Board_ extends e{
     maxboardsizechanged(){
@@ -916,12 +929,32 @@ class Board_ extends e{
         }        
     }
 
+    currentnodeset(resobj){
+        console.log("current node set", resobj)
+        console.log("current node id", this.study.currentnodeid)
+    }
+
     back(){
         if(this.study){
-            api({
-                "kind": "back",
-                "id": this.study.id                
-            }, this.algebmovemade.bind(this))
+            if(LOCKED_UPDATE_MODE){
+                api({
+                    "kind": "back",
+                    "id": this.study.id                
+                }, this.algebmovemade.bind(this))
+            }else{
+                let nodeid = this.currentnode.backid()
+                if(nodeid){
+                    api({
+                        "kind": "setcurrentnode",
+                        "id": this.study.id,                
+                        "nodeid": nodeid
+                    }, this.currentnodeset.bind(this))
+                    this.study.setcurrentnode(nodeid)
+                    this.setgamefromstudy(this.study)
+                }else{
+                    console.log("no way back")
+                }                
+            }            
         }        
     }
 
@@ -936,45 +969,94 @@ class Board_ extends e{
         }        
     }
 
-    selectnodebyid(idopt, nodeidopt, callbackopt){
+    selectnodebyid(idopt, nodeidopt){
         let id = idopt || this.study.id
         let nodeid = nodeidopt || this.study.currentnodeid
-        let callback = callbackopt || this.algebmovemade.bind(this)
-        api({
-            "kind": "selectnodebyid",
-            "id": id,
-            "nodeid": nodeid
-        }, callback)
+        if(LOCKED_UPDATE_MODE){
+            api({
+                "kind": "selectnodebyid",
+                "id": id,
+                "nodeid": nodeid
+            }, this.algebmovemade.bind(this))
+        }else{
+            api({
+                "kind": "setcurrentnode",
+                "id": id,                
+                "nodeid": nodeid
+            }, this.currentnodeset.bind(this))
+            this.study.setcurrentnode(nodeid)
+            this.setgamefromstudy(this.study)
+        }
     }
 
     tobegin(){        
-        if(this.study){
+        if(this.study){            
             if(this.study.currentnodeid == "root"){
                 console.log("tobegin ignored, already at root")
             }else{
-                api({
-                    "kind": "tobegin",
-                    "id": this.study.id                
-                }, this.algebmovemade.bind(this))
+                if(LOCKED_UPDATE_MODE){
+                    api({
+                        "kind": "tobegin",
+                        "id": this.study.id                
+                    }, this.algebmovemade.bind(this))
+                }else{                    
+                    api({
+                        "kind": "setcurrentnode",
+                        "id": this.study.id,                
+                        "nodeid": "root"
+                    }, this.currentnodeset.bind(this))
+                    this.study.setcurrentnode("root")
+                    this.setgamefromstudy(this.study)
+                }            
             }            
         }        
     }
 
     forward(){
         if(this.study){
-            api({
-                "kind": "forward",
-                "id": this.study.id                
-            }, this.algebmovemade.bind(this))
+            if(LOCKED_UPDATE_MODE){
+                api({
+                    "kind": "forward",
+                    "id": this.study.id                
+                }, this.algebmovemade.bind(this))
+            }else{
+                let nodeid = this.currentnode.forwardid()
+                if(nodeid){
+                    api({
+                        "kind": "setcurrentnode",
+                        "id": this.study.id,                
+                        "nodeid": nodeid
+                    }, this.currentnodeset.bind(this))
+                    this.study.setcurrentnode(nodeid)
+                    this.setgamefromstudy(this.study)
+                }else{
+                    console.log("no way forward")
+                }                
+            }            
         }        
     }
 
     toend(){
         if(this.study){
-            api({
-                "kind": "toend",
-                "id": this.study.id                
-            }, this.algebmovemade.bind(this))
+            if(LOCKED_UPDATE_MODE){
+                api({
+                    "kind": "toend",
+                    "id": this.study.id                
+                }, this.algebmovemade.bind(this))
+            }else{
+                let nodeid = this.currentnode.toendid()
+                if(nodeid){
+                    api({
+                        "kind": "setcurrentnode",
+                        "id": this.study.id,                
+                        "nodeid": nodeid
+                    }, this.currentnodeset.bind(this))
+                    this.study.setcurrentnode(nodeid)
+                    this.setgamefromstudy(this.study)
+                }else{
+                    console.log("fatal, no way to end")
+                }                
+            }            
         }        
     }
 
