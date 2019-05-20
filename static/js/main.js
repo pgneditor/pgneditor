@@ -24,6 +24,15 @@ app.setcontentelement(maintabpane)
 
 se("root", app)
 
+function keydownhandler(ev){
+    console.log("key down", ev.code, ev)
+    try{
+        board.book.keyhandler(ev)
+    }catch(err){
+        console.log("book could not handle key event", err)
+    }
+}
+
 function initapp(resobj){
     app.log("Welcome to Pgn Editor !", "success")    
 
@@ -33,6 +42,8 @@ function initapp(resobj){
     maintabpane.op(1)
 
     if(getuser().beingverified()) maintabpane.selecttab("profile")
+
+    document.addEventListener("keydown", keydownhandler)
 }
 
 function connect(){    

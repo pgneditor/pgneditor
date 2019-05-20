@@ -78,8 +78,8 @@ class e{
 		return this
     }
     
-    scrollcentersmooth(){
-        return this.scrollIntoView({block: "center", inline: "center", behavior: "smooth"})
+    scrollcentersmooth(quick){        
+        return this.scrollIntoView({block: "center", inline: "center", behavior: quick ? "auto" : "smooth"})
     }
 
     select(){

@@ -111,6 +111,26 @@ function Profile(){return new Profile_()}
 // game node
 const MAX_TREE_COUNT_DEPTH = 500
 class GameNode_ extends e{
+    childidscmpfunc(ida, idb){
+        let nodea = this.parentstudy.nodelist[ida]
+        let nodeb = this.parentstudy.nodelist[idb]
+        let mea = nodea.metrainweight
+        let meb = nodeb.metrainweight
+        if(mea != meb) return meb - mea
+        let oppa = nodea.opptrainweight
+        let oppb = nodeb.opptrainweight
+        if(oppa != oppb) oppb.opptrainweight - oppa.opptrainweight
+        return nodeb.sortindex - nodea.sortindex
+    }
+
+    sortedchildids(){                
+        for(let i in this.childids){
+            this.parentstudy.nodelist[this.childids[i]].sortindex == i
+        }
+        this.childids.sort(this.childidscmpfunc.bind(this))
+        return this.childids
+    }
+
     algebmovenodeid(algeb){
         for(let nodeid of this.childids){
             if(this.parentstudy.nodelist[nodeid].genuci == algeb) return nodeid
@@ -206,7 +226,7 @@ class GameNode_ extends e{
     }
 
     getchilds(){
-        return this.childids.map(childid => this.parentstudy.nodelist[childid])
+        return this.sortedchildids().map(childid => this.parentstudy.nodelist[childid])
     }
 
     movedivclicked(){
@@ -639,6 +659,7 @@ class WeightSelector_ extends e{
         console.log("train weight set", resobj)
         if(resobj.kind == "trainweightset"){
             this.parentbookitem.parentboard.setpgn(resobj.pgn)
+            this.parentbookitem.parentboard.buildbook()
         }        
     }
 
@@ -669,6 +690,14 @@ class WeightSelector_ extends e{
 function WeightSelector(parentbookitem, kind){return new WeightSelector_(parentbookitem, kind)}
 
 class BookItem_ extends e{
+    highlight(highlight){
+        if(highlight){
+            this.sandiv.bc("#7f7")
+        }else{
+            this.sandiv.bc("#ddd")
+        }
+    }
+
     sandivclicked(){
         console.log("book move clicked", this.san)
         this.parentboard.selectnodebyid(this.parentboard.study.id, this.nodeid)
@@ -680,16 +709,87 @@ class BookItem_ extends e{
         this.parentboard = parentboard
         this.san = blob.gensan        
         this.nodeid = blob.id
-        this.sandiv = Div().pad(2).fs(24).w(100).html(this.san).cp().bc("#ddd").mar(3).ta("center").c("#007").fw("bold")
+        this.sandiv = Div().pad(2).fs(24).w(100).html(this.san).cp().mar(3).ta("center").c("#007").fw("bold")
         this.sandiv.ae("mousedown", this.sandivclicked.bind(this))                
         this.a(
             this.sandiv,
             WeightSelector(this, "me"),
             WeightSelector(this, "opp")
         )
+        this.highlight(false)        
     }
 }
 function BookItem(parentboard, blob){return new BookItem_(parentboard, blob)}
+
+class Book_ extends e{
+    moveselected(dir){
+        if(this.bookitems.length == 0){
+            this.selectedindex = -1
+            return
+        }
+        this.selectedindex += dir        
+        if(this.selectedindex >= this.bookitems.length) this.selectedindex = 0
+        if(this.selectedindex < 0) this.selectedindex = this.bookitems.length - 1
+        this.select()
+    }
+
+    click(indexopt){
+        if(this.bookitems.length == 0) return
+        let index = indexopt || this.selectedindex
+        this.selectedindex = index        
+        this.select()
+        this.bookitems[this.selectedindex].sandivclicked()
+    }
+
+    keyhandler(ev){
+        let code = ev.code
+        if(ev.ctrlKey){
+            if(code == "ArrowRight") this.parentboard.toend()
+            else if(code == "ArrowLeft") this.parentboard.tobegin()
+        }else{
+            if(code == "ArrowUp") this.moveselected(-1)
+            else if(code == "ArrowDown") this.moveselected(1)
+            else if(code == "ArrowRight") this.click()
+            else if(code == "ArrowLeft") this.parentboard.back()
+        }
+    }
+
+    select(indexopt){
+        let index = indexopt || this.selectedindex
+        this.selectedindex = index
+        for(let bookitem of this.bookitems){
+            bookitem.highlight(false)
+        }
+        if(this.selectedindex >= 0){
+            this.bookitems[this.selectedindex].highlight(true)
+        }
+        return this
+    }
+
+    build(gamenodeopt){        
+        if(!this.parentboard.study) return this
+        let gamenode = gamenodeopt || this.parentboard.currentnode
+        this.container.x
+        this.bookitems = []        
+        for(let childid of gamenode.sortedchildids()){
+            let child = this.parentboard.study.nodelist[childid]
+            let bookitem = BookItem(this.parentboard, child)
+            this.container.a(bookitem)
+            this.bookitems.push(bookitem)
+        }
+        this.selectedindex = this.bookitems.length > 0 ? 0 : -1
+        this.select()
+        return this
+    }
+
+    constructor(parentboard){
+        super("div")
+        this.parentboard = parentboard
+        this.container = Div()
+        this.a(this.container)
+    }
+}
+function Book(parentboard){return new Book_(parentboard)}
 
 ////////////////////////////////////////////////////////////////////
 const SOFT_CONFIRM_TREE_SIZE_LIMIT = 10
@@ -727,8 +827,7 @@ class Board_ extends e{
         this.builddrawingsorganizer()
         let treebuild = this.study.tree()
         this.treediv.x.a(treebuild)        
-        this.treediv.resize()
-        this.study.currentnode.messagegeardiv.scrollcentersmooth()
+        this.treediv.resize()        
         this.pgntext.setText(study.pgn)
         this.studytoolshook.x
         let importurl = `${serverroot()}/importstudy/${getuser().code}/${this.study.id}/${this.study.currentnodeid}`                
@@ -794,18 +893,13 @@ class Board_ extends e{
     }
 
     get currentnode(){
+        if(!this.study) return null
         return this.study.currentnode
     }
 
-    buildbook(){
-        this.bookdiv.x
-        let sortedids = this.study.currentnode.childids.slice()
-        sortedids.sort((ida, idb) => this.study.nodelist[idb].metrainweight - this.study.nodelist[ida].metrainweight)
-        for(let childid of sortedids){
-            let child = this.study.nodelist[childid]
-            let bookitem = BookItem(this, child)
-            this.bookdiv.a(bookitem)
-        }
+    buildbook(){                
+        this.book = Book(this).build()
+        this.bookdiv.x.a(this.book)
     }
 
     initgif(){
@@ -994,6 +1088,15 @@ class Board_ extends e{
     currentnodeset(resobj){
         console.log("current node set", resobj)
         console.log("current node id", this.study.currentnodeid)
+        let treebuild = this.study.tree()
+        this.treediv.x.a(treebuild)        
+        this.treediv.resize()
+    }
+
+    scrollcurrentnodeintoview(quick){
+        try{            
+            this.study.currentnode.messagegeardiv.scrollcentersmooth(quick)
+        }catch(err){console.log("could not scroll current node into view", err)}
     }
 
     back(){
@@ -1344,9 +1447,11 @@ class Board_ extends e{
         this.switchdraw()
         this.pgntext = CopyTextArea({pastecallback: this.pgnpastecallback.bind(this)})
         this.treediv = Div().pad(3).bimg("static/img/backgrounds/marble.jpg")
+        let self = this
         this.treediv.resize = function(){            
             setTimeout(function(){
                 this.treediv.w(this.treediv.e.scrollWidth).h(this.tabpane.contentdiv.e.scrollHeight).mw(2000).mh(1000)            
+                self.scrollcurrentnodeintoview(true)
             }.bind(this), 0)
         }.bind(this)
         this.toolsdiv = Div().pad(3)        
