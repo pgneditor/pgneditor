@@ -10,7 +10,7 @@ import os
 import utils.file
 from utils.logger import log
 from utils.http import geturl
-from utils.study import Study
+from utils.study import Study, DEFAULT_MAX_PLIES
 from utils.cryptography import encryptalphanum, decryptalphanum
 
 ###################################################################
@@ -120,6 +120,7 @@ class Req():
         self.duration = reqobj.get("duration", None)
         self.weightkind = reqobj.get("weightkind", "me")
         self.weight = reqobj.get("weight", 0)
+        self.maxplies = reqobj.get("maxplies", DEFAULT_MAX_PLIES)
 
         if SERVERLOGIC_VERBOSE:
             log(self, "warning")
@@ -394,9 +395,9 @@ def parsepgn(req):
     }
 
 def mergemoves(req):
-    log(f"< merging moves < {req.id} | {req.moves} > >", "info")
+    log(f"< merging moves < {req.id} | {req.maxplies} | {req.moves} > >", "info")
     study = getstudy(req)
-    study.mergemoves(req.moves)
+    study.mergemoves(req.moves, req.maxplies)
     storestudy(req, study)
     return {
         "kind": "movesmerged",

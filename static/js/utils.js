@@ -379,6 +379,59 @@ function setLocal(key, value){
 
 ////////////////////////////////////////////////////////////////////
 
+function extractpgn(pgn){
+    pgn = pgn.replace(/\r/g, "")    
+    let lines = pgn.split("\n")
+    let state = "wait"
+    let headers = []
+    let movelist = []
+    let rest = []
+    for(let line of lines){
+        if(state == "wait"){
+            if(line.length > 0){
+                if(line[0] == "["){
+                    state = "parsing headers"
+                    headers.push(line)
+                }else{
+                    state = "parsing movelist"
+                    movelist.push(line)
+                }
+            }
+        }else if(state == "parsing headers"){
+            if(line.length == 0){
+                state = "parsing movelist"
+                headers.push(line)
+            }else if(line[0] == "["){
+                headers.push(line)
+            }else{
+                // non standard, there should be an empty line between headers and move list
+                state = "parsiing movelist"
+                movelist.push(line)
+            }
+        }else if(state == "parsing movelist"){
+            if(line.length == 0){
+                state = "parsing rest"
+            }else{
+                movelist.push(line)
+            }
+        }else{
+            rest.push(line)
+        }
+    }
+    if((headers.length > 0)||(movelist.length > 0)){
+        let extractedpgn = headers.join("\n") + "\n" + movelist.join("\n")
+        while((rest.length > 0)&&(rest[0].length == 0)){
+            rest.shift()
+        }
+        let extractedrest = rest.join("\n")
+        return [extractedpgn, extractedrest]
+    }else{
+        return [null, pgn]
+    }
+}
+
+////////////////////////////////////////////////////////////////////
+
 function textconfirm(message, text, soft){
     let confirmquestion = `Are you sure you want to ${message}?`
     if(soft){

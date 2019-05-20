@@ -736,7 +736,12 @@ class Board_ extends e{
         this.linetextinput = CopyText({dopaste: false}).setText(line)
         this.studytoolshook.a(Labeled("Line", this.linetextinput).setLabelWidth(150).fs(18))
         this.mergetextinput = CopyTextArea({height: 80, pastecallback: this.mergemoves.bind(this)})
-        this.studytoolshook.a(Labeled("Merge moves", this.mergetextinput).setLabelWidth(150).fs(18))
+        this.mergemaxplyselect = Select().setid(`${this.id}/mergemaxplies`).setoptions([...Array(20).keys()].map(x => [10 * ( x + 1 ), 10 * ( x + 1 )]), 200)
+        this.mergemovespanel = Div().disp("flex").ai("center").a(
+            Labeled("Merge moves", this.mergetextinput).setLabelWidth(150).fs(18),
+            Labeled("Max plies", this.mergemaxplyselect).fs(18).ml(10)
+        )
+        this.studytoolshook.a(this.mergemovespanel)
         this.importlinktextinput = CopyText({dopaste: false}).setText(importurl)
         this.embedtextinput = CopyText({dopaste: false}).setText(`<iframe width="800" height="500" src="${importurl}" />`)
         this.studytoolshook.a(Labeled("Import link", this.importlinktextinput).setLabelWidth(150).fs(18))
@@ -766,6 +771,14 @@ class Board_ extends e{
         }
 
         console.log("tree size", this.currenttreesize, this.studytreesize)
+
+        ////////////////////////////////////////////////////////////////////
+        if(this.mergequeue){
+            this.mergetextinput.setText(this.mergequeue)
+            this.mergemoves()
+            return
+        }
+        ////////////////////////////////////////////////////////////////////
 
         ////////////////////////////////////////////////////////////////////
         this.dotrain()
@@ -851,13 +864,19 @@ class Board_ extends e{
     }
 
     mergemoves(){
-        let moves = this.mergetextinput.getText()
-        console.log("merge", moves)
-        api({
-            "kind": "mergemoves",
-            "id": this.study.id,
-            "moves": moves
-        }, this.movesmerged.bind(this))
+        let moves = this.mergetextinput.getText()        
+        let [pgn, rest] = extractpgn(moves)
+        console.log("merge", pgn)        
+        this.mergequeue = null
+        if(pgn){
+            this.mergequeue = rest
+            api({
+                "kind": "mergemoves",
+                "id": this.study.id,
+                "moves": pgn,
+                "maxplies": parseInt(this.mergemaxplyselect.v())
+            }, this.movesmerged.bind(this))
+        }
     }
 
     searchusergames(){
@@ -1280,6 +1299,7 @@ class Board_ extends e{
         super("div")
         this.initgif()
         let args = argsopt || {}
+        this.mergequeue = null
         this.trainroot = "root"
         this.id = getelse(args, "id", "board")
         this.width = getelse(args, "width", 1000)
