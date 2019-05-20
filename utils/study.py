@@ -223,7 +223,7 @@ class Study:
         return board
 
     def addgamenoderecursive(self, currentid, gamenode, maxplies = DEFAULT_MAX_PLIES, depth = 0):
-        if(depth > maxplies):
+        if(depth >= maxplies):
             return
         for childnode in gamenode.variations:
             self.currentnodeid = currentid

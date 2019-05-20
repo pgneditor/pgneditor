@@ -775,7 +775,7 @@ class Board_ extends e{
         ////////////////////////////////////////////////////////////////////
         if(this.mergequeue){
             this.mergetextinput.setText(this.mergequeue)
-            this.mergemoves()
+            setTimeout(this.mergemoves.bind(this), 5000)
             return
         }
         ////////////////////////////////////////////////////////////////////
