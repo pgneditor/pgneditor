@@ -119,7 +119,7 @@ class GameNode_ extends e{
         if(mea != meb) return meb - mea
         let oppa = nodea.opptrainweight
         let oppb = nodeb.opptrainweight
-        if(oppa != oppb) oppb.opptrainweight - oppa.opptrainweight
+        if(oppa != oppb) return oppb - oppa
         return nodeb.sortindex - nodea.sortindex
     }
 
