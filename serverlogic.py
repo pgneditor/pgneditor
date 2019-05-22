@@ -124,6 +124,7 @@ class Req():
         self.ignorecomments = reqobj.get("ignorecomments", False)
         self.ignoredrawings = reqobj.get("ignoredrawings", False)
         self.ignoretrainweights = reqobj.get("ignoretrainweights", False)
+        self.success = reqobj.get("success", 0)
 
         if SERVERLOGIC_VERBOSE:
             log(self, "warning")
@@ -416,6 +417,20 @@ def setdrawings(req):
         "kind": "drawingsset",
         "pgn": study.reportpgn()
     }
+
+def setsuccess(req):
+    log(f"< setting success < {req.id} | {req.nodeid} | {req.success} > >", "info")
+    study = getstudy(req)
+    if study.setsuccess(req.nodeid, req.success):
+        storestudy(req, study)
+        return {
+            "kind": "successset",
+            "success": req.success
+        }
+    else:
+        return {
+            "kind": "setsuccessfailed"
+        }
 
 def savemessage(req):
     log(f"< save message < {req.id} | {req.nodeid} | {req.message} > >", "info")

@@ -111,6 +111,15 @@ function Profile(){return new Profile_()}
 // game node
 const MAX_TREE_COUNT_DEPTH = 500
 class GameNode_ extends e{
+    get haschild(){
+        return this.childids.length > 0
+    }
+
+    get hasmetrainchild(){
+        for(let child of this.getchilds()) if(child.metrainweight > 0) return true
+        return false
+    }
+
     childidscmpfunc(ida, idb){
         let nodea = this.parentstudy.nodelist[ida]
         let nodeb = this.parentstudy.nodelist[idb]
@@ -428,6 +437,7 @@ class GameNode_ extends e{
         this.message = blob.message
         this.duration = blob.duration
         this.nags = blob.nags || []
+        this.success = getelse(blob, "success", 0)
         this.movelabeldiv.html(this.numberedsan()).fw("bold").pl(3).pr(3)
         this.movelabeldiv.bc(this.turn() == "w" ? "#000" : "#fff")
         this.movelabeldiv.c(this.turn() == "w" ? "#fff" : "#000")
@@ -704,18 +714,20 @@ class BookItem_ extends e{
     }
 
     constructor(parentboard, blob){
-        super("div").mar(2).disp("flex").bc("#eee")
+        super("div").mar(2).disp("flex").bc("#eee").ai("center")
+        console.log("book item", blob)
         this.blob = blob
         this.parentboard = parentboard
         this.san = blob.gensan        
         this.nodeid = blob.id
+        this.success = blob.success
         this.sandiv = Div().pad(2).fs(24).w(100).html(this.san).cp().mar(3).ta("center").c("#007").fw("bold")
         this.sandiv.ae("mousedown", this.sandivclicked.bind(this))                
         this.a(
             this.sandiv,
             WeightSelector(this, "me"),
             WeightSelector(this, "opp")
-        )
+        )        
         this.highlight(false)        
     }
 }
@@ -770,6 +782,14 @@ class Book_ extends e{
         if(!this.parentboard.study) return this
         let gamenode = gamenodeopt || this.parentboard.currentnode
         this.container.x
+        this.successdiv = Div().w(80).pad(2).mar(4).ml(10).mb(6).fs(20).ff("monospace").bc("#ddd").ta("center")
+        this.successdiv.html(`${gamenode.success}`)
+        if(gamenode.success > 0){
+            this.successdiv.c("#070")
+        }else{
+            this.successdiv.c("#700")
+        }
+        if(gamenode.hasmetrainchild) this.container.a(this.successdiv)
         this.bookitems = []        
         for(let childid of gamenode.sortedchildids()){
             let child = this.parentboard.study.nodelist[childid]
@@ -1019,6 +1039,20 @@ class Board_ extends e{
         this.setgamefromstudy(study)
     }
 
+    successset(resobj){
+        console.log("success set", resobj)
+    }
+
+    setsuccess(node, success){
+        node.success = success
+        api({
+            "kind": "setsuccess",
+            "id": this.study.id,
+            "nodeid": node.id,            
+            "success": success
+        }, this.successset.bind(this))
+    }
+
     dragmovecallback(move){
         let prompiece = this.prompieceselect.v()
         this.buildprompieceselect()
@@ -1029,29 +1063,32 @@ class Board_ extends e{
                 console.log("me train turn")
                 let maxweight = 0
                 let moveok = false
-                let mymoveweight = 0
+                let mymoveweight = 0                
                 for(let childid of this.study.currentnode.childids){
                     let child = this.study.nodelist[childid]
                     let moveweight = child.metrainweight
                     if(moveweight > 0){                        
                         if(child.genuci == algeb){
                             moveok = true
-                            mymoveweight = moveweight
+                            mymoveweight = moveweight                            
                         }
                     }
                     if(moveweight > maxweight) maxweight = moveweight
                 }
                 console.log(mymoveweight, maxweight)
                 if(moveok){
+                    this.setsuccess(this.study.currentnode, this.study.currentnode.success + 1)
                     if(mymoveweight == maxweight){
 
                     }else{
-                        window.alert("Good move, but keep in mind, there is a better move !")
+                        window.alert("Good move, but keep in mind, there is a better move !")                        
                     }
                 }else{                    
                     if(maxweight > 0){                        
                         this.basicboard.setfromfen(this.basicboard.fen)
                         window.alert("Wrong move !")                    
+                        this.setsuccess(this.study.currentnode, 0)
+                        this.buildbook()
                         return
                     }else{
                         setTimeout(function(){

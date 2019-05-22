@@ -188,7 +188,8 @@ class GameNode:
         self.message = blob.get("message", None)
         self.duration = blob.get("duration", 1000)
         self.nags = blob.get("nags", [])
-        self.childids = blob.get("childids", [])
+        self.success = blob.get("success", 0)
+        self.childids = blob.get("childids", [])        
 
     def toblob(self):
         return {
@@ -204,6 +205,7 @@ class GameNode:
             "message": self.message,
             "duration": self.duration,
             "nags": self.nags,
+            "success": self.success,
             "childids": self.childids
         }
         
@@ -274,6 +276,14 @@ class Study:
 
     def setdrawings(self, drawings):
         self.currentnode().drawings = drawings
+
+    def setsuccess(self, nodeid, success):
+        try:
+            self.nodelist[nodeid].success = int(success)
+            return True
+        except:
+            print("could not set success for", nodeid)
+            return False
 
     def setmessage(self, nodeid, message):
         try:
