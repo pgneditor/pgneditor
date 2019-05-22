@@ -165,12 +165,15 @@ class GameNode:
         comment = re.sub(COMMENT_SINGLE_LINE_MATCHER, " ", comment)
         return comment
 
-    def parsecomment(self, comment):
+    def parsecomment(self, comment, ignorecomments = False, ignoredrawings = False, ignoretrainweights = False):
         plcr = parselichesscomment(comment)
-        self.message = plcr.message
-        self.drawings = plcr.drawings
-        self.metrainweight = plcr.metrainweight
-        self.opptrainweight = plcr.opptrainweight
+        if not ignorecomments:
+            self.message = plcr.message
+        if not ignoredrawings:
+            self.drawings = plcr.drawings
+        if not ignoretrainweights:
+            self.metrainweight = plcr.metrainweight
+            self.opptrainweight = plcr.opptrainweight
 
     def fromblob(self, blob):
         self.id = blob.get("id", "root")
@@ -222,15 +225,16 @@ class Study:
         board.set_fen(self.rootnode().fen)
         return board
 
-    def addgamenoderecursive(self, currentid, gamenode, maxplies = DEFAULT_MAX_PLIES, depth = 0):
+    def addgamenoderecursive(self, currentid, gamenode, maxplies = DEFAULT_MAX_PLIES, ignorecomments = False, ignoredrawings = False, ignoretrainweights = False, depth = 0):
         if(depth >= maxplies):
             return
         for childnode in gamenode.variations:
             self.currentnodeid = currentid
             moveuci = childnode.uci()
-            if self.makealgebmove(moveuci):
-                self.currentnode().parsecomment(childnode.comment)
-                self.currentnode().nags = list(childnode.nags)
+            if self.makealgebmove(moveuci):                
+                self.currentnode().parsecomment(childnode.comment,  ignorecomments = ignorecomments, ignoredrawings = ignoredrawings, ignoretrainweights = ignoretrainweights)
+                if not ignorecomments:
+                    self.currentnode().nags = list(childnode.nags)
                 self.addgamenoderecursive(self.currentnodeid, childnode, maxplies = maxplies, depth = depth + 1)
             else:
                 print("could not make move", moveuci)
@@ -259,14 +263,14 @@ class Study:
         self.rootnode().parsecomment(game.comment)
         self.addgamenoderecursive("root", game)
 
-    def mergemoves(self, moves, maxplies = DEFAULT_MAX_PLIES):
+    def mergemoves(self, moves, maxplies = DEFAULT_MAX_PLIES, ignorecomments = False, ignoredrawings = False, ignoretrainweights = False):
         pgnio = io.StringIO(moves)
         try:
             game = read_game(pgnio)
         except:
             print("could not read game")
             return        
-        self.addgamenoderecursive("root", game, maxplies = maxplies)
+        self.addgamenoderecursive("root", game, maxplies = maxplies, ignorecomments = ignorecomments, ignoredrawings = ignoredrawings, ignoretrainweights = ignoretrainweights)
 
     def setdrawings(self, drawings):
         self.currentnode().drawings = drawings

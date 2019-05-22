@@ -1974,7 +1974,7 @@ class Labeled_ extends e{
         super("div")
         this.disp("inline-block")
         this.container = Div().disp("flex").curlyborder().pad(3).ai("center").jc("space-around").mar(1).bc("#ffe")
-        this.captiondiv = Div().pad(2).pl(8).pr(8).html(caption).ff("monospace").ml(1).mr(6).bc("#eff").curlyborder()
+        this.captiondiv = Div().pad(2).pl(8).pr(8).html(caption.replace(/ /g, "&nbsp;")).ff("monospace").ml(1).mr(6).bc("#eff").curlyborder()
         this.contentdiv = Div().a(element).mr(5)
         this.container.a(this.captiondiv, this.contentdiv)
         this.a(this.container)

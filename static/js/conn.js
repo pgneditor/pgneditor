@@ -834,11 +834,19 @@ class Board_ extends e{
         let line = this.study.getcurrentnode().getline()
         this.linetextinput = CopyText({dopaste: false}).setText(line)
         this.studytoolshook.a(Labeled("Line", this.linetextinput).setLabelWidth(150).fs(18))
-        this.mergetextinput = CopyTextArea({height: 80, pastecallback: this.mergemoves.bind(this)})
+        this.mergetextinput = CopyTextArea({height: 100, pastecallback: this.mergemoves.bind(this)})
         this.mergemaxplyselect = Select().setid(`${this.id}/mergemaxplies`).setoptions([...Array(20).keys()].map(x => [10 * ( x + 1 ), 10 * ( x + 1 )]), 200)
+        this.mergeignorecommentscheck = Check({id: `${this.id}/mergeignorecomments`})
+        this.mergeignoredrawingscheck = Check({id: `${this.id}/mergeignoredrawings`})
+        this.mergeignoretrainweightscheck = Check({id: `${this.id}/mergeignoretrainweights`})
         this.mergemovespanel = Div().disp("flex").ai("center").a(
             Labeled("Merge moves", this.mergetextinput).setLabelWidth(150).fs(18),
-            Labeled("Max plies", this.mergemaxplyselect).fs(18).ml(10)
+            Div().a(
+                Labeled("Max plies       ", this.mergemaxplyselect),
+                Labeled("Ignore comments    ", this.mergeignorecommentscheck),
+                Labeled("Ignore drawings    ", this.mergeignoredrawingscheck),
+                Labeled("Ignore trainweights", this.mergeignoretrainweightscheck)
+            ).ml(10)
         )
         this.studytoolshook.a(this.mergemovespanel)
         this.importlinktextinput = CopyText({dopaste: false}).setText(importurl)
@@ -968,6 +976,9 @@ class Board_ extends e{
                 "kind": "mergemoves",
                 "id": this.study.id,
                 "moves": pgn,
+                "ignorecomments": this.mergeignorecommentscheck.checked,
+                "ignoredrawings": this.mergeignoredrawingscheck.checked,
+                "ignoretrainweights": this.mergeignoretrainweightscheck.checked,
                 "maxplies": parseInt(this.mergemaxplyselect.v())
             }, this.movesmerged.bind(this))
         }

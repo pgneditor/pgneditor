@@ -121,6 +121,9 @@ class Req():
         self.weightkind = reqobj.get("weightkind", "me")
         self.weight = reqobj.get("weight", 0)
         self.maxplies = reqobj.get("maxplies", DEFAULT_MAX_PLIES)
+        self.ignorecomments = reqobj.get("ignorecomments", False)
+        self.ignoredrawings = reqobj.get("ignoredrawings", False)
+        self.ignoretrainweights = reqobj.get("ignoretrainweights", False)
 
         if SERVERLOGIC_VERBOSE:
             log(self, "warning")
@@ -395,9 +398,9 @@ def parsepgn(req):
     }
 
 def mergemoves(req):
-    log(f"< merging moves < {req.id} | {req.maxplies} | {req.moves} > >", "info")
+    log(f"< merging moves < {req.id} | max plies {req.maxplies} | ignore comments {req.ignorecomments} | ignore drawings {req.ignoredrawings} | ignore trainweights {req.ignoretrainweights} | moves {req.moves} > >", "info")
     study = getstudy(req)
-    study.mergemoves(req.moves, req.maxplies)
+    study.mergemoves(req.moves, req.maxplies, ignorecomments = req.ignorecomments, ignoredrawings = req.ignoredrawings, ignoretrainweights = req.ignoretrainweights)
     storestudy(req, study)
     return {
         "kind": "movesmerged",
