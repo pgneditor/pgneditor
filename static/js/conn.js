@@ -110,7 +110,22 @@ function Profile(){return new Profile_()}
 ////////////////////////////////////////////////////////////////////
 // game node
 const MAX_TREE_COUNT_DEPTH = 500
+const MAX_SUCCESS = 10
+
 class GameNode_ extends e{
+    get siblings(){
+        let siblings = []
+        if(this.parentid){
+            let parent = this.getparent()
+            for(let child of parent.getchilds()){
+                if(child.id != this.id){
+                    siblings.push(child)
+                }
+            }
+        }
+        return siblings
+    }
+
     get haschild(){
         return this.childids.length > 0
     }
@@ -1115,7 +1130,18 @@ class Board_ extends e{
     }
 
     setsuccess(node, success){
-        node.success = success
+        if(success < MAX_SUCCESS){
+            node.success = success
+        }else{
+            for(let sibling of node.siblings){
+                console.log("sibling", sibling)
+                if(sibling.success > 0){                    
+                    sibling.success--
+                }
+            }
+            node.success = MAX_SUCCESS
+        }
+        
         api({
             "kind": "setsuccess",
             "id": this.study.id,

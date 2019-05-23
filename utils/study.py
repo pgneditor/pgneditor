@@ -27,6 +27,7 @@ VARIANT_KEYS = [
 ]
 
 DEFAULT_MAX_PLIES = 200
+MAX_SUCCESS = 10
 
 ###################################################################
 
@@ -136,6 +137,15 @@ class GameNode:
     def __init__(self, parentstudy, blob = {}):
         self.parentstudy = parentstudy
         self.fromblob(blob)
+
+    def getsiblings(self):
+        siblings = []
+        if self.parentid:
+            parentnode = self.parentstudy.nodelist[self.parentid]
+            for childid in parentnode.childids:
+                if not ( childid == self.id ):
+                    siblings.append(self.parentstudy.nodelist[childid])
+        return siblings
 
     def settrainweight(self, weightkind, weight):
         try:
@@ -279,7 +289,15 @@ class Study:
 
     def setsuccess(self, nodeid, success):
         try:
-            self.nodelist[nodeid].success = int(success)
+            success = int(success)
+            node = self.nodelist[nodeid]
+            if success < MAX_SUCCESS:
+                node.success = success
+            else:
+                for sibling in node.getsiblings():
+                    if sibling.success > 0:
+                        sibling.success -= 1
+                node.success = MAX_SUCCESS                
             return True
         except:
             print("could not set success for", nodeid)
