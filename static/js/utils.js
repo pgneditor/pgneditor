@@ -80,6 +80,11 @@ function feninfo(fen){
 
 ////////////////////////////////////////////////////////////////////
 
+function withchance(percent){
+    let r = Math.random() * 100
+    return r <= percent
+}
+
 //https://stackoverflow.com/questions/521295/seeding-the-random-number-generator-in-javascript
 seed = 1
 function random(){

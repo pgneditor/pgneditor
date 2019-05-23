@@ -238,6 +238,61 @@ class GameNode_ extends e{
         return this.sortedchildids().map(childid => this.parentstudy.nodelist[childid])
     }
 
+    getgrandchilds(){
+        let grandchilds = []
+        for(let child of this.getchilds()){
+            for(let grandchild of child.getchilds()){
+                grandchilds.push(grandchild)
+            }
+        }
+        return grandchilds
+    }
+
+    getminsuccessrecursive(baseturn){                  
+        let minsuccess = null
+        if(this.turn() == baseturn){
+            for(let child of this.getchilds()){
+                if(child.opptrainweight > 0){
+                    let chminsuccess = child.getminsuccessrecursive(baseturn)                    
+                    if(chminsuccess != null){
+                        if(minsuccess == null){
+                            minsuccess = chminsuccess
+                        }else{
+                            if(chminsuccess < minsuccess){
+                                minsuccess = chminsuccess
+                            }
+                        }
+                    }
+                }
+            }
+        }else{
+            for(let child of this.getchilds()){
+                if(child.metrainweight > 0){
+                    let chminsuccess = child.getminsuccessrecursive(baseturn)
+                    if(chminsuccess != null){
+                        if(minsuccess == null){
+                            minsuccess = chminsuccess
+                        }else{
+                            if(chminsuccess < minsuccess){
+                                minsuccess = chminsuccess
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if(minsuccess == null){            
+            if((this.turn() == baseturn)&&(this.hasmetrainchild)){
+                minsuccess = this.success
+            }
+        }        
+        return minsuccess
+    }
+
+    getminsuccess(){
+        return this.getminsuccessrecursive(this.turn())
+    }
+
     movedivclicked(){
         this.parentstudy.parentstudies.parentboard.selectnodebyid(this.parentstudy.id, this.id)
     }
@@ -690,7 +745,7 @@ class WeightSelector_ extends e{
         super("div")
         this.kind = kind
         this.key = this.kind + "trainweight"
-        this.weight = parentbookitem.blob[this.key]                
+        this.weight = parentbookitem.gamenode[this.key]                
         this.parentbookitem = parentbookitem
         this.disp("flex").ai("center").jc("space-around").pad(2).fs(24).w(100).cp().bc("#ddd").mar(3).ta("center").ff("momospace")
         this.weightselect = Select().setoptions([...Array(11).keys()].map(x => [x, x]), this.weight).onchange(this.weightchanged.bind(this)).fs(16)
@@ -713,25 +768,42 @@ class BookItem_ extends e{
         this.parentboard.selectnodebyid(this.parentboard.study.id, this.nodeid)
     }
 
-    constructor(parentboard, blob){
-        super("div").mar(2).disp("flex").bc("#eee").ai("center")
-        console.log("book item", blob)
-        this.blob = blob
+    buildsuccess(){
+        this.successdivhook.x
+        let minsuccess = this.gamenode.getminsuccess()        
+        if(minsuccess != null){
+            this.successdiv.html(`${minsuccess}`)
+            if(minsuccess > 0){
+                this.successdiv.c("#070")
+            }else{
+                this.successdiv.c("#700")
+            }
+            this.successdivhook.a(this.successdiv)
+        }
+    }
+
+    constructor(parentboard, gamenode){
+        super("div").mar(2).disp("flex").bc("#eee").ai("center")        
+        this.gamenode = gamenode
         this.parentboard = parentboard
-        this.san = blob.gensan        
-        this.nodeid = blob.id
-        this.success = blob.success
+        this.san = gamenode.gensan        
+        this.nodeid = gamenode.id
+        this.success = gamenode.success
         this.sandiv = Div().pad(2).fs(24).w(100).html(this.san).cp().mar(3).ta("center").c("#007").fw("bold")
         this.sandiv.ae("mousedown", this.sandivclicked.bind(this))                
+        this.successdiv = Div().w(80).ml(10).pad(2).fs(20).ff("monospace").bc("#ddd").ta("center")
+        this.successdivhook = Div()
+        this.buildsuccess()
         this.a(
             this.sandiv,
             WeightSelector(this, "me"),
-            WeightSelector(this, "opp")
-        )        
+            WeightSelector(this, "opp"),
+            this.successdivhook
+        )                
         this.highlight(false)        
     }
 }
-function BookItem(parentboard, blob){return new BookItem_(parentboard, blob)}
+function BookItem(parentboard, gamenode){return new BookItem_(parentboard, gamenode)}
 
 class Book_ extends e{
     moveselected(dir){
@@ -1085,9 +1157,11 @@ class Board_ extends e{
                     }
                 }else{                    
                     if(maxweight > 0){                        
-                        this.basicboard.setfromfen(this.basicboard.fen)
-                        window.alert("Wrong move !")                    
-                        this.setsuccess(this.study.currentnode, 0)
+                        this.basicboard.setfromfen(this.basicboard.fen)                        
+                        if(!move.isnull){
+                            this.setsuccess(this.study.currentnode, 0)
+                            window.alert("Wrong move !")                    
+                        }
                         this.buildbook()
                         return
                     }else{
@@ -1567,10 +1641,31 @@ class Board_ extends e{
                     }
                 }
                 if(candidates.length > 0){                    
-                    let ri = Math.floor(Math.random() * candidates.length)
-                    let selected = candidates[ri]
-                    console.log("selected", ri, selected)
-                    this.makealgebmove(selected.genuci)
+                    if(withchance(this.gettrainbyerrorpercent())){
+                        let minsuccesschild = null
+                        let minsuccess = null
+                        for(let child of this.study.currentnode.getchilds()){                            
+                            let chminsuccess = child.getminsuccess()
+                            if(chminsuccess != null){
+                                if(minsuccesschild == null){
+                                    minsuccesschild = child
+                                    minsuccess = chminsuccess
+                                }else{
+                                    if(chminsuccess < minsuccess){
+                                        minsuccesschild = child
+                                        minsuccess = chminsuccess
+                                    }
+                                }
+                            }
+                        }
+                        console.log("min success", minsuccesschild)
+                        this.makealgebmove(minsuccesschild.genuci)
+                    }else{
+                        let ri = Math.floor(Math.random() * candidates.length)
+                        let selected = candidates[ri]
+                        console.log("selected", ri, selected)
+                        this.makealgebmove(selected.genuci)
+                    }
                 }else{
                     setTimeout(function(){
                         window.alert("Line completed. Well done !")
@@ -1627,6 +1722,10 @@ class Board_ extends e{
         this.trainrootlabel.html(this.trainroot.replace(/_/g, " "))
     }
 
+    gettrainbyerrorpercent(){
+        return this.trainbyerrorpercentselect.v()
+    }
+
     buildtraindiv(){
         this.trainmodeselect = Select().setoptions([
             ["none", "Training off"],
@@ -1641,8 +1740,10 @@ class Board_ extends e{
             Div().a(Labeled("Train root", this.trainrootlabel)),
             Button("Set train root to current position", this.settrainroot.bind(this)).mt(5).ml(5)
         )
+        this.trainbyerrorpercentselect = Select().setid(`${this.id}/trainbyerrorpercent`).setoptions([...Array(11).keys()].map(x => [10 * x, 10 * x]), 50)
         this.traindiv.a(
             this.trainmodeselect,
+            Div().mt(10).ml(5).a(Labeled("Train by error %", this.trainbyerrorpercentselect)),
             this.trainrootdiv
         )
     }

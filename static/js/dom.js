@@ -1393,6 +1393,10 @@ class Square{
     toalgeb(){
         return `${String.fromCharCode(this.file + 'a'.charCodeAt(0))}${String.fromCharCode(7 - this.rank + '1'.charCodeAt(0))}`
     }
+
+    equals(sq){
+        return ( sq.file == this.file ) && ( sq.rank == this.rank )
+    }
 }
 function Sq(file, rank){return new Square(file, rank)}
 
@@ -1407,6 +1411,10 @@ class Move{
         let algeb = `${this.fromsq.toalgeb()}${this.tosq.toalgeb()}`
         if(this.prompiece) algeb += this.prompiece.kind
         return algeb
+    }
+
+    get isnull(){
+        return this.tosq.equals(this.fromsq)
     }
 }
 
@@ -1717,9 +1725,9 @@ class BasicBoard_ extends e{
     }
 
     piecedrop(sq, ev){        
-        ev.preventDefault()
+        ev.preventDefault()        
+        this.draggedpdiv.tl(this.piececoord(sq))                
         let m = new Move(this.draggedsq, sq)
-        this.draggedpdiv.tl(this.piececoord(sq))
         if(this.dragmovecallback){
             this.dragmovecallback(m)
         }
