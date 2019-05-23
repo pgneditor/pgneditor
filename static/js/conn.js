@@ -1273,8 +1273,7 @@ class Board_ extends e{
     }
 
     del(){
-        let currenttreesize = this.currenttreesize
-        if(currenttreesize >= SOFT_CONFIRM_TREE_SIZE_LIMIT) if(!textconfirm(`delete line with ${currenttreesize} move(s)`, "delete", currenttreesize < HARD_CONFIRM_TREE_SIZE_LIMIT)) return
+        if(!this.confirmdeleteoperation("delete this line")) return        
         if(this.study){
             api({
                 "kind": "delete",
@@ -1374,9 +1373,14 @@ class Board_ extends e{
         }        
     }
 
-    reset(){
+    confirmdeleteoperation(msg){
         let studytreesize = this.studytreesize
-        if(studytreesize >= SOFT_CONFIRM_TREE_SIZE_LIMIT) if(!textconfirm(`reset the study and delete ${studytreesize} move(s)`, "reset", studytreesize < HARD_CONFIRM_TREE_SIZE_LIMIT)) return
+        if(studytreesize >= SOFT_CONFIRM_TREE_SIZE_LIMIT) if(!textconfirm(`${msg} and delete ${studytreesize} move(s)`, "reset", studytreesize < HARD_CONFIRM_TREE_SIZE_LIMIT)) return false
+        return true
+    }
+
+    reset(){
+        if(!this.confirmdeleteoperation("reset the study")) return
         if(this.study){
             api({
                 "kind": "reset",
@@ -1395,6 +1399,10 @@ class Board_ extends e{
 
     pgnpastecallback(pgn){
         console.log("pasted", pgn)
+        if(!this.confirmdeleteoperation("reset study from PGN")){
+            if(this.study) this.pgntext.setText(this.study.pgn)
+            return
+        }
         api({
             "kind": "parsepgn",
             "id": this.study.id,
@@ -1528,6 +1536,10 @@ class Board_ extends e{
         let fen = this.fentext.getText()        
         let pgn = `[FEN "${fen}"]`
         console.log("fen pasted", fen, "parsing", pgn)
+        if(!this.confirmdeleteoperation("reset study from FEN")){
+            this.fentext.setText(this.basicboard.fen)
+            return
+        }
         api({
             "kind": "parsepgn",
             "id": this.study.id,
