@@ -280,12 +280,11 @@ class GameNode_ extends e{
                     }
                 }
             }
-        }
-        if(minsuccess == null){            
-            if((this.turn() == baseturn)&&(this.hasmetrainchild)){
-                minsuccess = this.success
-            }
         }        
+        if((this.turn() == baseturn)&&(this.hasmetrainchild)){
+            if(minsuccess == null) minsuccess = this.success
+            else if(this.success < minsuccess) minsuccess = this.success
+        }    
         return minsuccess
     }
 
@@ -1153,7 +1152,9 @@ class Board_ extends e{
                     if(mymoveweight == maxweight){
 
                     }else{
-                        window.alert("Good move, but keep in mind, there is a better move !")                        
+                        setTimeout(function(){
+                            window.alert("Good move, but keep in mind, there is a better move !")                        
+                        }.bind(this))                                                                
                     }
                 }else{                    
                     if(maxweight > 0){                        
