@@ -57,14 +57,15 @@ def getvariantboard(variantkey = "standard"):
         return VariantBoard()
 
 class CommentParseResult:
-    def __init__(self, message, drawings, metrainweight, opptrainweight):
+    def __init__(self, message, drawings, metrainweight, opptrainweight, success):
         self.message = message
         self.drawings = drawings
         self.metrainweight = metrainweight
         self.opptrainweight = opptrainweight
+        self.success = success
 
     def __repr__(self):
-        return f"< CommentParseResult < {self.message} | {self.drawings} | {self.metrainweight} | {self.opptrainweight} > >"
+        return f"< CommentParseResult < {self.message} | {self.drawings} | {self.metrainweight} | {self.opptrainweight} | {self.success} > >"
 
 LICHESS_DRAWING_MATCHER = re.compile(r"(\[%(...) (.*?)\])")
 
@@ -99,6 +100,7 @@ def parselichesscomment(comment):
         purecomment = comment
         metrainweight = 0
         opptrainweight = 0
+        success = 0
         for item in matches:
             full = item[0]
             kind = item[1]
@@ -107,7 +109,10 @@ def parselichesscomment(comment):
             for coord in coords:
                 if kind == "trn":
                     metrainweight = int(coords[0])
-                    opptrainweight = int(coords[1])
+                    if len(coords) > 1:
+                        opptrainweight = int(coords[1])
+                    if len(coords) > 2:
+                        success = int(coords[2])
                 else:
                     colorletter = coord[0]
                     color = "green"
@@ -127,9 +132,9 @@ def parselichesscomment(comment):
                             "toalgeb": coord[2:4],
                             "color": color
                         })
-        return CommentParseResult(purecomment, drawings, metrainweight, opptrainweight)
+        return CommentParseResult(purecomment, drawings, metrainweight, opptrainweight, success)
     except:       
-        return CommentParseResult(comment, [], 0, 0)
+        return CommentParseResult(comment, [], 0, 0, 0)
 
 ###################################################################
 
@@ -170,8 +175,8 @@ class GameNode:
         if self.message:
             comment += self.message
         comment += drawingstolichesscomment(self.drawings)
-        if ( self.metrainweight > 0 ) or ( self.opptrainweight > 0 ):
-            comment += f"[%trn {self.metrainweight},{self.opptrainweight}]"
+        if ( self.metrainweight > 0 ) or ( self.opptrainweight > 0 ) or ( self.success > 0 ):
+            comment += f"[%trn {self.metrainweight},{self.opptrainweight},{self.success}]"
         comment = re.sub(COMMENT_SINGLE_LINE_MATCHER, " ", comment)
         return comment
 
@@ -184,6 +189,7 @@ class GameNode:
         if not ignoretrainweights:
             self.metrainweight = plcr.metrainweight
             self.opptrainweight = plcr.opptrainweight
+            self.success = plcr.success
 
     def fromblob(self, blob):
         self.id = blob.get("id", "root")
