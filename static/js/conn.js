@@ -258,7 +258,7 @@ class GameNode_ extends e{
                         if(minsuccess == null){
                             minsuccess = chminsuccess
                         }else{
-                            if(chminsuccess < minsuccess){
+                            if(chminsuccess > minsuccess){
                                 minsuccess = chminsuccess
                             }
                         }
@@ -1642,6 +1642,7 @@ class Board_ extends e{
                 }
                 if(candidates.length > 0){                    
                     if(withchance(this.gettrainbyerrorpercent())){
+                        console.log("train by error")
                         let minsuccesschild = null
                         let minsuccess = null
                         for(let child of this.study.currentnode.getchilds()){                            
@@ -1661,6 +1662,7 @@ class Board_ extends e{
                         console.log("min success", minsuccesschild)
                         this.makealgebmove(minsuccesschild.genuci)
                     }else{
+                        console.log("train by weights")
                         let ri = Math.floor(Math.random() * candidates.length)
                         let selected = candidates[ri]
                         console.log("selected", ri, selected)
