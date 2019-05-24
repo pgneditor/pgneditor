@@ -8,4 +8,7 @@
 [FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"]
 [Variant "Atomic"]
 
-*
+1. e4 { [%trn 0,4,0] } 1... d5 { [%trn 5,5,0] } 2. d4 { [%trn 5,5,0] } 2... Nh6
+{ [%trn 5,5,0] } 3. g4 { [%trn 0,5,0] } 3... Na6 { [%trn 5,5,0] } 4. b4
+{ [%trn 0,5,0] } 4... e5 { [%trn 5,5,0] } 5. h4 { [%trn 0,5,0] } 5... exd4
+{ [%trn 5,5,0] } *
