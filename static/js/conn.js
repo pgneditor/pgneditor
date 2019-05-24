@@ -335,7 +335,7 @@ class GameNode_ extends e{
     messagesaved(resobj){        
         if(resobj.kind == "messagesaved"){
             this.message = resobj.message
-            this.parentstudy.parentstudies.parentboard.pgntext.setText(resobj.pgn)
+            this.parentstudy.parentstudies.parentboard.setpgn(resobj.pgn)
             this.buildmessage()
             console.log("message saved", this.message)            
         }
@@ -407,7 +407,7 @@ class GameNode_ extends e{
     nagssaved(resobj){
         if(resobj.kind == "nagssaved"){
             this.nags = resobj.nags
-            this.parentstudy.parentstudies.parentboard.pgntext.setText(resobj.pgn)
+            this.parentstudy.parentstudies.parentboard.setpgn(resobj.pgn)
             this.buildnags()
             console.log("nags saved", this.nags)            
         }
@@ -629,7 +629,18 @@ class Study_ extends e{
     }
 
     download(){
-        downloadcontent(this.title + ".pgn", this.pgn)
+        if(this.parentstudies){
+            if(this.parentstudies.parentboard){
+                let parentboardstudy = this.parentstudies.parentboard.study
+                if(parentboardstudy){
+                    if(this.selected){
+                        downloadcontent(this.title + ".pgn", parentboardstudy.pgn)
+                    }else{
+                        window.alert("Select this study first to be able to download it !")
+                    }
+                }                
+            }            
+        }        
     }
 
     constructor(argsopt){
