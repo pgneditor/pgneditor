@@ -680,10 +680,13 @@ def scanplayerstarget():
                 except:
                     pe()                    
                     break
-            print("writing player", player)
-            ndjson = rationalizeplayerdata(ndjson)
-            write_json_to_fdb(ndjsonpath(player), ndjson)
-            print("writing player done", player)
+            if found > 0:
+                print("writing player", player)
+                ndjson = rationalizeplayerdata(ndjson)
+                write_json_to_fdb(ndjsonpath(player), ndjson)
+                print("writing player done", player)
+            else:
+                print("up to date", player)
             time.sleep(5)
         time.sleep(600)
 
