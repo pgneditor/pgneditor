@@ -35,11 +35,14 @@ if DO_REMOTE_DB:
         import firebase_admin
         from firebase_admin import credentials
         from firebase_admin import firestore
+        from firebase_admin import db as fdb
 
         ###################################################
 
         cred = credentials.Certificate("firebase/sacckey.json")
-        firebase_admin.initialize_app(cred)
+        firebase_admin.initialize_app(cred, {
+            "databaseURL": "https://pgneditor-1ab96.firebaseio.com/",
+        })
         db = firestore.client()
 
         ###################################################
@@ -324,5 +327,29 @@ class Db:
         if FILE_VERBOSE:
             log(f"< returning coll dict from < {path} > >", "info")        
         return colldict
+
+###################################################################
+
+FDBPATH = "fdb"
+
+createdir(FDBPATH)
+
+def localfdbpath(path):
+    return f"{FDBPATH}/{path}"
+
+def read_json_from_fdb(path, default):
+    if os.path.isfile(localfdbpath(path)):
+        return read_json_from_file(localfdbpath(path), default)
+    obj = fdb.reference(path).get()
+    if not obj:
+        return default
+    write_json_to_file(localfdbpath(path), obj)
+    return obj
+
+def write_json_to_fdb(path, obj, writeremote = True):
+    write_json_to_file(localfdbpath(path), obj)
+    if writeremote:
+        print("setting remote", path)
+        fdb.reference(path).set(obj)
 
 ###################################################################

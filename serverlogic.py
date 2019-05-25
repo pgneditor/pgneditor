@@ -4,6 +4,9 @@ from traceback import print_exc as pe
 import uuid
 import time
 import os
+from threading import Thread
+import requests
+import json
 
 ###################################################################
 
@@ -12,6 +15,7 @@ from utils.logger import log
 from utils.http import geturl
 from utils.study import Study, DEFAULT_MAX_PLIES
 from utils.cryptography import encryptalphanum, decryptalphanum
+from utils.file import read_json_from_fdb, write_json_to_fdb
 
 ###################################################################
 
@@ -610,5 +614,62 @@ def jsonapi(reqobj):
             "kind": "unknownapirequest"
         }    
     return req.res(resobj)
+
+###################################################################
+
+SCAN_PLAYER_LIST = os.environ.get("SCANPLAYERS", "Xeransis,jwaceking,kreedz,Wolfram_EP,letzplaykrazy,HigherBrainPattern,Natso,sutcunuri")
+TOKEN = "L8GHblP1Wc57Oegi"
+
+def ndjsonpath(player):
+    return f"{player}_ndjson"
+
+def gamexporturl(player, since = 0):
+    return f"https://lichess.org//api/games/user/{player}?since={since}"
+
+def filterok(obj):    
+    if not obj["perf"] == "atomic":
+        return False
+    return True
+
+def scanplayerstarget():
+    SCAN_PLAYERS = SCAN_PLAYER_LIST.split(",")
+    print("scan", SCAN_PLAYERS)
+    while True:
+        for player in SCAN_PLAYERS:
+            print("scanning", player)
+            ndjson = read_json_from_fdb(ndjsonpath(player), [])
+            since = 0
+            if len(ndjson) > 0:
+                since = ndjson[0]["lastMoveAt"]
+            print("since", since)
+            r = requests.get(gamexporturl(player, since = since), headers = {
+                "Authorization": f"Bearer {TOKEN}",
+                "Accept": "application/x-ndjson"
+            }, stream = True)                        
+            cnt = 0
+            found = 0
+            start = time.time()
+            for line in r.iter_lines():
+                try:
+                    line = line.decode("utf-8")                    
+                    obj = json.loads(line)                    
+                    cnt += 1
+                    if(filterok(obj)):
+                        ndjson.append(obj)
+                        found += 1
+                    if ( cnt % 20 ) == 0:
+                        print("read cnt", cnt, "found", found, "rate", cnt / (time.time() - start))
+                except:
+                    pe()                    
+                    break
+            print("writing player", player)
+            write_json_to_fdb(ndjsonpath(player), ndjson)
+            print("writing player done", player)
+            time.sleep(5)
+        time.sleep(600)
+
+###################################################################
+
+Thread(target = scanplayerstarget).start()
 
 ###################################################################
