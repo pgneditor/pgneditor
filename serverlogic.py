@@ -16,6 +16,7 @@ from utils.http import geturl
 from utils.study import Study, DEFAULT_MAX_PLIES
 from utils.cryptography import encryptalphanum, decryptalphanum
 from utils.file import read_json_from_fdb, write_json_to_fdb
+from config import SERVER_URL, KEEP_ALIVE
 
 ###################################################################
 
@@ -631,6 +632,22 @@ def filterok(obj):
         return False
     return True
 
+def rationalizeplayerdata(ndjson):
+    print("rationalizing player data", len(ndjson))
+    ids = {}
+    filtered = []
+    for obj in ndjson:
+        if ( "id" in obj ) and ( "lastMoveAt" in obj ):
+            id = obj["id"]
+            if not id in ids:
+                ids[id] = True
+                filtered.append(obj)
+            else:
+                print("duplicate id", id)
+    filtered.sort(key = lambda x: x["lastMoveAt"], reverse = True)
+    print("rationalized player data", len(filtered))
+    return filtered
+
 def scanplayerstarget():
     SCAN_PLAYERS = SCAN_PLAYER_LIST.split(",")
     print("scan", SCAN_PLAYERS)
@@ -638,6 +655,7 @@ def scanplayerstarget():
         for player in SCAN_PLAYERS:
             print("scanning", player)
             ndjson = read_json_from_fdb(ndjsonpath(player), [])
+            ndjson = rationalizeplayerdata(ndjson)
             since = 0
             if len(ndjson) > 0:
                 since = ndjson[0]["lastMoveAt"]
@@ -663,6 +681,7 @@ def scanplayerstarget():
                     pe()                    
                     break
             print("writing player", player)
+            ndjson = rationalizeplayerdata(ndjson)
             write_json_to_fdb(ndjsonpath(player), ndjson)
             print("writing player done", player)
             time.sleep(5)
@@ -670,6 +689,14 @@ def scanplayerstarget():
 
 ###################################################################
 
+def keepalivetarget():
+    for i in range(KEEP_ALIVE):
+        geturl(SERVER_URL, verbose = True)
+        time.sleep(600)
+
+###################################################################
+
 Thread(target = scanplayerstarget).start()
+Thread(target = keepalivetarget).start()
 
 ###################################################################
