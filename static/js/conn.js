@@ -915,6 +915,10 @@ const HARD_CONFIRM_TREE_SIZE_LIMIT = 50
 
 const LOCKED_UPDATE_MODE = false
 
+function pbTd(){
+    return Td().pad(3).w(80).ta("center")
+}
+
 class Board_ extends e{
     setpgn(pgn){
         this.pgntext.setText(pgn)
@@ -927,13 +931,36 @@ class Board_ extends e{
         this.rebuild()
     }
 
+    playerbookmoveclicked(moveblob){
+        this.makealgebmove(moveblob.uci)
+    }
+
     buildplayerbook(){
         if((this.study) && (this.bookblob)){
-            this.playerbookdiv = Div()
+            this.playerbookdiv = Div().pad(3)
             this.playerssplitpane.setcontentelement(this.playerbookdiv)
             let posblob = this.bookblob.positions[this.currentnode.zobristkeyhex]
             if(posblob){
-                this.playerbookdiv.html(JSON.stringify(posblob))
+                let sorteducis = Object.keys(posblob.moves).sort((ucia, ucib) => posblob.moves[ucib].plays - posblob.moves[ucia].plays)
+                let table = Table().fs(20)
+                table.a(Tr().ff("monospace").a(
+                    pbTd().html("Move"),
+                    pbTd().html(`Plays`),
+                    pbTd().html(`Wins`),
+                    pbTd().html(`Draws`),
+                    pbTd().html(`Losses`)
+                ))
+                for(let uci of sorteducis){
+                    let moveblob = posblob.moves[uci]
+                    table.a(Tr().a(
+                        pbTd().html(`${moveblob.san}`).fw("bold").c("#007").cp().fs(25).ae("mousedown", this.playerbookmoveclicked.bind(this, moveblob)),
+                        pbTd().html(`${moveblob.plays}`).c("#007"),
+                        pbTd().html(`${moveblob.wins}`).c("#070"),
+                        pbTd().html(`${moveblob.draws}`).c("#770"),
+                        pbTd().html(`${moveblob.losses}`).c("#700")
+                    ))
+                }
+                this.playerbookdiv.a(table)
             }
         }
     }
