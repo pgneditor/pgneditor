@@ -23,11 +23,11 @@ from config import SERVER_URL, KEEP_ALIVE, IS_PROD
 
 SERVERLOGIC_VERBOSE = True
 
-SCAN_PLAYER_LIST = os.environ.get("SCANPLAYERS", "Xeransis,jwaceking,Wolfram_EP,letzplaykrazy,HigherBrainPattern,Natso,sutcunuri")
+SCAN_PLAYER_LIST = os.environ.get("SCANPLAYERS", "kreedz,Xeransis,jwaceking,Wolfram_EP,letzplaykrazy,HigherBrainPattern,Natso,sutcunuri")
 
 MAX_BOOK_GAMES = 500
 
-BOOK_FILTER_VERSION = 2
+BOOK_FILTER_VERSION = 3
 
 ###################################################################
 
@@ -635,8 +635,11 @@ def ndjsonpath(player):
 def gamexporturl(player, since = 0):
     return f"https://lichess.org//api/games/user/{player}?since={since}"
 
-def filterok(obj):    
+def filterok(obj, player):    
     if not obj["perf"] == "atomic":
+        return False
+    g = LichessGame(obj, player)
+    if ( g.white.rating < 2250 ) or ( g.black.rating < 2250 ):
         return False
     return True
 
@@ -666,7 +669,8 @@ def scanplayerstarget():
             ndjson = rationalizeplayerdata(ndjson)
             since = 0
             if len(ndjson) > 0:
-                since = ndjson[0]["lastMoveAt"]
+                since = ndjson[0]["lastMoveAt"]                
+            #since = 0
             print("since", since)
             r = requests.get(gamexporturl(player, since = since), headers = {
                 "Authorization": f"Bearer {TOKEN}",
@@ -680,7 +684,7 @@ def scanplayerstarget():
                     line = line.decode("utf-8")                    
                     obj = json.loads(line)                    
                     cnt += 1
-                    if(filterok(obj)):
+                    if(filterok(obj, player)):
                         ndjson.append(obj)
                         found += 1
                     if ( cnt % 20 ) == 0:
@@ -787,6 +791,8 @@ def buildbooktarget():
         time.sleep(600)
 
 ###################################################################
+
+#Thread(target = scanplayerstarget).start()
 
 if IS_PROD():
     Thread(target = scanplayerstarget).start()
