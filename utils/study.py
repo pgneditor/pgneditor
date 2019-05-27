@@ -3,6 +3,9 @@
 import time
 import re
 import random
+import chess
+import chess.pgn
+import chess.polyglot
 
 ###################################################################
 
@@ -28,6 +31,14 @@ VARIANT_KEYS = [
 
 DEFAULT_MAX_PLIES = 200
 MAX_SUCCESS = 10
+
+###################################################################
+
+def format_zobrist_key_hex(zobrist_key):
+	return "%0.16x" % zobrist_key
+
+def get_zobrist_key_hex(board):
+	return format_zobrist_key_hex(chess.polyglot.zobrist_hash(board))
 
 ###################################################################
 
@@ -480,6 +491,72 @@ class Study:
             "flip": self.flip,
             "nodelist": nodelistblob,
             "pgn": pgn
+        }
+
+###################################################################
+
+class BookMove:
+    def __init__(self, blob = {}):
+        self.fromblob(blob)
+
+    def fromblob(self, blob = {}):
+        self.uci = blob.get("uci", None)
+        self.san = blob.get("san", None)
+        self.plays = blob.get("plays", 0)
+        self.wins = blob.get("wins", 0)
+        self.losses = blob.get("losses", 0)
+        self.draws = blob.get("draws", 0)
+        self.topgames = blob.get("topgames", [])
+
+    def toblob(self):
+        return {
+            "uci": self.uci,
+            "san": self.san,
+            "plays": self.plays,
+            "wins": self.wins,
+            "losses": self.losses,
+            "draws": self.draws,
+            "topgames": self.topgames
+        }
+
+class BookPosition:
+    def __init__(self, blob = {}):
+        self.fromblob(blob)
+
+    def fromblob(self, blob = {}):        
+        self.zobristkeyhex = blob.get("zobristkeyhex", None)        
+        self.moves = {}
+        for uci, moveblob in blob.get("moves", {}).items():
+            self.moves[uci] = BookMove(moveblob)
+
+    def toblob(self):
+        movesblob = {}
+        for uci, bookmove in self.moves.items():
+            movesblob[uci] = bookmove.toblob()
+        return {
+            "zobristkeyhex": self.zobristkeyhex,        
+            "moves": movesblob
+        }
+
+class Book:
+    def __init__(self, blob = {}):
+        self.fromblob(blob)
+
+    def fromblob(self, blob = {}):        
+        self.name = blob.get("name", "default")        
+        self.filterversion = blob.get("filterversion", 0)        
+        self.positions = {}
+        for zobristkeyhex, positionblob in blob.get("positions", {}).items():
+            self.positions[zobristkeyhex] = BookPosition(positionblob)
+
+    def toblob(self):
+        positionsblob = {}
+        for zobristkeyhex, bookposition in self.positions.items():
+            positionsblob[zobristkeyhex] = bookposition.toblob()
+        return {
+            "name": self.name,        
+            "filterversion": self.filterversion,
+            "positions": self.positions
         }
 
 ###################################################################

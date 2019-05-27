@@ -13,10 +13,10 @@ import json
 import utils.file
 from utils.logger import log
 from utils.http import geturl
-from utils.study import Study, DEFAULT_MAX_PLIES
+from utils.study import Study, DEFAULT_MAX_PLIES, Book
 from utils.cryptography import encryptalphanum, decryptalphanum
 from utils.file import read_json_from_fdb, write_json_to_fdb
-from config import SERVER_URL, KEEP_ALIVE
+from config import SERVER_URL, KEEP_ALIVE, IS_PROD
 
 ###################################################################
 
@@ -699,7 +699,25 @@ def keepalivetarget():
 
 ###################################################################
 
-Thread(target = scanplayerstarget).start()
-Thread(target = keepalivetarget).start()
+def bookpath(player):
+    return f"{player}_book"
+
+def buildbooktarget():
+    BUILD_PLAYERS = SCAN_PLAYER_LIST.split(",")
+    for player in BUILD_PLAYERS:
+        book = Book({
+            "name": player
+        })
+        write_json_to_fdb(bookpath(player), book.toblob(), writeremote = IS_PROD())
+
+###################################################################
+
+if IS_PROD():
+    Thread(target = scanplayerstarget).start()
+    Thread(target = keepalivetarget).start()
+
+Thread(target = buildbooktarget).start()
+
+print("serveglogic started, prod", IS_PROD())
 
 ###################################################################
