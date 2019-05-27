@@ -356,4 +356,7 @@ def write_json_to_fdb(path, obj, writeremote = True):
             pe()
             print("there was a problem setting remote")
 
+def delfdb(path):
+    fdb.reference(path).delete()
+
 ###################################################################

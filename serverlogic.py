@@ -16,7 +16,7 @@ from utils.logger import log
 from utils.http import geturl
 from utils.study import Study, DEFAULT_MAX_PLIES, Book, BookMove, BookPosition, LichessGame, getvariantboard, get_zobrist_key_hex
 from utils.cryptography import encryptalphanum, decryptalphanum
-from utils.file import read_json_from_fdb, write_json_to_fdb
+from utils.file import read_json_from_fdb, write_json_to_fdb, delfdb
 from config import SERVER_URL, KEEP_ALIVE, IS_PROD
 
 ###################################################################
@@ -669,8 +669,7 @@ def scanplayerstarget():
             ndjson = rationalizeplayerdata(ndjson)
             since = 0
             if len(ndjson) > 0:
-                since = ndjson[0]["lastMoveAt"]                
-            #since = 0
+                since = ndjson[0]["lastMoveAt"]
             print("since", since)
             r = requests.get(gamexporturl(player, since = since), headers = {
                 "Authorization": f"Bearer {TOKEN}",
@@ -792,7 +791,13 @@ def buildbooktarget():
 
 ###################################################################
 
-#Thread(target = scanplayerstarget).start()
+def cleanplayers():
+    for player in SCAN_PLAYER_LIST.split(","):
+        print("cleaning player", player)    
+        delfdb(ndjsonpath(player))
+        delfdb(bookpath(player))
+
+#cleanplayers()
 
 if IS_PROD():
     Thread(target = scanplayerstarget).start()
