@@ -727,6 +727,7 @@ def buildbooktarget():
             book = Book(bookblob)
             if BOOK_FILTER_VERSION > book.filterversion:
                 book.gameids = {}
+                book.positions = {}
                 book.filterversion = BOOK_FILTER_VERSION
             ndjson = read_json_from_fdb(ndjsonpath(player), [])
             print("building", player)
