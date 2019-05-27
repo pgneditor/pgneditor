@@ -27,7 +27,7 @@ SCAN_PLAYER_LIST = os.environ.get("SCANPLAYERS", "kreedz,Xeransis,jwaceking,Wolf
 
 MAX_BOOK_GAMES = 500
 
-BOOK_FILTER_VERSION = 4
+BOOK_FILTER_VERSION = 5
 
 ###################################################################
 
