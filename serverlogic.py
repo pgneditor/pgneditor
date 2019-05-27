@@ -23,7 +23,7 @@ from config import SERVER_URL, KEEP_ALIVE, IS_PROD
 
 SERVERLOGIC_VERBOSE = True
 
-SCAN_PLAYER_LIST = os.environ.get("SCANPLAYERS", "Xeransis,jwaceking,kreedz,Wolfram_EP,letzplaykrazy,HigherBrainPattern,Natso,sutcunuri")
+SCAN_PLAYER_LIST = os.environ.get("SCANPLAYERS", "Xeransis,jwaceking,Wolfram_EP,letzplaykrazy,HigherBrainPattern,Natso,sutcunuri")
 
 MAX_BOOK_GAMES = 500
 
