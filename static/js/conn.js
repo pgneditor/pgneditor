@@ -942,7 +942,7 @@ class Board_ extends e{
             let posblob = this.bookblob.positions[this.currentnode.zobristkeyhex]
             if(posblob){
                 let sorteducis = Object.keys(posblob.moves).sort((ucia, ucib) => posblob.moves[ucib].plays - posblob.moves[ucia].plays)
-                let table = Table().fs(20)
+                let table = Table().fs(20).ac("unselectable")
                 table.a(Tr().ff("monospace").a(
                     pbTd().html("Move"),
                     pbTd().html(`Plays`),
@@ -952,7 +952,8 @@ class Board_ extends e{
                 ))
                 for(let uci of sorteducis){
                     let moveblob = posblob.moves[uci]
-                    table.a(Tr().a(
+                    let trbc = moveblob.plays > 0 ? "#fff" : "#ccc"
+                    table.a(Tr().bc(trbc).a(
                         pbTd().html(`${moveblob.san}`).fw("bold").c("#007").cp().fs(25).ae("mousedown", this.playerbookmoveclicked.bind(this, moveblob)),
                         pbTd().html(`${moveblob.plays}`).c("#007"),
                         pbTd().html(`${moveblob.wins}`).c("#070"),

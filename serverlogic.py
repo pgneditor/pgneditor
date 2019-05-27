@@ -25,6 +25,10 @@ SERVERLOGIC_VERBOSE = True
 
 SCAN_PLAYER_LIST = os.environ.get("SCANPLAYERS", "Xeransis,jwaceking,kreedz,Wolfram_EP,letzplaykrazy,HigherBrainPattern,Natso,sutcunuri")
 
+MAX_BOOK_GAMES = 500
+
+BOOK_FILTER_VERSION = 2
+
 ###################################################################
 
 def createuuid():
@@ -703,10 +707,8 @@ def keepalivetarget():
 
 ###################################################################
 
-BOOK_FILTER_VERSION = 1
-
 def bookfilterok(g):
-    return ( g.white.rating > 2350 ) and ( g.black.rating > 2350 ) and ( not g.playeropp.ailevel ) and ( not g.playeropp.title == "BOT" )
+    return ( g.white.rating > 2300 ) and ( g.black.rating > 2300 ) and ( not g.playeropp.ailevel ) and ( not g.playeropp.title == "BOT" )
 
 def bookpath(player):
     return f"{player}_book"
@@ -737,6 +739,8 @@ def buildbooktarget():
                 if ( cnt % 1000 ) == 0:
                     print("filtering", cnt, "found", found)
             print("filtering done, found", found)
+            if len(filtered) > MAX_BOOK_GAMES:
+                filtered = filtered[:MAX_BOOK_GAMES]
             cnt = 0
             for g in filtered:
                 cnt += 1
@@ -749,32 +753,32 @@ def buildbooktarget():
                     zkh = get_zobrist_key_hex(board)
                     movecnt = 0
                     for san in g.moves:                
-                        move = board.parse_san(san)                 
+                        move = board.parse_san(san)                                         
+                        movecnt += 1
+                        uci = move.uci()
+                        if zkh in book.positions:
+                            pos = book.positions[zkh]
+                        else:
+                            pos = BookPosition({
+                                "zobristkeyhex": zkh
+                            })
+                        if uci in pos.moves:
+                            bookmove = pos.moves[uci]
+                        else:
+                            bookmove = BookMove({
+                                "uci": uci,
+                                "san": san
+                            })
                         if board.turn == g.mecolor:
-                            movecnt += 1
-                            uci = move.uci()
-                            if zkh in book.positions:
-                                pos = book.positions[zkh]
-                            else:
-                                pos = BookPosition({
-                                    "zobristkeyhex": zkh
-                                })
-                            if uci in pos.moves:
-                                bookmove = pos.moves[uci]
-                            else:
-                                bookmove = BookMove({
-                                    "uci": uci,
-                                    "san": san
-                                })
                             bookmove.plays += 1
-                            if g.meresult == 1:
-                                bookmove.wins += 1
-                            elif g.meresult == 0:
-                                bookmove.losses += 1
-                            else:
-                                bookmove.draws += 1                
-                            pos.moves[uci] = bookmove
-                            book.positions[zkh] = pos
+                        if g.meresult == 1:
+                            bookmove.wins += 1
+                        elif g.meresult == 0:
+                            bookmove.losses += 1
+                        else:
+                            bookmove.draws += 1                
+                        pos.moves[uci] = bookmove
+                        book.positions[zkh] = pos
                         board.push(move)
                         zkh = get_zobrist_key_hex(board)                                       
                     print("added", movecnt)
@@ -787,7 +791,7 @@ def buildbooktarget():
 if IS_PROD():
     Thread(target = scanplayerstarget).start()
     Thread(target = keepalivetarget).start()
-    Thread(target = buildbooktarget).start()
+Thread(target = buildbooktarget).start()
 
 print("serveglogic started, prod", IS_PROD())
 
