@@ -27,7 +27,7 @@ SCAN_PLAYER_LIST = os.environ.get("SCANPLAYERS", "kreedz,Xeransis,jwaceking,Wolf
 
 MAX_BOOK_GAMES = 500
 
-BOOK_FILTER_VERSION = 3
+BOOK_FILTER_VERSION = 4
 
 ###################################################################
 
@@ -774,12 +774,12 @@ def buildbooktarget():
                             })
                         if board.turn == g.mecolor:
                             bookmove.plays += 1
-                        if g.meresult == 1:
-                            bookmove.wins += 1
-                        elif g.meresult == 0:
-                            bookmove.losses += 1
-                        else:
-                            bookmove.draws += 1                
+                            if g.meresult == 1:
+                                bookmove.wins += 1
+                            elif g.meresult == 0:
+                                bookmove.losses += 1
+                            else:
+                                bookmove.draws += 1                
                         pos.moves[uci] = bookmove
                         book.positions[zkh] = pos
                         board.push(move)
