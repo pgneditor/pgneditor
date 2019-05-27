@@ -7,13 +7,14 @@ import os
 from threading import Thread
 import requests
 import json
+import chess
 
 ###################################################################
 
 import utils.file
 from utils.logger import log
 from utils.http import geturl
-from utils.study import Study, DEFAULT_MAX_PLIES, Book
+from utils.study import Study, DEFAULT_MAX_PLIES, Book, BookMove, BookPosition, LichessGame, getvariantboard, get_zobrist_key_hex
 from utils.cryptography import encryptalphanum, decryptalphanum
 from utils.file import read_json_from_fdb, write_json_to_fdb
 from config import SERVER_URL, KEEP_ALIVE, IS_PROD
@@ -699,16 +700,84 @@ def keepalivetarget():
 
 ###################################################################
 
+BOOK_FILTER_VERSION = 1
+
+def bookfilterok(g):
+    return ( g.white.rating > 2350 ) and ( g.black.rating > 2350 ) and ( not g.playeropp.ailevel ) and ( not g.playeropp.title == "BOT" )
+
 def bookpath(player):
     return f"{player}_book"
 
 def buildbooktarget():
     BUILD_PLAYERS = SCAN_PLAYER_LIST.split(",")
-    for player in BUILD_PLAYERS:
-        book = Book({
-            "name": player
-        })
-        write_json_to_fdb(bookpath(player), book.toblob(), writeremote = IS_PROD())
+    while True:
+        for player in BUILD_PLAYERS:
+            defaultbookblob = {
+                "name": player
+            }
+            bookblob = read_json_from_fdb(bookpath(player), defaultbookblob)
+            book = Book(bookblob)
+            if BOOK_FILTER_VERSION > book.filterversion:
+                book.gameids = {}
+                book.filterversion = BOOK_FILTER_VERSION
+            ndjson = read_json_from_fdb(ndjsonpath(player), [])
+            print("building", player)
+            cnt = 0
+            found = 0
+            filtered = []
+            for gameblob in ndjson:
+                cnt += 1
+                g = LichessGame(gameblob, player)
+                if bookfilterok(g):
+                    filtered.append(g)
+                    found += 1
+                if ( cnt % 1000 ) == 0:
+                    print("filtering", cnt, "found", found)
+            print("filtering done, found", found)
+            cnt = 0
+            for g in filtered:
+                cnt += 1
+                print("building", cnt, "of", len(filtered), g.white.name, g.black.name)
+                if g.id in book.gameids:
+                    print("up to date")
+                else:
+                    book.gameids[g.id] = True
+                    board = getvariantboard("atomic")
+                    zkh = get_zobrist_key_hex(board)
+                    movecnt = 0
+                    for san in g.moves:                
+                        move = board.parse_san(san)                 
+                        if board.turn == g.mecolor:
+                            movecnt += 1
+                            uci = move.uci()
+                            if zkh in book.positions:
+                                pos = book.positions[zkh]
+                            else:
+                                pos = BookPosition({
+                                    "zobristkeyhex": zkh
+                                })
+                            if uci in pos.moves:
+                                bookmove = pos.moves[uci]
+                            else:
+                                bookmove = BookMove({
+                                    "uci": uci,
+                                    "san": san
+                                })
+                            bookmove.plays += 1
+                            if g.meresult == 1:
+                                bookmove.wins += 1
+                            elif g.meresult == 0:
+                                bookmove.losses += 1
+                            else:
+                                bookmove.draws += 1                
+                            pos.moves[uci] = bookmove
+                            book.positions[zkh] = pos
+                        board.push(move)
+                        zkh = get_zobrist_key_hex(board)                                       
+                    print("added", movecnt)
+            write_json_to_fdb(bookpath(player), book.toblob(), writeremote = IS_PROD())
+            time.sleep(5)
+        time.sleep(600)
 
 ###################################################################
 

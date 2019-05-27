@@ -495,6 +495,81 @@ class Study:
 
 ###################################################################
 
+AI_LEVEL_2_RATING = {
+  1: 1350,
+  2: 1420,
+  3: 1500,
+  4: 1600,
+  5: 1700,
+  6: 1900,
+  7: 2200,
+  8: 2600
+}
+
+def ailevel2rating(ailevel):      
+    rating = AI_LEVEL_2_RATING.get(ailevel, 1500)
+    return rating
+
+class LichessPlayer:
+    def __init__(self, blob = {}):
+        self.fromblob(blob)
+
+    def fromblob(self, blob = {}):
+        self.id = "anonymous"
+        self.name = "Anonymous"
+        self.title = None
+        self.patron = False
+        if "user" in blob:
+            userblob = blob["user"]
+            if "id" in userblob:
+                self.id = userblob["id"]
+            if "name" in userblob:
+                self.name = userblob["name"]
+            if "title" in userblob:
+                self.title = userblob["title"]
+            if "patron" in userblob:
+                self.patron = userblob["patron"]
+        self.rating = blob.get("rating", 1500)
+        self.ailevel = blob.get("aiLevel", None)
+        if self.ailevel:
+            self.id = None
+            self.name = f"Stockfish AI level {self.ailevel}"
+            self.rating = ailevel2rating(self.ailevel)
+        self.ratingdiff = blob.get("ratingDiff", 0)
+
+class LichessGame:
+    def __init__(self, blob = {}, me = None):
+        self.fromblob(blob, me)
+
+    def fromblob(self, blob = {}, me = None):
+        self.me = me
+        self.id = blob.get("id", None)
+        playersblob = blob.get("players", {})
+        self.white = LichessPlayer(playersblob.get("white", {}))
+        self.black = LichessPlayer(playersblob.get("black", {}))
+        self.movesstr = blob.get("moves", "")
+        self.moves = []
+        if not self.movesstr == "":
+            self.moves = self.movesstr.split(" ")
+        self.result = 0.5
+        self.winnercolor = blob.get("winner", None)
+        if self.winnercolor:
+            if self.winnercolor == "white":
+                self.result = 1
+            else:
+                self.result = 0
+        self.playerme = self.white
+        self.playeropp = self.black    
+        self.meresult = self.result    
+        self.mecolor = chess.WHITE
+        if me.lower() == self.black.id:
+            self.playerme = self.black
+            self.playeropp = self.white
+            self.meresult = 1 - self.result
+            self.mecolor = chess.BLACK
+
+###################################################################
+
 class BookMove:
     def __init__(self, blob = {}):
         self.fromblob(blob)
@@ -545,6 +620,7 @@ class Book:
     def fromblob(self, blob = {}):        
         self.name = blob.get("name", "default")        
         self.filterversion = blob.get("filterversion", 0)        
+        self.gameids = blob.get("gameids", {})        
         self.positions = {}
         for zobristkeyhex, positionblob in blob.get("positions", {}).items():
             self.positions[zobristkeyhex] = BookPosition(positionblob)
@@ -556,7 +632,8 @@ class Book:
         return {
             "name": self.name,        
             "filterversion": self.filterversion,
-            "positions": self.positions
+            "gameids": self.gameids,
+            "positions": positionsblob
         }
 
 ###################################################################
