@@ -23,6 +23,8 @@ from config import SERVER_URL, KEEP_ALIVE, IS_PROD
 
 SERVERLOGIC_VERBOSE = True
 
+SCAN_PLAYER_LIST = os.environ.get("SCANPLAYERS", "Xeransis,jwaceking,kreedz,Wolfram_EP,letzplaykrazy,HigherBrainPattern,Natso,sutcunuri")
+
 ###################################################################
 
 def createuuid():
@@ -131,6 +133,7 @@ class Req():
         self.ignoredrawings = reqobj.get("ignoredrawings", False)
         self.ignoretrainweights = reqobj.get("ignoretrainweights", False)
         self.success = reqobj.get("success", 0)
+        self.player = reqobj.get("player", None)
 
         if SERVERLOGIC_VERBOSE:
             log(self, "warning")
@@ -177,7 +180,8 @@ def connected(req):
     if req.task == "importstudy":
         importstudy(req)
     return {
-        "kind": "connectedack"        
+        "kind": "connectedack",
+        "players": SCAN_PLAYER_LIST.split(",")
     }
 
 def login(req):
@@ -619,7 +623,6 @@ def jsonapi(reqobj):
 
 ###################################################################
 
-SCAN_PLAYER_LIST = os.environ.get("SCANPLAYERS", "Xeransis,jwaceking,kreedz,Wolfram_EP,letzplaykrazy,HigherBrainPattern,Natso,sutcunuri")
 TOKEN = "L8GHblP1Wc57Oegi"
 
 def ndjsonpath(player):
@@ -784,9 +787,16 @@ def buildbooktarget():
 if IS_PROD():
     Thread(target = scanplayerstarget).start()
     Thread(target = keepalivetarget).start()
-
-Thread(target = buildbooktarget).start()
+    Thread(target = buildbooktarget).start()
 
 print("serveglogic started, prod", IS_PROD())
 
 ###################################################################
+
+def loadbook(req):    
+    log(f"< load book < {req.player} > >", "info")
+    bookblob = read_json_from_fdb(bookpath(req.player), None)
+    return {
+        "kind": "loadbook",
+        "bookblob": bookblob
+    }

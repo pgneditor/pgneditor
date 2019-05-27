@@ -496,6 +496,7 @@ class GameNode_ extends e{
         this.id = blob.id
         this.parentid = blob.parentid
         this.fen = blob.fen
+        this.zobristkeyhex = blob.zobristkeyhex
         this.gensan = blob.gensan
         this.genuci = blob.genuci
         this.priorityindex = blob.priorityindex
@@ -693,7 +694,7 @@ class Studies_ extends e{
     }
 
     init(){
-        this.request()
+        this.request()        
     }
 
     studycreated(resobj){
@@ -926,6 +927,17 @@ class Board_ extends e{
         this.rebuild()
     }
 
+    buildplayerbook(){
+        if((this.study) && (this.bookblob)){
+            this.playerbookdiv = Div()
+            this.playerssplitpane.setcontentelement(this.playerbookdiv)
+            let posblob = this.bookblob.positions[this.currentnode.zobristkeyhex]
+            if(posblob){
+                this.playerbookdiv.html(JSON.stringify(posblob))
+            }
+        }
+    }
+
     setgamefromstudy(study){
         console.log("setting game from", study)
         this.study = study
@@ -989,6 +1001,7 @@ class Board_ extends e{
             Labeled("Max board size", this.maxboardsizeselect)
         ))
         this.buildbook()
+        this.buildplayerbook()
         if(!(this.trainroot in this.study.nodelist)){
             this.trainroot = "root"
             this.settrainrootlabel()
@@ -1570,6 +1583,36 @@ class Board_ extends e{
         this.openurl(`https://fbserv2.herokuapp.com/analysis/${this.basicboard.variantkey}/${this.basicboard.fen}`)
     }
 
+    bookloaded(resobj){
+        this.buildplayers(false)
+        if(resobj.kind == "loadbook"){
+            this.bookblob = resobj.bookblob
+        }
+        this.setgamefromstudy(this.study)
+    }
+
+    loadbook(){
+        this.buildplayers(true)
+        api({
+            "kind": "loadbook",
+            "player": this.playerscombo.v()
+        }, this.bookloaded.bind(this))
+    }
+
+    buildplayers(loading){
+        if(!this.players) return
+        this.playerscombo = Select().ff("monospace").pad(2).fs(20).setid(`${this.id}/playerscombo`).setoptions(this.players.map(player => [player, player]))        
+        this.playerscombohook.x.a(
+            this.playerscombo            
+        )
+        this.playersloadhook.x
+        if(loading){
+            this.playersloadhook.a(Div().html("Loading book, please wait ..."))
+        }else{
+            this.playersloadhook.a(Button("Load book", this.loadbook.bind(this)).fs(20).ml(10))
+        }
+    }
+
     constructor(argsopt){
         super("div")
         this.initgif()
@@ -1631,13 +1674,19 @@ class Board_ extends e{
         this.toolsdiv.a(this.studytoolshook)
         this.studies = Studies({parentboard: this})
         this.bookdiv = Div().pad(3)
+        this.playerssplitpane = SplitPane()
+        this.playerscombohook = Div()
+        this.playersloadhook = Div()
+        this.playerssplitpane.controlpanel.a(this.playerscombohook, this.playersloadhook).bc("#ddd")
+        this.buildplayers()
         this.traindiv = Div().pad(3)
         this.trainmode = "none"
-        this.buildtraindiv()
+        this.buildtraindiv()        
         this.tabpane = TabPane("boardtabpane").settabs([
             Tab("game", "Game", this.pgntext, "C"),
             Tab("tree", "Tree", this.treediv, "$"),
             Tab("book", "Book", this.bookdiv, "?"),
+            Tab("players", "Players", this.playerssplitpane, "f"),
             Tab("train", "Train", this.traindiv, "-"),
             Tab("tools", "Tools", this.toolsdiv, "%"),
             Tab("studies", "Studies", this.studies, "]")
@@ -1800,8 +1849,10 @@ class Board_ extends e{
         )
     }
 
-    init(){
+    init(resobj){
         this.studies.init()
+        this.players = getelse(resobj, "players", [])
+        this.buildplayers()
     }
 }
 function Board(argsopt){return new Board_(argsopt)}

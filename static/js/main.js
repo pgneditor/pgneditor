@@ -36,7 +36,7 @@ function keydownhandler(ev){
 function initapp(resobj){
     app.log("Welcome to Pgn Editor !", "success")    
 
-    board.init()
+    board.init(resobj)
 
     profile.build()
     maintabpane.op(1)

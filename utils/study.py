@@ -206,6 +206,9 @@ class GameNode:
         self.id = blob.get("id", "root")
         self.parentid = blob.get("parentid", None)
         self.fen = blob.get("fen", self.parentstudy.getvariantboard().fen())
+        board = self.parentstudy.getvariantboard()
+        board.set_fen(self.fen)
+        self.zobristkeyhex = get_zobrist_key_hex(board)
         self.gensan = blob.get("gensan", None)
         self.genuci = blob.get("genuci", None)
         self.priorityindex = blob.get("priority", 0)
@@ -223,6 +226,7 @@ class GameNode:
             "id": self.id,
             "parentid": self.parentid,
             "fen": self.fen,
+            "zobristkeyhex": self.zobristkeyhex,
             "gensan": self.gensan,
             "genuci": self.genuci,
             "priorityindex": self.priorityindex,
