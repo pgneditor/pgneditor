@@ -350,6 +350,10 @@ def write_json_to_fdb(path, obj, writeremote = True):
     write_json_to_file(localfdbpath(path), obj)
     if writeremote:
         print("setting remote", path)
-        fdb.reference(path).set(obj)
+        try:
+            fdb.reference(path).set(obj)
+        except:
+            pe()
+            print("there was a problem setting remote")
 
 ###################################################################

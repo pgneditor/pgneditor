@@ -791,7 +791,7 @@ def buildbooktarget():
 if IS_PROD():
     Thread(target = scanplayerstarget).start()
     Thread(target = keepalivetarget).start()
-Thread(target = buildbooktarget).start()
+    Thread(target = buildbooktarget).start()
 
 print("serveglogic started, prod", IS_PROD())
 
