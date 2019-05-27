@@ -27,7 +27,9 @@ SCAN_PLAYER_LIST = os.environ.get("SCANPLAYERS", "jwaceking,Wolfram_EP,letzplayk
 
 MAX_BOOK_GAMES = 500
 
-BOOK_FILTER_VERSION = 5
+BOOK_FILTER_VERSION = 6
+
+MAX_DOWNLOAD_GAMES = 2000
 
 ###################################################################
 
@@ -633,7 +635,7 @@ def ndjsonpath(player):
     return f"{player}_ndjson"
 
 def gamexporturl(player, since = 0):
-    return f"https://lichess.org//api/games/user/{player}?since={since}"
+    return f"https://lichess.org//api/games/user/{player}?variant=atomic&max={MAX_DOWNLOAD_GAMES}&since={since}"
 
 def filterok(obj, player):    
     if not obj["perf"] == "atomic":
