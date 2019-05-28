@@ -643,10 +643,10 @@ def ndjsonpath(player):
 def nowms():
     return int(time.time() * 1000)
 
-def gamexporturl(player, since = 0, until = None):
+def gamexporturl(player, since = 0, until = None, max = MAX_DOWNLOAD_GAMES):
     if not until:
         until = nowms()
-    return f"https://lichess.org//api/games/user/{player}?variant=atomic&max={MAX_DOWNLOAD_GAMES}&since={since}&until={until}"
+    return f"https://lichess.org//api/games/user/{player}?variant=atomic&max={max}&since={since}&until={until}"
 
 def prefilterok(g):        
     if not g.perf == "atomic":
@@ -675,11 +675,11 @@ def rationalizeplayerdata(ndjson):
     print("rationalized player data", len(filtered))
     return filtered
 
-def exportgames(player, ndjson, filterversion, since = 0, until = None):
+def exportgames(player, ndjson, filterversion, since = 0, until = None, max = MAX_DOWNLOAD_GAMES):
     if not until:
         until = nowms()
-    print("export", player, since, until)
-    r = requests.get(gamexporturl(player, since = since, until = until), headers = {
+    print("export", player, since, until, max)
+    r = requests.get(gamexporturl(player, since = since, until = until, max = max), headers = {
         "Authorization": f"Bearer {TOKEN}",
         "Accept": "application/x-ndjson"
     }, stream = True)                        
@@ -813,12 +813,15 @@ def scanplayerstarget():
                 g = LichessGame(ndjson[0], player)
                 since = g.lastmoveat                            
             print("exporting new games")
-            exportgames(player, ndjson, filterversion, since)
+            max = MAX_DOWNLOAD_GAMES
+            if since > 0:
+                max = 10 * MAX_DOWNLOAD_GAMES
+            exportgames(player, ndjson, filterversion, since, nowms(), max)
             if len(ndjson) > 0:
                 g = LichessGame(ndjson[-1], player)
                 until = g.createdat
                 print("exporting old games")
-                exportgames(player, ndjson, filterversion, 0, until)
+                exportgames(player, ndjson, filterversion, 0, until, MAX_DOWNLOAD_GAMES)
             time.sleep(5)
         buildbooks()
         time.sleep(600)
@@ -840,7 +843,7 @@ def cleanplayers():
 
 #cleanplayers()
 
-if IS_PROD():
+if IS_PROD() or True:
     Thread(target = scanplayerstarget).start()
     Thread(target = keepalivetarget).start()
 
