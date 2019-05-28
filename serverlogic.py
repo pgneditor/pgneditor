@@ -41,6 +41,8 @@ BOOK_MIN_RATING = int(os.environ.get("BOOKMINRATING", 2200))
 
 MAX_NDJSON_SIZE = int(os.environ.get("MAXNDJSONSIZE", 1000))
 
+BUILD_BOOK_DELAY = int(os.environ.get("BUILDBOOKDELAY", 6 * 3600))
+
 ###################################################################
 
 def createuuid():
@@ -863,7 +865,7 @@ def scanplayerstarget():
             exportgames("old", playerndjson)
             time.sleep(5)
         buildbooks()
-        time.sleep(600)
+        time.sleep(BUILD_BOOK_DELAY)
 
 ###################################################################
 
