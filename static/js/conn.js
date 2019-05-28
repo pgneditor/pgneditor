@@ -1622,21 +1622,41 @@ class Board_ extends e{
         this.buildplayers(false)
         if(resobj.kind == "loadbook"){
             this.bookblob = resobj.bookblob
+            if(!this.bookcache) this.bookcache = {}
+            let playerlower = this.bookblob.name.toLowerCase()
+            this.bookcache[playerlower] = resobj.bookblob
         }
         this.setgamefromstudy(this.study)
     }
 
     loadbook(){
         this.buildplayers(true)
+        let player = this.playerscombo.v()
+        if(this.bookcache){
+            let playerlower = player.toLowerCase()
+            if(this.bookcache[playerlower]){
+                this.bookblob = this.bookcache[playerlower]
+                this.buildplayers(false)
+                this.setgamefromstudy(this.study)
+                return
+            }
+        }
         api({
             "kind": "loadbook",
-            "player": this.playerscombo.v()
+            "player": player
         }, this.bookloaded.bind(this))
+    }
+
+    playerscombochanged(){
+        if(!this.bookcache) return
+        let playerlower = this.playerscombo.v().toLowerCase()
+        if(this.bookcache[playerlower]) this.loadbook()
     }
 
     buildplayers(loading){
         if(!this.players) return
         this.playerscombo = Select().ff("monospace").pad(2).fs(20).setid(`${this.id}/playerscombo`).setoptions(this.players.map(player => [player, player]))        
+        this.playerscombo.onchange(this.playerscombochanged.bind(this))
         this.playerscombohook.x.a(
             this.playerscombo            
         )
