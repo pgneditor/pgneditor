@@ -738,7 +738,7 @@ class PlayerNdjson:
         self.filterversion = blob.get("filterversion", 0)
         self.ndjson = blob.get("ndjson", [])
         self.since = blob.get("since", 0)
-        self.until = blob.get("since", nowms())
+        self.until = blob.get("until", nowms())
 
     def fromdb(self):
         blob = read_json_from_fdb(ndjsonpath(self.player), {})    
