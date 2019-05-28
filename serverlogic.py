@@ -710,20 +710,18 @@ def exportgames(kind, playerndjson):
                 if(prefilterok(g)):
                     playerndjson.ndjson.append(obj)
                     found += 1
-                    if g.lastmoveat > playerndjson.since:
-                        playerndjson.since = g.lastmoveat
+                if g.lastmoveat > playerndjson.since:
+                    playerndjson.since = g.lastmoveat
                 if ( cnt % 20 ) == 0:
                     print("read cnt", cnt, "found", found, "rate", cnt / (time.time() - start))
         except:
-            pe()                    
-            break
+            pe()                                
     if found > 0:
         print("writing player", playerndjson.player)
-        playerndjson.ndjson = rationalizeplayerdata(playerndjson.ndjson)
-        playerndjson.storedb()
-        print("writing player done", playerndjson.player)
+        playerndjson.ndjson = rationalizeplayerdata(playerndjson.ndjson)                
     else:
         print("up to date", playerndjson.player)
+    playerndjson.storedb()
 
 def bookfilterok(g):
     return ( g.white.rating > BOOK_MIN_RATING ) and ( g.black.rating > BOOK_MIN_RATING )
@@ -757,6 +755,7 @@ class PlayerNdjson:
         }
 
     def storedb(self):
+        print("storing ndjson", self.player)
         write_json_to_fdb(ndjsonpath(self.player), self.toblob())    
         return self
 
