@@ -733,7 +733,7 @@ def exportgames(kind, playerndjson):
     playerndjson.storedb()
 
 def bookfilterok(g):
-    return ( g.white.rating > BOOK_MIN_RATING ) and ( g.black.rating > BOOK_MIN_RATING )
+    return ( g.white.rating >= BOOK_MIN_RATING ) and ( g.black.rating >= BOOK_MIN_RATING )
 
 def bookpath(player):
     return f"{player}_book"
