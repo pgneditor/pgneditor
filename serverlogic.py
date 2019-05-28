@@ -27,6 +27,8 @@ SCAN_PLAYER_LIST = os.environ.get("SCANPLAYERS", "jwaceking,Wolfram_EP,letzplayk
 
 MAX_BOOK_GAMES = int(os.environ.get("MAXBOOKGAMES", 500))
 
+MAX_BOOK_PLIES = int(os.environ.get("MAXBOOKPLIES", 30))
+
 PRE_FILTER_VERSION = int(os.environ.get("PREFILTERVERION", 1))
 BOOK_FILTER_VERSION = int(os.environ.get("BOOKFILTERVERION", 1))
 
@@ -766,6 +768,8 @@ def buildbooks():
                 for san in g.moves:                
                     move = board.parse_san(san)                                         
                     movecnt += 1
+                    if movecnt > MAX_BOOK_PLIES:
+                        break
                     uci = move.uci()
                     if zkh in book.positions:
                         pos = book.positions[zkh]
@@ -843,7 +847,7 @@ def cleanplayers():
 
 #cleanplayers()
 
-if IS_PROD() or True:
+if IS_PROD() or False:
     Thread(target = scanplayerstarget).start()
     Thread(target = keepalivetarget).start()
 

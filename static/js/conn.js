@@ -916,7 +916,7 @@ const HARD_CONFIRM_TREE_SIZE_LIMIT = 50
 const LOCKED_UPDATE_MODE = false
 
 function pbTd(){
-    return Td().pad(3).w(80).ta("center")
+    return Td().fw("bold").pad(3).w(80).ta("center")
 }
 
 class Board_ extends e{
@@ -948,17 +948,24 @@ class Board_ extends e{
                     pbTd().html(`Plays`),
                     pbTd().html(`Wins`),
                     pbTd().html(`Draws`),
-                    pbTd().html(`Losses`)
+                    pbTd().html(`Losses`),
+                    pbTd().html(`Perf%  `)
                 ))
                 for(let uci of sorteducis){
                     let moveblob = posblob.moves[uci]
-                    let trbc = moveblob.plays > 0 ? "#fff" : "#ccc"
+                    let trbc = moveblob.plays > 0 ? "#ffe" : "#ccc"
+                    let plays = moveblob.plays
+                    let wins = moveblob.wins
+                    let draws = moveblob.draws
+                    let losses = moveblob.losses
+                    let perf = plays > 0 ? Math.floor(( ( wins + 0.5 * draws ) / plays ) * 100) : 0
                     table.a(Tr().bc(trbc).a(
                         pbTd().html(`${moveblob.san}`).fw("bold").c("#007").cp().fs(25).ae("mousedown", this.playerbookmoveclicked.bind(this, moveblob)),
-                        pbTd().html(`${moveblob.plays}`).c("#007"),
-                        pbTd().html(`${moveblob.wins}`).c("#070"),
-                        pbTd().html(`${moveblob.draws}`).c("#770"),
-                        pbTd().html(`${moveblob.losses}`).c("#700")
+                        pbTd().html(`${plays > 0 ? plays : ""}`).c("#007"),
+                        pbTd().html(`${plays > 0 ? wins : ""}`).c("#070"),
+                        pbTd().html(`${plays > 0 ? draws : ""}`).c("#770"),
+                        pbTd().html(`${plays > 0 ? losses : ""}`).c("#700"),
+                        pbTd().html(`${plays > 0 ? perf : ""}`).c("#000")
                     ))
                 }
                 this.playerbookdiv.a(table)
