@@ -797,9 +797,10 @@ def buildbooks():
         cnt = 0
         for g in filtered:
             cnt += 1
-            print("building", cnt, "of", len(filtered), g.white.name, g.black.name)
+            #print("building", cnt, "of", len(filtered), g.white.name, g.black.name)
             if g.id in book.gameids:
-                print("up to date")
+                pass
+                #print("up to date")
             else:
                 book.gameids[g.id] = True
                 board = getvariantboard("atomic")
@@ -835,8 +836,8 @@ def buildbooks():
                     pos.moves[uci] = bookmove
                     book.positions[zkh] = pos
                     board.push(move)
-                    zkh = get_zobrist_key_hex(board)                                       
-                print("added", movecnt)
+                    zkh = get_zobrist_key_hex(board)                                                       
+                print("added", movecnt, "moves of", g.white.name, g.black.name)
         write_json_to_fdb(bookpath(player), book.toblob())
         time.sleep(5)
 
