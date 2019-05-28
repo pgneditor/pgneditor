@@ -718,10 +718,10 @@ def bookpath(player):
     return f"{player}_book"
 
 def readndjson(player):
-    ndjsonblob = read_json_from_fdb(ndjsonpath(player),{
+    ndjsonblob = read_json_from_fdb(ndjsonpath(player), {
         "filterversion": 0,
         "ndjson": []
-    })
+    })    
     return ( ndjsonblob["filterversion"], ndjsonblob["ndjson"])
 
 def buildbooks():    
@@ -838,9 +838,9 @@ def cleanplayers():
         delfdb(ndjsonpath(player))
         delfdb(bookpath(player))
 
-#cleanplayers()
+cleanplayers()
 
-if IS_PROD() or True:
+if IS_PROD():
     Thread(target = scanplayerstarget).start()
     Thread(target = keepalivetarget).start()
 
