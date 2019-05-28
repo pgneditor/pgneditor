@@ -25,11 +25,17 @@ SERVERLOGIC_VERBOSE = True
 
 SCAN_PLAYER_LIST = os.environ.get("SCANPLAYERS", "jwaceking,Wolfram_EP,letzplaykrazy,HigherBrainPattern,Natso,sutcunuri,kreedz,Xeransis,Illion")
 
-MAX_BOOK_GAMES = 500
+MAX_BOOK_GAMES = os.environ.get("MAXBOOKGAMES", 500)
 
-BOOK_FILTER_VERSION = 8
+PRE_FILTER_VERSION = os.environ.get("PREFILTERVERION", 1)
+BOOK_FILTER_VERSION = os.environ.get("BOOKFILTERVERION", 1)
 
-MAX_DOWNLOAD_GAMES = 1000
+MAX_DOWNLOAD_GAMES = os.environ.get("MAXDOWNLOADGAMES", 100)
+
+PRE_MIN_RATING = os.environ.get("PREMINRATING", 2200)
+BOOK_MIN_RATING = os.environ.get("BOOKMINRATING", 2200)
+
+MAX_NDJSON_SIZE = os.environ.get("MAXNDJSONSIZE", 1000)
 
 ###################################################################
 
@@ -634,14 +640,20 @@ TOKEN = "L8GHblP1Wc57Oegi"
 def ndjsonpath(player):
     return f"{player}_ndjson"
 
-def gamexporturl(player, since = 0):
-    return f"https://lichess.org//api/games/user/{player}?variant=atomic&max={MAX_DOWNLOAD_GAMES}&since={since}"
+def nowms():
+    return int(time.time() * 1000)
 
-def filterok(obj, player):    
-    if not obj["perf"] == "atomic":
+def gamexporturl(player, since = 0, until = None):
+    if not until:
+        until = nowms()
+    return f"https://lichess.org//api/games/user/{player}?variant=atomic&max={MAX_DOWNLOAD_GAMES}&since={since}&until={until}"
+
+def prefilterok(g):        
+    if not g.perf == "atomic":
         return False
-    g = LichessGame(obj, player)
-    if ( g.white.rating < 2250 ) or ( g.black.rating < 2250 ):
+    if ( g.white.rating < PRE_MIN_RATING ) or ( g.black.rating < PRE_MIN_RATING ):
+        return False
+    if g.playeropp.ailevel or ( g.playeropp.title == "BOT" ):
         return False
     return True
 
@@ -650,7 +662,7 @@ def rationalizeplayerdata(ndjson):
     ids = {}
     filtered = []
     for obj in ndjson:
-        if ( "id" in obj ) and ( "lastMoveAt" in obj ):
+        if ( "id" in obj ) and ( "lastMoveAt" in obj ) and ( "createdAt" in obj ):
             id = obj["id"]
             if not id in ids:
                 ids[id] = True
@@ -658,8 +670,131 @@ def rationalizeplayerdata(ndjson):
             else:
                 print("duplicate id", id)
     filtered.sort(key = lambda x: x["lastMoveAt"], reverse = True)
+    if len(filtered) > MAX_NDJSON_SIZE:
+        filtered = filtered[:MAX_NDJSON_SIZE]
     print("rationalized player data", len(filtered))
     return filtered
+
+def exportgames(player, ndjson, filterversion, since = 0, until = None):
+    if not until:
+        until = nowms()
+    print("export", player, since, until)
+    r = requests.get(gamexporturl(player, since = since, until = until), headers = {
+        "Authorization": f"Bearer {TOKEN}",
+        "Accept": "application/x-ndjson"
+    }, stream = True)                        
+    cnt = 0
+    found = 0
+    start = time.time()
+    for line in r.iter_lines():
+        try:
+            line = line.decode("utf-8")                    
+            obj = json.loads(line)                    
+            cnt += 1
+            g = LichessGame(obj, player)
+            if(prefilterok(g)):
+                ndjson.append(obj)
+                found += 1
+            if ( cnt % 20 ) == 0:
+                print("read cnt", cnt, "found", found, "rate", cnt / (time.time() - start))
+        except:
+            pe()                    
+            break
+    if found > 0:
+        print("writing player", player)
+        ndjson = rationalizeplayerdata(ndjson)
+        write_json_to_fdb(ndjsonpath(player), {
+            "filterversion": filterversion,
+            "ndjson": ndjson
+        })
+        print("writing player done", player)
+    else:
+        print("up to date", player)
+
+def bookfilterok(g):
+    return ( g.white.rating > BOOK_MIN_RATING ) and ( g.black.rating > BOOK_MIN_RATING )
+
+def bookpath(player):
+    return f"{player}_book"
+
+def readndjson(player):
+    ndjsonblob = read_json_from_fdb(ndjsonpath(player),{
+        "filterversion": 0,
+        "ndjson": []
+    })
+    return ( ndjsonblob["filterversion"], ndjsonblob["ndjson"])
+
+def buildbooks():    
+    BUILD_PLAYERS = SCAN_PLAYER_LIST.split(",")    
+    for player in BUILD_PLAYERS:
+        defaultbookblob = {
+            "name": player
+        }
+        bookblob = read_json_from_fdb(bookpath(player), defaultbookblob)
+        book = Book(bookblob)
+        if BOOK_FILTER_VERSION > book.filterversion:
+            book.gameids = {}
+            book.positions = {}
+            book.filterversion = BOOK_FILTER_VERSION
+        ( filterversion, ndjson ) = readndjson(player)
+        print("building", player)
+        cnt = 0
+        found = 0
+        filtered = []
+        for gameblob in ndjson:
+            cnt += 1
+            g = LichessGame(gameblob, player)
+            if bookfilterok(g):
+                filtered.append(g)
+                found += 1
+            if ( cnt % 1000 ) == 0:
+                print("filtering", cnt, "found", found)
+        print("filtering done, found", found)
+        if len(filtered) > MAX_BOOK_GAMES:
+            filtered = filtered[:MAX_BOOK_GAMES]
+        cnt = 0
+        for g in filtered:
+            cnt += 1
+            print("building", cnt, "of", len(filtered), g.white.name, g.black.name)
+            if g.id in book.gameids:
+                print("up to date")
+            else:
+                book.gameids[g.id] = True
+                board = getvariantboard("atomic")
+                zkh = get_zobrist_key_hex(board)
+                movecnt = 0
+                for san in g.moves:                
+                    move = board.parse_san(san)                                         
+                    movecnt += 1
+                    uci = move.uci()
+                    if zkh in book.positions:
+                        pos = book.positions[zkh]
+                    else:
+                        pos = BookPosition({
+                            "zobristkeyhex": zkh
+                        })
+                    if uci in pos.moves:
+                        bookmove = pos.moves[uci]
+                    else:
+                        bookmove = BookMove({
+                            "uci": uci,
+                            "san": san
+                        })
+                    if board.turn == g.mecolor:
+                        bookmove.plays += 1
+                        if g.meresult == 1:
+                            bookmove.wins += 1
+                        elif g.meresult == 0:
+                            bookmove.losses += 1
+                        else:
+                            bookmove.draws += 1                
+                    pos.moves[uci] = bookmove
+                    book.positions[zkh] = pos
+                    board.push(move)
+                    zkh = get_zobrist_key_hex(board)                                       
+                print("added", movecnt)
+        write_json_to_fdb(bookpath(player), book.toblob(), writeremote = IS_PROD())
+        time.sleep(5)
 
 def scanplayerstarget():
     SCAN_PLAYERS = SCAN_PLAYER_LIST.split(",")
@@ -667,130 +802,33 @@ def scanplayerstarget():
     while True:
         for player in SCAN_PLAYERS:
             print("scanning", player)
-            ndjson = read_json_from_fdb(ndjsonpath(player), [])
+            ( filterversion, ndjson ) = readndjson(player)
+            if PRE_FILTER_VERSION > filterversion:
+                print("rebuild ndjson")
+                filterversion = PRE_FILTER_VERSION
+                ndjson = []
             ndjson = rationalizeplayerdata(ndjson)
             since = 0
             if len(ndjson) > 0:
-                since = ndjson[0]["lastMoveAt"]
-            print("since", since)
-            r = requests.get(gamexporturl(player, since = since), headers = {
-                "Authorization": f"Bearer {TOKEN}",
-                "Accept": "application/x-ndjson"
-            }, stream = True)                        
-            cnt = 0
-            found = 0
-            start = time.time()
-            for line in r.iter_lines():
-                try:
-                    line = line.decode("utf-8")                    
-                    obj = json.loads(line)                    
-                    cnt += 1
-                    if(filterok(obj, player)):
-                        ndjson.append(obj)
-                        found += 1
-                    if ( cnt % 20 ) == 0:
-                        print("read cnt", cnt, "found", found, "rate", cnt / (time.time() - start))
-                except:
-                    pe()                    
-                    break
-            if found > 0:
-                print("writing player", player)
-                ndjson = rationalizeplayerdata(ndjson)
-                write_json_to_fdb(ndjsonpath(player), ndjson)
-                print("writing player done", player)
-            else:
-                print("up to date", player)
+                g = LichessGame(ndjson[0], player)
+                since = g.lastmoveat                            
+            print("exporting new games")
+            exportgames(player, ndjson, filterversion, since)
+            if len(ndjson) > 0:
+                g = LichessGame(ndjson[-1], player)
+                until = g.createdat
+                print("exporting old games")
+                exportgames(player, ndjson, filterversion, 0, until)
             time.sleep(5)
+        buildbooks()
         time.sleep(600)
 
 ###################################################################
 
 def keepalivetarget():
-    for i in range(KEEP_ALIVE):
+    for i in range(KEEP_ALIVE):        
+        time.sleep(600)
         geturl(SERVER_URL, verbose = True)
-        time.sleep(600)
-
-###################################################################
-
-def bookfilterok(g):
-    return ( g.white.rating > 2300 ) and ( g.black.rating > 2300 ) and ( not g.playeropp.ailevel ) and ( not g.playeropp.title == "BOT" )
-
-def bookpath(player):
-    return f"{player}_book"
-
-def buildbooktarget():
-    BUILD_PLAYERS = SCAN_PLAYER_LIST.split(",")
-    while True:
-        for player in BUILD_PLAYERS:
-            defaultbookblob = {
-                "name": player
-            }
-            bookblob = read_json_from_fdb(bookpath(player), defaultbookblob)
-            book = Book(bookblob)
-            if BOOK_FILTER_VERSION > book.filterversion:
-                book.gameids = {}
-                book.positions = {}
-                book.filterversion = BOOK_FILTER_VERSION
-            ndjson = read_json_from_fdb(ndjsonpath(player), [])
-            print("building", player)
-            cnt = 0
-            found = 0
-            filtered = []
-            for gameblob in ndjson:
-                cnt += 1
-                g = LichessGame(gameblob, player)
-                if bookfilterok(g):
-                    filtered.append(g)
-                    found += 1
-                if ( cnt % 1000 ) == 0:
-                    print("filtering", cnt, "found", found)
-            print("filtering done, found", found)
-            if len(filtered) > MAX_BOOK_GAMES:
-                filtered = filtered[:MAX_BOOK_GAMES]
-            cnt = 0
-            for g in filtered:
-                cnt += 1
-                print("building", cnt, "of", len(filtered), g.white.name, g.black.name)
-                if g.id in book.gameids:
-                    print("up to date")
-                else:
-                    book.gameids[g.id] = True
-                    board = getvariantboard("atomic")
-                    zkh = get_zobrist_key_hex(board)
-                    movecnt = 0
-                    for san in g.moves:                
-                        move = board.parse_san(san)                                         
-                        movecnt += 1
-                        uci = move.uci()
-                        if zkh in book.positions:
-                            pos = book.positions[zkh]
-                        else:
-                            pos = BookPosition({
-                                "zobristkeyhex": zkh
-                            })
-                        if uci in pos.moves:
-                            bookmove = pos.moves[uci]
-                        else:
-                            bookmove = BookMove({
-                                "uci": uci,
-                                "san": san
-                            })
-                        if board.turn == g.mecolor:
-                            bookmove.plays += 1
-                            if g.meresult == 1:
-                                bookmove.wins += 1
-                            elif g.meresult == 0:
-                                bookmove.losses += 1
-                            else:
-                                bookmove.draws += 1                
-                        pos.moves[uci] = bookmove
-                        book.positions[zkh] = pos
-                        board.push(move)
-                        zkh = get_zobrist_key_hex(board)                                       
-                    print("added", movecnt)
-            write_json_to_fdb(bookpath(player), book.toblob(), writeremote = IS_PROD())
-            time.sleep(5)
-        time.sleep(600)
 
 ###################################################################
 
@@ -802,10 +840,9 @@ def cleanplayers():
 
 #cleanplayers()
 
-if IS_PROD():
+if IS_PROD() or True:
     Thread(target = scanplayerstarget).start()
     Thread(target = keepalivetarget).start()
-    Thread(target = buildbooktarget).start()
 
 print("serveglogic started, prod", IS_PROD())
 

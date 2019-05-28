@@ -548,6 +548,9 @@ class LichessGame:
     def fromblob(self, blob = {}, me = None):
         self.me = me
         self.id = blob.get("id", None)
+        self.perf = blob.get("perf", None)
+        self.lastmoveat = blob.get("lastMoveAt", 0)
+        self.createdat = blob.get("createdAt", 0)
         playersblob = blob.get("players", {})
         self.white = LichessPlayer(playersblob.get("white", {}))
         self.black = LichessPlayer(playersblob.get("black", {}))

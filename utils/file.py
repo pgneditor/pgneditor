@@ -8,6 +8,7 @@ import stat
 from threading import Thread
 import time
 from queue import Queue
+import json
 
 ###################################################################
 
@@ -344,14 +345,14 @@ def read_json_from_fdb(path, default):
     if not obj:
         return default
     write_json_to_file(localfdbpath(path), obj)
-    return obj
+    return json.loads(obj)
 
 def write_json_to_fdb(path, obj, writeremote = True):
     write_json_to_file(localfdbpath(path), obj)
     if writeremote:
         print("setting remote", path)
         try:
-            fdb.reference(path).set(obj)
+            fdb.reference(path).set(json.dumps(obj))
         except:
             pe()
             print("there was a problem setting remote")
