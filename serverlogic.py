@@ -755,7 +755,7 @@ class PlayerNdjson:
         }
 
     def storedb(self):
-        print("storing ndjson", self.player)
+        print("storing ndjson", self)
         write_json_to_fdb(ndjsonpath(self.player), self.toblob())    
         return self
 
