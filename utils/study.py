@@ -549,6 +549,7 @@ class LichessGame:
         self.me = me
         self.id = blob.get("id", None)
         self.perf = blob.get("perf", None)
+        self.rated = blob.get("rated", False)
         self.lastmoveat = blob.get("lastMoveAt", 0)
         self.createdat = blob.get("createdAt", 0)
         playersblob = blob.get("players", {})

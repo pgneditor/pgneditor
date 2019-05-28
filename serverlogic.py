@@ -27,6 +27,7 @@ SCAN_PLAYER_LIST = os.environ.get("SCANPLAYERS", "jwaceking,Wolfram_EP,letzplayk
 
 MAX_BOOK_GAMES = int(os.environ.get("MAXBOOKGAMES", 500))
 
+PRE_MIN_PLIES = int(os.environ.get("PREMINPLIES", 10))
 MAX_BOOK_PLIES = int(os.environ.get("MAXBOOKPLIES", 30))
 
 PRE_FILTER_VERSION = int(os.environ.get("PREFILTERVERION", 1))
@@ -656,6 +657,10 @@ def prefilterok(g):
     if ( g.white.rating < PRE_MIN_RATING ) or ( g.black.rating < PRE_MIN_RATING ):
         return False
     if g.playeropp.ailevel or ( g.playeropp.title == "BOT" ):
+        return False
+    if len(g.moves) < PRE_MIN_PLIES:
+        return False
+    if not g.rated:
         return False
     return True
 
