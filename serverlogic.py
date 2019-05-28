@@ -817,7 +817,7 @@ def scanplayerstarget():
             if since > 0:
                 max = 10 * MAX_DOWNLOAD_GAMES
             exportgames(player, ndjson, filterversion, since, nowms(), max)
-            if len(ndjson) > 0:
+            if ( len(ndjson) > 0 ) and ( len(ndjson) < MAX_NDJSON_SIZE ):
                 g = LichessGame(ndjson[-1], player)
                 until = g.createdat
                 print("exporting old games")
