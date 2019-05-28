@@ -679,6 +679,9 @@ def rationalizeplayerdata(ndjson):
 
 def exportgames(kind, playerndjson):
     print("export", kind, playerndjson)
+    if ( kind == "old" ) and ( len(playerndjson.ndjson) >= MAX_NDJSON_SIZE ):
+        print("cache full, not exporting")
+        return
     since = playerndjson.since
     until = playerndjson.until
     max = MAX_DOWNLOAD_GAMES
