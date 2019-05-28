@@ -645,7 +645,7 @@ def ndjsonpath(player):
 def nowms():
     return int(time.time() * 1000)
 
-def gamexporturl(player, since = 0, until = None, max = MAX_DOWNLOAD_GAMES):
+def gameexporturl(player, since = 0, until = None, max = MAX_DOWNLOAD_GAMES):
     if not until:
         until = nowms()
     return f"https://lichess.org//api/games/user/{player}?variant=atomic&max={max}&since={since}&until={until}"
@@ -677,11 +677,20 @@ def rationalizeplayerdata(ndjson):
     print("rationalized player data", len(filtered))
     return filtered
 
-def exportgames(player, ndjson, filterversion, since = 0, until = None, max = MAX_DOWNLOAD_GAMES):
-    if not until:
+def exportgames(kind, playerndjson):
+    print("export", kind, playerndjson)
+    since = playerndjson.since
+    until = playerndjson.until
+    max = MAX_DOWNLOAD_GAMES
+    if kind == "new":
         until = nowms()
-    print("export", player, since, until, max)
-    r = requests.get(gamexporturl(player, since = since, until = until, max = max), headers = {
+        if playerndjson.since > 0:
+            max = 10 * max
+    if kind == "old":
+        since = 0
+        until = playerndjson.until
+    print("exporting", since, until, max)
+    r = requests.get(gameexporturl(playerndjson.player, since = since, until = until, max = max), headers = {
         "Authorization": f"Bearer {TOKEN}",
         "Accept": "application/x-ndjson"
     }, stream = True)                        
@@ -693,25 +702,28 @@ def exportgames(player, ndjson, filterversion, since = 0, until = None, max = MA
             line = line.decode("utf-8")                    
             obj = json.loads(line)                    
             cnt += 1
-            g = LichessGame(obj, player)
-            if(prefilterok(g)):
-                ndjson.append(obj)
-                found += 1
-            if ( cnt % 20 ) == 0:
-                print("read cnt", cnt, "found", found, "rate", cnt / (time.time() - start))
+            if ( "createdAt" in obj ) and ( "lastMoveAt" in obj ):
+                createdat = obj["createdAt"]                
+                if createdat < playerndjson.until:
+                    playerndjson.until = createdat
+                g = LichessGame(obj, playerndjson.player)
+                if(prefilterok(g)):
+                    playerndjson.ndjson.append(obj)
+                    found += 1
+                    if g.lastmoveat > playerndjson.since:
+                        playerndjson.since = g.lastmoveat
+                if ( cnt % 20 ) == 0:
+                    print("read cnt", cnt, "found", found, "rate", cnt / (time.time() - start))
         except:
             pe()                    
             break
     if found > 0:
-        print("writing player", player)
-        ndjson = rationalizeplayerdata(ndjson)
-        write_json_to_fdb(ndjsonpath(player), {
-            "filterversion": filterversion,
-            "ndjson": ndjson
-        })
-        print("writing player done", player)
+        print("writing player", playerndjson.player)
+        playerndjson.ndjson = rationalizeplayerdata(playerndjson.ndjson)
+        playerndjson.storedb()
+        print("writing player done", playerndjson.player)
     else:
-        print("up to date", player)
+        print("up to date", playerndjson.player)
 
 def bookfilterok(g):
     return ( g.white.rating > BOOK_MIN_RATING ) and ( g.black.rating > BOOK_MIN_RATING )
@@ -719,12 +731,37 @@ def bookfilterok(g):
 def bookpath(player):
     return f"{player}_book"
 
-def readndjson(player):
-    ndjsonblob = read_json_from_fdb(ndjsonpath(player), {
-        "filterversion": 0,
-        "ndjson": []
-    })    
-    return ( ndjsonblob["filterversion"], ndjsonblob["ndjson"] )
+class PlayerNdjson:
+    def __init__(self, player, blob = {}):
+        self.fromblob(player, blob)
+
+    def fromblob(self, player, blob = {}):
+        self.player = player
+        self.filterversion = blob.get("filterversion", 0)
+        self.ndjson = blob.get("ndjson", [])
+        self.since = blob.get("since", 0)
+        self.until = blob.get("since", nowms())
+
+    def fromdb(self):
+        blob = read_json_from_fdb(ndjsonpath(self.player), {})    
+        self.fromblob(self.player, blob)
+        return self
+
+    def toblob(self):
+        return {
+            "player": self.player,
+            "filterversion": self.filterversion,
+            "since": self.since,
+            "until": self.until,
+            "ndjson": self.ndjson
+        }
+
+    def storedb(self):
+        write_json_to_fdb(ndjsonpath(self.player), self.toblob())    
+        return self
+
+    def __repr__(self):
+        return f"< player ndjson < {self.player} since {self.since} until {self.until} size {len(self.ndjson)} > >"
 
 def buildbooks():    
     BUILD_PLAYERS = SCAN_PLAYER_LIST.split(",")    
@@ -738,7 +775,8 @@ def buildbooks():
             book.gameids = {}
             book.positions = {}
             book.filterversion = BOOK_FILTER_VERSION
-        ( filterversion, ndjson ) = readndjson(player)
+        playerndjson = PlayerNdjson(player).fromdb()
+        ndjson = playerndjson.ndjson
         print("building", player)
         cnt = 0
         found = 0
@@ -766,10 +804,10 @@ def buildbooks():
                 zkh = get_zobrist_key_hex(board)
                 movecnt = 0
                 for san in g.moves:                
-                    move = board.parse_san(san)                                         
-                    movecnt += 1
-                    if movecnt > MAX_BOOK_PLIES:
+                    move = board.parse_san(san)                                                             
+                    if movecnt >= MAX_BOOK_PLIES:                        
                         break
+                    movecnt += 1
                     uci = move.uci()
                     if zkh in book.positions:
                         pos = book.positions[zkh]
@@ -797,7 +835,7 @@ def buildbooks():
                     board.push(move)
                     zkh = get_zobrist_key_hex(board)                                       
                 print("added", movecnt)
-        write_json_to_fdb(bookpath(player), book.toblob(), writeremote = IS_PROD())
+        write_json_to_fdb(bookpath(player), book.toblob())
         time.sleep(5)
 
 def scanplayerstarget():
@@ -806,26 +844,14 @@ def scanplayerstarget():
     while True:
         for player in SCAN_PLAYERS:
             print("scanning", player)
-            ( filterversion, ndjson ) = readndjson(player)
-            if PRE_FILTER_VERSION > filterversion:
+            playerndjson = PlayerNdjson(player).fromdb()            
+            if PRE_FILTER_VERSION > playerndjson.filterversion:
                 print("rebuild ndjson")
-                filterversion = PRE_FILTER_VERSION
-                ndjson = []
-            ndjson = rationalizeplayerdata(ndjson)
-            since = 0
-            if len(ndjson) > 0:
-                g = LichessGame(ndjson[0], player)
-                since = g.lastmoveat                            
-            print("exporting new games")
-            max = MAX_DOWNLOAD_GAMES
-            if since > 0:
-                max = 10 * MAX_DOWNLOAD_GAMES
-            exportgames(player, ndjson, filterversion, since, nowms(), max)
-            if ( len(ndjson) > 0 ) and ( len(ndjson) < MAX_NDJSON_SIZE ):
-                g = LichessGame(ndjson[-1], player)
-                until = g.createdat
-                print("exporting old games")
-                exportgames(player, ndjson, filterversion, 0, until, MAX_DOWNLOAD_GAMES)
+                playerndjson.filterversion = PRE_FILTER_VERSION
+                playerndjson.ndjson = []            
+            playerndjson.ndjson = rationalizeplayerdata(playerndjson.ndjson)            
+            exportgames("new", playerndjson)            
+            exportgames("old", playerndjson)
             time.sleep(5)
         buildbooks()
         time.sleep(600)
@@ -845,7 +871,7 @@ def cleanplayers():
         delfdb(ndjsonpath(player))
         delfdb(bookpath(player))
 
-#cleanplayers()
+cleanplayers()
 
 if IS_PROD() or False:
     Thread(target = scanplayerstarget).start()
