@@ -25,17 +25,17 @@ SERVERLOGIC_VERBOSE = True
 
 SCAN_PLAYER_LIST = os.environ.get("SCANPLAYERS", "jwaceking,Wolfram_EP,letzplaykrazy,HigherBrainPattern,Natso,sutcunuri,kreedz,Xeransis,Illion")
 
-MAX_BOOK_GAMES = os.environ.get("MAXBOOKGAMES", 500)
+MAX_BOOK_GAMES = int(os.environ.get("MAXBOOKGAMES", 500))
 
-PRE_FILTER_VERSION = os.environ.get("PREFILTERVERION", 1)
-BOOK_FILTER_VERSION = os.environ.get("BOOKFILTERVERION", 1)
+PRE_FILTER_VERSION = int(os.environ.get("PREFILTERVERION", 1))
+BOOK_FILTER_VERSION = int(os.environ.get("BOOKFILTERVERION", 1))
 
-MAX_DOWNLOAD_GAMES = os.environ.get("MAXDOWNLOADGAMES", 100)
+MAX_DOWNLOAD_GAMES = int(os.environ.get("MAXDOWNLOADGAMES", 100))
 
-PRE_MIN_RATING = os.environ.get("PREMINRATING", 2200)
-BOOK_MIN_RATING = os.environ.get("BOOKMINRATING", 2200)
+PRE_MIN_RATING = int(os.environ.get("PREMINRATING", 2200))
+BOOK_MIN_RATING = int(os.environ.get("BOOKMINRATING", 2200))
 
-MAX_NDJSON_SIZE = os.environ.get("MAXNDJSONSIZE", 1000)
+MAX_NDJSON_SIZE = int(os.environ.get("MAXNDJSONSIZE", 1000))
 
 ###################################################################
 
@@ -847,7 +847,7 @@ if IS_PROD() or True:
     Thread(target = scanplayerstarget).start()
     Thread(target = keepalivetarget).start()
 
-print("serveglogic started, prod", IS_PROD())
+print("serverlogic started, prod", IS_PROD())
 
 ###################################################################
 
