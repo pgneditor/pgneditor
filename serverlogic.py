@@ -871,7 +871,7 @@ def cleanplayers():
         delfdb(ndjsonpath(player))
         delfdb(bookpath(player))
 
-cleanplayers()
+#cleanplayers()
 
 if IS_PROD() or False:
     Thread(target = scanplayerstarget).start()
