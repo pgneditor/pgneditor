@@ -722,7 +722,7 @@ def readndjson(player):
         "filterversion": 0,
         "ndjson": []
     })    
-    return ( ndjsonblob["filterversion"], ndjsonblob["ndjson"])
+    return ( ndjsonblob["filterversion"], ndjsonblob["ndjson"] )
 
 def buildbooks():    
     BUILD_PLAYERS = SCAN_PLAYER_LIST.split(",")    

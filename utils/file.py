@@ -344,8 +344,8 @@ def read_json_from_fdb(path, default):
     obj = fdb.reference(path).get()
     if not obj:
         return default
-    write_json_to_file(localfdbpath(path), obj)    
     obj = json.loads(obj)    
+    write_json_to_file(localfdbpath(path), obj)        
     return obj
 
 def write_json_to_fdb(path, obj, writeremote = True):
