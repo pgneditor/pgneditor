@@ -991,6 +991,20 @@ class Board_ extends e{
     setgamefromstudy(study){
         console.log("setting game from", study)
         this.study = study
+        if(this.trainon()){
+            if(this.study.currentnode.childids.length == 0){
+                let transpositions = this.study.transpositions()
+                if(transpositions.length > 0){
+                    let maintrid = transpositions[0]
+                    let maintrnode = this.study.nodelist[maintrid]
+                    if(maintrnode.childids.length > 0){
+                        console.log("training transpoisition", maintrid)
+                        this.selectnodebyid(this.study.id, maintrid)
+                        return
+                    }
+                }
+            }
+        }
         if(this.basicboard.variantkey != study.variantkey){
             console.log("changing variant to", study.variantkey)
             this.basicboard.variantkey = study.variantkey
