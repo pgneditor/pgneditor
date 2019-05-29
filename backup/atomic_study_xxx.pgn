@@ -8,4 +8,15 @@
 [FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"]
 [Variant "Atomic"]
 
-1. e3 e6 *
+1. Nf3 ( 1. Nh3 h6 ( 1... e6 2. e3 ( 2. Ng5 f5 3. e4 Nc6 4. Nxh7 g6 ) 2... Nc6
+3. Ng5 f5 4. Nxh7 g6 5. h4 Nb4 6. Qf3 ) 2. d4 ( 2. e3 e6 ) 2... e6 ( 2... Na6
+3. e4 d5 4. Nc3 Nb4 5. Bg5 ( 5. Qh5 g6 6. Nb5 Bg4 7. Qg5 f6 8. f3 c6 9. Nc7+
+Qxc7 10. a3 Na2 ( 10... Bc8 11. axb4 hxg5 ) ) 5... f6 6. Nb5 c6 ( 6... Bg4 7.
+f3 c6 8. Nc7+ Qxc7 9. c3 Nc2+ 10. Qxc2 e5 11. Bd2 Bd7 ) ) ( 2... d5 ) ( 2... e5
+) 3. e4 ) ( 1. e3 ) ( 1. Nc3 Nf6 ) ( 1. g3 ) 1... f6 ( 1... e5 2. Ng5 f5 3. e3
+Na6 4. b4 h6 5. Nf7 Qh4 6. g3 Qg4 7. f3 Qh3 8. Bxh3 e4 9. d4 d5 10. O-O f4 11.
+h3 Nf6 12. fxe4 f3 13. Kh1 g6 14. e4 Be7 15. e5 O-O 16. Bg5 Bd6 17. e6 Re8 18.
+Nd8 Ng4 19. Nxb7 f2 20. hxg4 Be5 21. dxe5 d4 22. Qd3 c5 23. e7 Kh8 24. Qe4 ) 2.
+e3 ( 2. e4 d5 ) ( 2. Nc3 Nh6 3. g4 c6 4. d4 ) ( 2. Nd4 Nh6 ) 2... d5 ( 2... e6
+3. Nd4 ) 3. Ng5 fxg5 4. Qh5+ g6 5. Qe5 Be6 6. Nc3 b5 7. d4 Bg7 8. Qf4 Nf6 9. f3
+g5 10. Qe5 Ne4 11. b3 Nd2 12. Bd3 Bxe5 *
