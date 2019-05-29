@@ -524,6 +524,21 @@ function GameNode(parentstudy, blobopt){return new GameNode_(parentstudy, blobop
 ////////////////////////////////////////////////////////////////////
 // study
 class Study_ extends e{
+    transpositions(){
+        let currentnode = this.getcurrentnode()
+        let transpositions = []
+        for(let nodeid in this.nodelist){
+            if(nodeid != this.currentnode.id){
+                let node = this.nodelist[nodeid]
+                if(node.zobristkeyhex == currentnode.zobristkeyhex){
+                    transpositions.push(nodeid)
+                }
+            }            
+        }
+        transpositions.sort((tra, trb) => this.nodelist[trb].childids.length - this.nodelist[tra].childids.length)
+        return transpositions
+    }
+
     setcurrentnode(nodeid){
         this.currentnodeid = nodeid
         this.currentnode = this.nodelist[this.currentnodeid]
@@ -1071,8 +1086,29 @@ class Board_ extends e{
     }
 
     buildbook(){                
-        this.book = Book(this).build()
-        this.bookdiv.x.a(this.book)
+        this.book = Book(this).build()                
+        this.bookdiv.x.a(
+            this.transpositionshook = Div(),
+            this.book
+        )
+        let transpositions = []        
+        if(this.study){
+            transpositions = this.study.transpositions()
+            for(let nodeid of transpositions){
+                let node = this.study.nodelist[nodeid]
+                let numchilds = node.childids.length
+                let name = numchilds > 0 ? `branch(${numchilds})` : `leaf node`
+                let line = nodeid.split("_")
+                let trdiv = Div().cp().ff("monospace").mar(2).curlyborder().pad(2).pl(8).pr(8).html(`transposition - ${name} - ${line.join(" ")}`)
+                trdiv.bc(numchilds > 0 ? "#efe" : "#fee")
+                trdiv.ae("mousedown", function(){
+                    this.selectnodebyid(this.study.id, nodeid)
+                }.bind(this))
+                this.transpositionshook.a(
+                    trdiv
+                )
+            }            
+        }
     }
 
     initgif(){
