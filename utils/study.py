@@ -32,6 +32,8 @@ VARIANT_KEYS = [
 DEFAULT_MAX_PLIES = 200
 MAX_SUCCESS = 10
 
+MAX_TOP_GAMES = 5
+
 ###################################################################
 
 def format_zobrist_key_hex(zobrist_key):
@@ -541,9 +543,50 @@ class LichessPlayer:
             self.rating = ailevel2rating(self.ailevel)
         self.ratingdiff = blob.get("ratingDiff", 0)
 
+class LichessGameExcerpt:
+    def __init__(self, blob = {}):
+        self.fromblob(blob)
+
+    def fromblob(self, blob = {}):
+        self.gameid = blob.get("gameid", None)
+        self.white = blob.get("white", "White")
+        self.whiterating = blob.get("whiterating", 1500)
+        self.black = blob.get("black", "Black")        
+        self.blackrating = blob.get("blackrating", 1500)
+        self.result = blob.get("result", "1/2 - 1/2")
+
+    def toblob(self):
+        return {
+            "gameid": self.gameid,
+            "white": self.white,
+            "whiterating": self.whiterating,
+            "black": self.black,
+            "blackrating": self.blackrating,
+            "result": self.result
+        }
+
 class LichessGame:
     def __init__(self, blob = {}, me = None):
         self.fromblob(blob, me)
+
+    def resultstr(self, result = None):
+        if result is None:
+            result = self.result
+        if result == 0:
+            return "0-1"
+        if result == 1:
+            return "1-0"
+        return "1/2 - 1/2"
+
+    def excerpt(self):
+        return LichessGameExcerpt({
+            "gameid": self.id,
+            "white": self.white.name,
+            "whiterating": self.white.rating,
+            "black": self.black.name,
+            "blackrating": self.black.rating,
+            "result": self.resultstr()
+        })
 
     def fromblob(self, blob = {}, me = None):
         self.me = me
@@ -588,8 +631,7 @@ class BookMove:
         self.plays = blob.get("plays", 0)
         self.wins = blob.get("wins", 0)
         self.losses = blob.get("losses", 0)
-        self.draws = blob.get("draws", 0)
-        self.topgames = blob.get("topgames", [])
+        self.draws = blob.get("draws", 0)        
 
     def toblob(self):
         return {
@@ -598,27 +640,39 @@ class BookMove:
             "plays": self.plays,
             "wins": self.wins,
             "losses": self.losses,
-            "draws": self.draws,
-            "topgames": self.topgames
+            "draws": self.draws            
         }
 
 class BookPosition:
     def __init__(self, blob = {}):
         self.fromblob(blob)
 
+    def addtopgame(self, excerpt, maxtopgames = MAX_TOP_GAMES):
+        self.topgames.append(excerpt)
+        self.topgames.sort(key = lambda e: e.whiterating + e.blackrating, reverse = True)
+        if len(self.topgames) > maxtopgames:
+            self.topgames = self.topgames[:maxtopgames]
+
     def fromblob(self, blob = {}):        
         self.zobristkeyhex = blob.get("zobristkeyhex", None)        
         self.moves = {}
         for uci, moveblob in blob.get("moves", {}).items():
             self.moves[uci] = BookMove(moveblob)
+        self.topgames = []
+        for excerptblob in blob.get("topgames", []):
+            self.topgames.append(LichessGameExcerpt(excerptblob))
 
     def toblob(self):
         movesblob = {}
         for uci, bookmove in self.moves.items():
             movesblob[uci] = bookmove.toblob()
+        topgamesblob = []
+        for excerpt in self.topgames:
+            topgamesblob.append(excerpt.toblob())
         return {
             "zobristkeyhex": self.zobristkeyhex,        
-            "moves": movesblob
+            "moves": movesblob,
+            "topgames": topgamesblob
         }
 
 class Book:

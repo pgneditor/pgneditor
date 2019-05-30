@@ -984,6 +984,18 @@ class Board_ extends e{
                     ))
                 }
                 this.playerbookdiv.a(table)
+                let etable = Table().mt(5).ff("monospace")
+                let i = 0
+                for(let excerptblob of posblob.topgames){
+                    etable.a(Tr().cp().ae("mousedown", function(){
+                        window.open(`https://lichess.org/${excerptblob.gameid}`, "_blank")
+                    }).bc(i++%2 ? "#ffe" : "#eee").a(
+                        Td().pad(3).html(`${excerptblob.white} ${excerptblob.whiterating}`),
+                        Td().pad(3).pl(12).html(`${excerptblob.black} ${excerptblob.blackrating}`),
+                        Td().pad(3).pl(12).html(`${excerptblob.result}`)
+                    ))
+                }
+                this.playerbookdiv.a(etable)
             }
         }
     }
