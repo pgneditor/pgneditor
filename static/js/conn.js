@@ -984,20 +984,37 @@ class Board_ extends e{
                     ))
                 }
                 this.playerbookdiv.a(table)
-                let etable = Table().mt(5).ff("monospace")
-                let i = 0
-                for(let excerptblob of posblob.topgames){
-                    etable.a(Tr().cp().ae("mousedown", function(){
-                        window.open(`https://lichess.org/${excerptblob.gameid}`, "_blank")
-                    }).bc(i++%2 ? "#ffe" : "#eee").a(
-                        Td().pad(3).html(`${excerptblob.white} ${excerptblob.whiterating}`),
-                        Td().pad(3).pl(12).html(`${excerptblob.black} ${excerptblob.blackrating}`),
-                        Td().pad(3).pl(12).html(`${excerptblob.result}`)
-                    ))
-                }
-                this.playerbookdiv.a(etable)
+                if(posblob.topgames){
+                    let etable = this.excerptstable(posblob.topgames, this.bookblob.name)                
+                    this.playerbookdiv.a(etable)
+                }                
             }
         }
+    }
+
+    excerptstable(excerpts, name){        
+        const resultmappingwc = {"1-0": "#070","1/2-1/2": "#770","0-1": "#700"}
+        const resultmappingbc = {"0-1": "#070","1/2-1/2": "#770","1-0": "#700"}
+        let etable = Table().mt(5).ff("monospace")
+        let i = 0
+        for(let excerptblob of excerpts){
+            let whitec = "#007"
+            let blackc = "#007"
+            if(excerptblob.white == name){
+                whitec = resultmappingwc[excerptblob.result]
+            }
+            else if(excerptblob.black == name){
+                blackc = resultmappingbc[excerptblob.result]
+            }
+            etable.a(Tr().cp().ae("mousedown", function(){
+                window.open(`https://lichess.org/${excerptblob.gameid}`, "_blank")
+            }).bc(i++%2 ? "#ffe" : "#eee").a(
+                Td().c(whitec).pad(3).html(`${excerptblob.white} ( ${excerptblob.whiterating} )`),
+                Td().c(blackc).pad(3).pl(12).html(`${excerptblob.black} ( ${excerptblob.blackrating} )`),
+                Td().pad(3).pl(12).html(`${excerptblob.result}`)
+            ))
+        }
+        return etable
     }
 
     setgamefromstudy(study){

@@ -32,7 +32,7 @@ PRE_MIN_PLIES = int(os.environ.get("PREMINPLIES", 10))
 MAX_BOOK_PLIES = int(os.environ.get("MAXBOOKPLIES", 30))
 
 PRE_FILTER_VERSION = int(os.environ.get("PREFILTERVERION", 1))
-BOOK_FILTER_VERSION = int(os.environ.get("BOOKFILTERVERION", 1))
+BOOK_FILTER_VERSION = int(os.environ.get("BOOKFILTERVERION", 2))
 
 MAX_DOWNLOAD_GAMES = int(os.environ.get("MAXDOWNLOADGAMES", 100))
 

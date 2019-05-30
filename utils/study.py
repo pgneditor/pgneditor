@@ -553,7 +553,7 @@ class LichessGameExcerpt:
         self.whiterating = blob.get("whiterating", 1500)
         self.black = blob.get("black", "Black")        
         self.blackrating = blob.get("blackrating", 1500)
-        self.result = blob.get("result", "1/2 - 1/2")
+        self.result = blob.get("result", "1/2-1/2")
 
     def toblob(self):
         return {
@@ -576,7 +576,7 @@ class LichessGame:
             return "0-1"
         if result == 1:
             return "1-0"
-        return "1/2 - 1/2"
+        return "1/2-1/2"
 
     def excerpt(self):
         return LichessGameExcerpt({
@@ -648,7 +648,15 @@ class BookPosition:
         self.fromblob(blob)
 
     def addtopgame(self, excerpt, maxtopgames = MAX_TOP_GAMES):
-        self.topgames.append(excerpt)
+        found = False
+        for i in range(len(self.topgames)):
+            if self.topgames[i].gameid == excerpt.gameid:
+                self.topgames[i] = excerpt
+                print("found")
+                found = True
+                break
+        if not found:
+            self.topgames.append(excerpt)
         self.topgames.sort(key = lambda e: e.whiterating + e.blackrating, reverse = True)
         if len(self.topgames) > maxtopgames:
             self.topgames = self.topgames[:maxtopgames]
