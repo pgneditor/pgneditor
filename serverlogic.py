@@ -17,7 +17,8 @@ from utils.http import geturl
 from utils.study import Study, DEFAULT_MAX_PLIES, Book, BookMove, BookPosition, LichessGame, getvariantboard, get_zobrist_key_hex
 from utils.cryptography import encryptalphanum, decryptalphanum
 from utils.file import read_json_from_fdb, write_json_to_fdb, delfdb
-from config import SERVER_URL, KEEP_ALIVE, IS_PROD
+from utils.engine import Engine
+from utils.config import SERVER_URL, KEEP_ALIVE, IS_PROD, ENGINE_WORKING_DIR, ENGINE_EXECUTABLE_NAME
 
 ###################################################################
 
@@ -880,6 +881,23 @@ def keepalivetarget():
 
 ###################################################################
 
+def enginetesttarget():
+    time.sleep(5)
+    
+    e = Engine(ENGINE_WORKING_DIR(), ENGINE_EXECUTABLE_NAME())
+
+    e.open()
+
+    time.sleep(5)
+
+    e.send_line("uci")
+
+    time.sleep(5)
+
+    e.kill()
+
+###################################################################
+
 def cleanplayers():
     for player in SCAN_PLAYER_LIST.split(","):
         print("cleaning player", player)    
@@ -891,6 +909,8 @@ def cleanplayers():
 if IS_PROD() or False:
     Thread(target = scanplayerstarget).start()
     Thread(target = keepalivetarget).start()
+
+Thread(target = enginetesttarget).start()
 
 print("serverlogic started, prod", IS_PROD())
 

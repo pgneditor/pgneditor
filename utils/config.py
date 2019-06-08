@@ -15,10 +15,27 @@ def getenvboolelse(key, defaultvalue):
 
 ###################################################################
 
+SERVER_URL = os.environ.get("SERVERURL", "https://pgneditor.herokuapp.com")
+KEEP_ALIVE = int(os.environ.get("KEEPALIVE", 15))
+
 def IS_DEV():
-    return getenvboolelse("PGNEDITOR_DEV", False)
+    if "PGNEDITORDEV" in os.environ:
+        return True
+    return False
 
 def IS_PROD():
     return not IS_DEV()
+
+###################################################################
+
+def ENGINE_WORKING_DIR():
+    if IS_DEV():
+        return "engines"
+    return "/app/engines"
+
+def ENGINE_EXECUTABLE_NAME():
+    if IS_DEV():
+        return "stockfish.exe"
+    return "stockfish"
 
 ###################################################################
