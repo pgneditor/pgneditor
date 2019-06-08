@@ -107,3 +107,17 @@ class Engine:
         return f"< Engine {self.commandpath} >"
 
 ###################################################################
+
+class UciEngine(Engine):
+    def __init__(self, workingdirectory, executablename, id, systemlog):
+        super().__init__(workingdirectory, executablename)
+        self.id = id
+        self.systemlog = systemlog
+    
+    def read_stdout_func(self, sline):
+        #print(self, sline)
+        self.systemlog.log({"owner": self.id, "msg": sline})
+
+    def __repr__(self):
+        return f"< UciEngine {self.id} | {self.commandpath} >"
+

@@ -17,8 +17,9 @@ from utils.http import geturl
 from utils.study import Study, DEFAULT_MAX_PLIES, Book, BookMove, BookPosition, LichessGame, getvariantboard, get_zobrist_key_hex
 from utils.cryptography import encryptalphanum, decryptalphanum
 from utils.file import read_json_from_fdb, write_json_to_fdb, delfdb
-from utils.engine import Engine
+from utils.engine import UciEngine
 from utils.config import SERVER_URL, KEEP_ALIVE, IS_PROD, ENGINE_WORKING_DIR, ENGINE_EXECUTABLE_NAME
+from utils.logger import SystemLog
 
 ###################################################################
 
@@ -883,8 +884,10 @@ def keepalivetarget():
 
 def enginetesttarget():
     time.sleep(5)
+
+    sl = SystemLog()
     
-    e = Engine(ENGINE_WORKING_DIR(), ENGINE_EXECUTABLE_NAME())
+    e = UciEngine(ENGINE_WORKING_DIR(), ENGINE_EXECUTABLE_NAME(), "mainengine", sl)
 
     e.open()
 
@@ -895,6 +898,8 @@ def enginetesttarget():
     time.sleep(5)
 
     e.kill()
+
+    print(sl)
 
 ###################################################################
 
