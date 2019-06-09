@@ -54,7 +54,18 @@ function connect(){
 
 ////////////////////////////////////////////////////////////////////
 
+function testeventsource(){
+    let es = new EventSource("/testevents")
+    es.onmessage= function(ev){
+        console.log("event source data", ev.data)
+    }
+}
+
+////////////////////////////////////////////////////////////////////
+
 app.log("Pgn Editor authenticating ...", "info")
+
+//testeventsource()
 
 setTimeout(connect, 100)
 

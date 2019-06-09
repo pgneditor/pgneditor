@@ -15,10 +15,18 @@ from tornado.options import define, options
 
 import mimetypes
 
+import random
+from tornadose.handlers import EventSource
+from tornadose.stores import DataStore
+
 ###################################################################
 
 import serverlogic
 from utils.file import read_string_from_file
+
+###################################################################
+
+teststore = DataStore()
 
 ###################################################################
 
@@ -36,7 +44,8 @@ class Application(tornado.web.Application):
             (r"/importstudy/.*", ImportStudy),
             (r"/test", Test),
             (r"/docs/.*", Docs),
-            (r"/chatsocket", ChatSocketHandler)
+            (r"/chatsocket", ChatSocketHandler),
+            (r"/testevents", EventSource, {'store': teststore})
         ]
         settings = dict(
             cookie_secret="__TODO:_GENERATE_YOUR_OWN_RANDOM_VALUE_HERE__",
@@ -148,6 +157,7 @@ def main():
     tornado.options.parse_command_line()
     app = Application()
     app.listen(options.port)
+    tornado.ioloop.PeriodicCallback(lambda: teststore.submit(random.random()), 1000).start()
     tornado.ioloop.IOLoop.current().start()
 
 if __name__ == "__main__":

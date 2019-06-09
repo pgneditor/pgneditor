@@ -12,6 +12,7 @@ urllib3 = "*"
 python-chess = "*"
 heroku3 = "*"
 firebase-admin = "*"
+tornadose = "*"
 
 [requires]
 python_version = "3.7"
