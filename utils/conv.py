@@ -57,7 +57,7 @@ def fromenv():
         
     write_string_to_file("firebase/sacckey.json", content)
 
-    print("written sacckey", content)
+    #print("written sacckey", content)
 
 if sys.argv[1] == "e":
     toenv()
