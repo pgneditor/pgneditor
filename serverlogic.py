@@ -730,10 +730,11 @@ def exportgames(kind, playerndjson):
         except:
             pe()                                
     if found > 0:
-        print("writing player", playerndjson.player)
+        #print("writing player", playerndjson.player)
         playerndjson.ndjson = rationalizeplayerdata(playerndjson.ndjson)                
     else:
-        print("up to date", playerndjson.player)
+        #print("up to date", playerndjson.player)
+        pass
     playerndjson.storedb()
 
 def bookfilterok(g):
