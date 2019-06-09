@@ -7,6 +7,10 @@ import time
 
 ###################################################################
 
+from utils.logger import SystemLogItem
+
+###################################################################
+
 class Engine:
     def __init__(self, workingdirectory, executablename):
         self.workingdirectory = workingdirectory
@@ -116,7 +120,7 @@ class UciEngine(Engine):
     
     def read_stdout_func(self, sline):
         #print(self, sline)
-        self.systemlog.log({"owner": self.id, "msg": sline})
+        self.systemlog.log(SystemLogItem({"owner": self.id, "msg": sline}))
 
     def __repr__(self):
         return f"< UciEngine {self.id} | {self.commandpath} >"

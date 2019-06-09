@@ -1819,6 +1819,10 @@ class Board_ extends e{
         this.rawsplitpane = SplitPane()
         this.enginesubmittext = SubmitText().onclick(this.enginesubmit.bind(this))
         this.rawsplitpane.controlpanel.a(this.enginesubmittext)
+        this.engineloges = new EventSource("/enginelog")
+        this.engineloges.onmessage= function(ev){
+            console.log("event source data", ev.data)
+        }
         this.analysistabpane = TabPane("analysistabpane").settabs([
             Tab("analysis", "Analysis", Div(), "A"),
             Tab("raw", "Raw", this.rawsplitpane, "n")

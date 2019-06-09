@@ -45,7 +45,8 @@ class Application(tornado.web.Application):
             (r"/test", Test),
             (r"/docs/.*", Docs),
             (r"/chatsocket", ChatSocketHandler),
-            (r"/testevents", EventSource, {'store': teststore})
+            (r"/testevents", EventSource, {'store': teststore}),
+            (r"/enginelog", EventSource, {'store': serverlogic.mainenginelog.datastore})
         ]
         settings = dict(
             cookie_secret="__TODO:_GENERATE_YOUR_OWN_RANDOM_VALUE_HERE__",

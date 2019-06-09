@@ -6,6 +6,9 @@ from uuid import uuid1
 import time
 from queue import Queue
 from threading import Thread
+from tornadose.stores import QueueStore
+import json
+import asyncio
 
 ###################################################################
 
@@ -32,8 +35,20 @@ class SystemLogItem:
     def fromblob(self, blob = {}):
         self.id = uuid1().hex
         self.time = time.time()
+        self.dir = blob.get("dir", "out")
+        self.kind = blob.get("kind", "normal")
         self.owner = blob.get("owner", None)
         self.msg = blob.get("msg", None)
+
+    def toblob(self):
+        return {
+            "id": self.id,
+            "time": self.time,
+            "dir": self.dir,
+            "kind": self.kind,
+            "owner": self.owner,
+            "msg": self.msg
+        }
 
     def __repr__(self):
         return f"< logitem < {self.owner} | {self.time} | {self.id} | {self.msg} > >"
@@ -43,16 +58,21 @@ class SystemLog:
         self.maxsize = maxsize
         self.buffer = []
         self.q = Queue()
+        self.datastore = QueueStore()
         Thread(target = self.readqueuetarget).start()
 
     def readqueuetarget(self):
+        #https://stackoverflow.com/questions/51038793/error-happen-python3-6-while-using-tornado-in-multi-threading
+        asyncio.set_event_loop(asyncio.new_event_loop())
         while True:
             li = self.q.get()
             self.buffer.append(li)
+            message = json.dumps(li.toblob())
+            self.datastore.submit(message)                                    
             while len(self.buffer) > self.maxsize:
                 self.buffer = self.buffer[1:]
 
-    def log(self, li):
+    def log(self, li):        
         self.q.put(li)
 
     def __repr__(self):

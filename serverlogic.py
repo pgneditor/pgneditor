@@ -60,6 +60,16 @@ db = FirestoreDb()
 
 ###################################################################
 
+mainengine = None
+mainenginelog = SystemLog()
+
+def newengine_func():
+    global mainengine, mainenginelog    
+    mainengine = UciEngine(ENGINE_WORKING_DIR(), ENGINE_EXECUTABLE_NAME(), "mainengine", mainenginelog)
+    mainengine.open()
+
+###################################################################
+
 PRIVILEGES = [
     "admin",
     "analyze"
@@ -903,6 +913,15 @@ def enginetesttarget():
 
     print(sl)
 
+def initenginetarget():
+    global mainengine
+    print("initializing engine")
+    newengine_func()
+    print("initializing engine done")
+    time.sleep(10)
+    print("sending uci")
+    mainengine.send_line("uci")
+
 ###################################################################
 
 def cleanplayers():
@@ -918,6 +937,8 @@ if IS_PROD() or False:
     Thread(target = keepalivetarget).start()
 
 #Thread(target = enginetesttarget).start()
+
+Thread(target = initenginetarget).start()
 
 print("serverlogic started, prod", IS_PROD())
 
