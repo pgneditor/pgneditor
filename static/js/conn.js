@@ -1816,10 +1816,19 @@ class Board_ extends e{
         this.traindiv = Div().pad(3)
         this.trainmode = "none"
         this.buildtraindiv()        
+        this.rawsplitpane = SplitPane()
+        this.enginesubmittext = SubmitText().onclick(this.enginesubmit.bind(this))
+        this.rawsplitpane.controlpanel.a(this.enginesubmittext)
+        this.analysistabpane = TabPane("analysistabpane").settabs([
+            Tab("analysis", "Analysis", Div(), "A"),
+            Tab("raw", "Raw", this.rawsplitpane, "n")
+        ]).selecttab("analysis", USE_STORED_IF_AVAILABLE)
+        this.analysistabpane.controlpanel.bc("#ccc")
         this.tabpane = TabPane("boardtabpane").settabs([
             Tab("game", "Game", this.pgntext, "C"),
             Tab("tree", "Tree", this.treediv, "$"),
             Tab("book", "Book", this.bookdiv, "?"),
+            Tab("analysis", "Analysis", this.analysistabpane, "A"),
             Tab("players", "Players", this.playerssplitpane, "f"),
             Tab("train", "Train", this.traindiv, "-"),
             Tab("tools", "Tools", this.toolsdiv, "%"),
@@ -1833,6 +1842,10 @@ class Board_ extends e{
         this.guicontainer.a(this.boardcontainer, this.tabpane)
         this.a(this.guicontainer)
         this.resize(this.width, this.height)
+    }
+
+    enginesubmit(command){
+        console.log("engine command", command)
     }
 
     trainon(){

@@ -25,7 +25,7 @@ app.setcontentelement(maintabpane)
 se("root", app)
 
 function keydownhandler(ev){
-    console.log("key down", ev.code, ev)
+    //console.log("key down", ev.code, ev)
     try{
         board.book.keyhandler(ev)
     }catch(err){

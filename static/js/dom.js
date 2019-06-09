@@ -2299,4 +2299,38 @@ function ListOrganizer(){return new ListOrganizer_()}
 ////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////
+class SubmitText_ extends e{
+    submitclicked(){
+        if(this.submitcallback){            
+            this.submitcallback(this.textinput.getText())
+            this.textinput.setText("")
+        }
+    }
 
+    textkeyup(ev){
+        if(ev.keyCode == 13){
+            this.submitclicked()
+        }
+    }
+
+    constructor(){
+        super("div")
+        this.textinput = TextInput().pad(2)
+        this.textinput.ae("keyup", this.textkeyup.bind(this))
+        this.container = Div().disp("flex").ai("center").curlyborder().pad(2)
+        this.container.a(
+            this.textinput.ml(5),
+            Button("Submit", this.submitclicked.bind(this)).ml(5).mr(5)
+        )
+        this.a(this.container)
+    }
+
+    onclick(submitcallback){
+        this.submitcallback = submitcallback
+        return this
+    }
+}
+function SubmitText(){return new SubmitText_()}
+////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////
