@@ -68,7 +68,7 @@ class MyStaticFileHandler(tornado.web.RequestHandler):
 
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
-        print(self.request.__dict__)
+        #print(self.request.__dict__)
         self.render("index.html", messages=ChatSocketHandler.cache)
 
 class JsonApi(tornado.web.RequestHandler):

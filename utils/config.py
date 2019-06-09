@@ -16,7 +16,7 @@ def getenvboolelse(key, defaultvalue):
 ###################################################################
 
 SERVER_URL = os.environ.get("SERVERURL", "https://pgneditor.herokuapp.com")
-KEEP_ALIVE = int(os.environ.get("KEEPALIVE", 15))
+KEEP_ALIVE = int(os.environ.get("KEEPALIVE", 3))
 
 def IS_DEV():
     if "PGNEDITORDEV" in os.environ:

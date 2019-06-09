@@ -670,7 +670,7 @@ def prefilterok(g):
     return True
 
 def rationalizeplayerdata(ndjson):
-    print("rationalizing player data", len(ndjson))
+    #print("rationalizing player data", len(ndjson))
     ids = {}
     filtered = []
     for obj in ndjson:
@@ -684,13 +684,13 @@ def rationalizeplayerdata(ndjson):
     filtered.sort(key = lambda x: x["lastMoveAt"], reverse = True)
     if len(filtered) > MAX_NDJSON_SIZE:
         filtered = filtered[:MAX_NDJSON_SIZE]
-    print("rationalized player data", len(filtered))
+    #print("rationalized player data", len(filtered))
     return filtered
 
 def exportgames(kind, playerndjson):
-    print("export", kind, playerndjson)
+    #print("export", kind, playerndjson)
     if ( kind == "old" ) and ( len(playerndjson.ndjson) >= MAX_NDJSON_SIZE ):
-        print("cache full, not exporting")
+        #print("cache full, not exporting")
         return
     since = playerndjson.since
     until = playerndjson.until
@@ -702,7 +702,7 @@ def exportgames(kind, playerndjson):
     if kind == "old":
         since = 0
         until = playerndjson.until
-    print("exporting", since, until, max)
+    #print("exporting", since, until, max)
     r = requests.get(gameexporturl(playerndjson.player, since = since, until = until, max = max), headers = {
         "Authorization": f"Bearer {TOKEN}",
         "Accept": "application/x-ndjson"
@@ -768,7 +768,7 @@ class PlayerNdjson:
         }
 
     def storedb(self):
-        print("storing ndjson", self)
+        #print("storing ndjson", self)
         write_json_to_fdb(ndjsonpath(self.player), self.toblob())    
         return self
 
@@ -787,7 +787,7 @@ def buildplayerbook(player, force = False):
         book.filterversion = BOOK_FILTER_VERSION
     playerndjson = PlayerNdjson(player).fromdb()
     ndjson = playerndjson.ndjson
-    print("building", player)
+    #print("building", player)
     cnt = 0
     found = 0
     filtered = []
@@ -798,8 +798,9 @@ def buildplayerbook(player, force = False):
             filtered.append(g)
             found += 1
         if ( cnt % 1000 ) == 0:
-            print("filtering", cnt, "found", found)
-    print("filtering done, found", found)
+            #print("filtering", cnt, "found", found)
+            pass
+    #print("filtering done, found", found)
     if len(filtered) > MAX_BOOK_GAMES:
         filtered = filtered[:MAX_BOOK_GAMES]
     cnt = 0
@@ -857,13 +858,13 @@ def buildbooks():
 
 def scanplayerstarget():
     SCAN_PLAYERS = SCAN_PLAYER_LIST.split(",")
-    print("scan", SCAN_PLAYERS)
+    #print("scan", SCAN_PLAYERS)
     while True:
         for player in SCAN_PLAYERS:
-            print("scanning", player)
+            #print("scanning", player)
             playerndjson = PlayerNdjson(player).fromdb()            
             if PRE_FILTER_VERSION > playerndjson.filterversion:
-                print("rebuild ndjson")
+                #print("rebuild ndjson")
                 playerndjson.filterversion = PRE_FILTER_VERSION
                 playerndjson.ndjson = []            
             playerndjson.ndjson = rationalizeplayerdata(playerndjson.ndjson)            
@@ -915,7 +916,7 @@ if IS_PROD() or False:
     Thread(target = scanplayerstarget).start()
     Thread(target = keepalivetarget).start()
 
-Thread(target = enginetesttarget).start()
+#Thread(target = enginetesttarget).start()
 
 print("serverlogic started, prod", IS_PROD())
 
