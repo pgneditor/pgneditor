@@ -904,7 +904,7 @@ def scanplayerstarget():
 def keepalivetarget():
     for i in range(KEEP_ALIVE):        
         time.sleep(600)
-        geturl(SERVER_URL, verbose = True)
+        geturl(SERVER_URL, verbose = False)
 
 ###################################################################
 
