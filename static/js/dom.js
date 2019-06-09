@@ -2334,3 +2334,58 @@ function SubmitText(){return new SubmitText_()}
 ////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////
+class SystemLogItem_ extends e{
+    constructor(blob){
+        super("div")
+
+        this.id = blob.id
+        this.time = blob.time
+        this.dir = blob.dir
+        this.kind = blob.kind
+        this.owner = blob.owner
+        this.msg = blob.msg
+
+        this.container = Div().mar(1).disp("flex").ai("center")
+
+        this.msgdiv = Div().bc("#eee").pad(1).ff("monospace").html(this.msg)
+
+        this.container.a(this.msgdiv)
+
+        this.a(this.container)
+    }
+}
+function SystemLogItem(blob){return new SystemLogItem_(blob)}
+
+class SystemLog_ extends e{
+    build(){
+        this.container.x
+        for(let item of this.items){
+            this.container.a(item)
+        }
+        return this
+    }
+
+    add(li){
+        this.items.unshift(li)
+        while(this.items.length > this.maxitems) this.items.pop()
+        this.build()
+    }
+
+    constructor(argsopt){
+        super("div")
+
+        this.args = argsopt || {}
+
+        this.maxitems = getelse(this.args, "maxitems", 50)
+
+        this.items = []
+
+        this.container = Div()
+
+        this.a(this.container)
+    }
+}
+function SystemLog(argsopt){return new SystemLog_(argsopt)}
+////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////

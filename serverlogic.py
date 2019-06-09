@@ -164,6 +164,7 @@ class Req():
         self.ignoretrainweights = reqobj.get("ignoretrainweights", False)
         self.success = reqobj.get("success", 0)
         self.player = reqobj.get("player", None)
+        self.command = reqobj.get("command", None)
 
         if SERVERLOGIC_VERBOSE:
             log(self, "warning")
@@ -638,6 +639,19 @@ def importstudy(req):
     storestudy(req, study)
     selectstudy(req, nodeid = nodeid)
 
+def enginecommand(req):
+    global mainengine
+    if req.user.can("analyze"):
+        mainengine.send_line(req.command)
+        return {
+            "kind": "enginecommandissued"
+        }
+    else:
+        return {
+            "kind": "enginecommandfailed",
+            "status": "not authorized"
+        }
+
 ###################################################################
 
 def jsonapi(reqobj):
@@ -918,9 +932,6 @@ def initenginetarget():
     print("initializing engine")
     newengine_func()
     print("initializing engine done")
-    time.sleep(10)
-    print("sending uci")
-    mainengine.send_line("uci")
 
 ###################################################################
 

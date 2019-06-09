@@ -1819,10 +1819,13 @@ class Board_ extends e{
         this.rawsplitpane = SplitPane()
         this.enginesubmittext = SubmitText().onclick(this.enginesubmit.bind(this))
         this.rawsplitpane.controlpanel.a(this.enginesubmittext)
+        this.enginelog = SystemLog()
+        this.rawsplitpane.setcontentelement(this.enginelog)
         this.engineloges = new EventSource("/enginelog")
         this.engineloges.onmessage= function(ev){
-            console.log("event source data", ev.data)
-        }
+            let li = SystemLogItem(JSON.parse(ev.data))
+            this.enginelog.add(li)
+        }.bind(this)
         this.analysistabpane = TabPane("analysistabpane").settabs([
             Tab("analysis", "Analysis", Div(), "A"),
             Tab("raw", "Raw", this.rawsplitpane, "n")
@@ -1850,6 +1853,10 @@ class Board_ extends e{
 
     enginesubmit(command){
         console.log("engine command", command)
+        api({
+            "kind": "enginecommand",
+            "command": command
+        }, function(resobj){console.log("engine command response", resobj)})
     }
 
     trainon(){
