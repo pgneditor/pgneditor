@@ -1747,6 +1747,20 @@ class Board_ extends e{
         }
     }
 
+    analyze(){
+        api({
+            "kind": "analyze",
+            "fen": this.basicboard.fen,
+            "variantkey": this.basicboard.variantkey            
+        }, function(resobj){console.log("analyze response", resobj)})
+    }
+
+    stopanalyze(){
+        api({
+            "kind": "stopanalyze"
+        }, function(resobj){console.log("stop analyze response", resobj)})
+    }
+
     constructor(argsopt){
         super("div")
         this.initgif()
@@ -1818,7 +1832,11 @@ class Board_ extends e{
         this.buildtraindiv()        
         this.rawsplitpane = SplitPane()
         this.enginesubmittext = SubmitText().onclick(this.enginesubmit.bind(this))
-        this.rawsplitpane.controlpanel.a(this.enginesubmittext)
+        this.rawsplitpane.controlpanel.a(
+            this.enginesubmittext,
+            Button("Analyze", this.analyze.bind(this)),
+            Button("Stop", this.stopanalyze.bind(this))
+        )
         this.enginelog = SystemLog()
         this.rawsplitpane.setcontentelement(this.enginelog)
         this.engineloges = new EventSource("/enginelog")
@@ -1826,8 +1844,13 @@ class Board_ extends e{
             let li = SystemLogItem(JSON.parse(ev.data))
             this.enginelog.add(li)
         }.bind(this)
+        this.analysissplitpane = SplitPane()
+        this.analysissplitpane.controlpanel.a(
+            Button("Analyze", this.analyze.bind(this)),
+            Button("Stop", this.stopanalyze.bind(this))
+        )
         this.analysistabpane = TabPane("analysistabpane").settabs([
-            Tab("analysis", "Analysis", Div(), "A"),
+            Tab("analysis", "Analysis", this.analysissplitpane, "A"),
             Tab("raw", "Raw", this.rawsplitpane, "n")
         ]).selecttab("analysis", USE_STORED_IF_AVAILABLE)
         this.analysistabpane.controlpanel.bc("#ccc")

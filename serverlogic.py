@@ -165,6 +165,8 @@ class Req():
         self.success = reqobj.get("success", 0)
         self.player = reqobj.get("player", None)
         self.command = reqobj.get("command", None)
+        self.fen = reqobj.get("fen", None)
+        self.multipv = reqobj.get("multipv", 1)
 
         if SERVERLOGIC_VERBOSE:
             log(self, "warning")
@@ -649,6 +651,32 @@ def enginecommand(req):
     else:
         return {
             "kind": "enginecommandfailed",
+            "status": "not authorized"
+        }
+
+def analyze(req):
+    global mainengine
+    if req.user.can("analyze"):
+        mainengine.analyze(req.fen, multipv = req.multipv, variantkey = req.variantkey)
+        return {
+            "kind": "analyzestarted"
+        }
+    else:
+        return {
+            "kind": "analyzefailed",
+            "status": "not authorized"
+        }
+
+def stopanalyze(req):
+    global mainengine
+    if req.user.can("analyze"):
+        mainengine.stopanalyze()
+        return {
+            "kind": "analyzestopped"
+        }
+    else:
+        return {
+            "kind": "stopanalyzefailed",
             "status": "not authorized"
         }
 

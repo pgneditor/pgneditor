@@ -2349,6 +2349,12 @@ class SystemLogItem_ extends e{
 
         this.msgdiv = Div().bc("#eee").pad(1).ff("monospace").html(this.msg)
 
+        if(this.dir == "in"){
+            this.msgdiv.c("#007")
+        }else{
+            this.msgdiv.c("#070")
+        }
+
         this.container.a(this.msgdiv)
 
         this.a(this.container)

@@ -112,6 +112,9 @@ class Engine:
 
 ###################################################################
 
+def variantkey2ucivariant(variantkey):
+    return variantkey
+
 class UciEngine(Engine):
     def __init__(self, workingdirectory, executablename, id, systemlog):
         super().__init__(workingdirectory, executablename)
@@ -121,6 +124,25 @@ class UciEngine(Engine):
     def read_stdout_func(self, sline):
         #print(self, sline)
         self.systemlog.log(SystemLogItem({"owner": self.id, "msg": sline}))
+
+    def send_line(self, sline):
+        print("uci send line", sline)
+        super().send_line(sline)
+        self.systemlog.log(SystemLogItem({"owner": self.id, "msg": sline, "dir": "in"}))
+
+    def setoption(self, name, value):
+        self.send_line(f"setoption name {name} value {value}")
+
+    def analyze(self, fen, multipv = 1, variantkey = "standard"):
+        ucivariant = variantkey2ucivariant(variantkey)
+        self.send_line("stop")
+        self.setoption("UCI_Variant", ucivariant)
+        self.setoption("MultiPV", multipv)
+        self.send_line(f"position fen {fen}")
+        self.send_line("go infinite")
+
+    def stopanalyze(self):
+        self.send_line("stop")
 
     def __repr__(self):
         return f"< UciEngine {self.id} | {self.commandpath} >"
