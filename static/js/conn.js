@@ -1102,6 +1102,10 @@ class Board_ extends e{
 
         console.log("tree size", this.currenttreesize, this.studytreesize)
 
+        if(this.analyzing){
+            this.analyze()
+        }
+
         ////////////////////////////////////////////////////////////////////
         if(this.mergequeue){
             this.mergetextinput.setText(this.mergequeue)
@@ -1748,6 +1752,7 @@ class Board_ extends e{
     }
 
     analyze(){
+        this.analyzing = true
         api({
             "kind": "analyze",
             "fen": this.basicboard.fen,
@@ -1757,6 +1762,7 @@ class Board_ extends e{
     }
 
     stopanalyze(){
+        this.analyzing = false
         api({
             "kind": "stopanalyze"
         }, function(resobj){console.log("stop analyze response", resobj)})
@@ -1888,7 +1894,7 @@ class Board_ extends e{
         let blobslice = blob.slice().reverse()
         while(blobslice.length > 3) blobslice.pop()        
         for(let diblob of blobslice){
-            let di = DepthItem(diblob)
+            let di = DepthItem(this, diblob)
             this.analysisinfodiv.a(di)
         }
     }

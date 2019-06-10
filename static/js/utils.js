@@ -80,6 +80,19 @@ function feninfo(fen){
 
 ////////////////////////////////////////////////////////////////////
 
+function scorecolor(scorekind, score){
+    if(scorekind == "mate") return score > 0 ? "#0f0" : "#f00"
+    if(score > 500) return "#0c0"
+    if(score > 200) return "#080"
+    if(score > 50) return "#040"
+    if(score > -50) return "#004"
+    if(score > -200) return "#400"
+    if(score > -500) return "#800"
+    return "#c00"
+}
+
+////////////////////////////////////////////////////////////////////
+
 function withchance(percent){
     let r = Math.random() * 100
     return r <= percent

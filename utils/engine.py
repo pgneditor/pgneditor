@@ -4,10 +4,13 @@ from subprocess import Popen, PIPE
 import threading
 import os
 import time
+from queue import Queue
+import chess
 
 ###################################################################
 
 from utils.logger import SystemLogItem
+from utils.study import getvariantboard
 
 ###################################################################
 
@@ -166,12 +169,14 @@ class UciInfo:
                     self.pv = []
 
 class PvItem:
-    def __init__(self):        
+    def __init__(self, parentdepthitem):        
+        self.parentdepthitem = parentdepthitem
         self.multipv = None
         self.depth = None
         self.scorekind = None     
         self.score = None        
         self.pv = None        
+        self.pvsan = None
 
     def mergeuciinfo(self, ui):        
         if not ( ui.scorekind is None ):
@@ -180,6 +185,18 @@ class PvItem:
             self.score = ui.score
         if not ( ui.pv is None ):
             self.pv = ui.pv
+            if True:
+                self.pvsan = []
+                caj = self.parentdepthitem.parentengine.currentanalyzejob
+                board = getvariantboard(caj.variantkey)
+                board.set_fen(caj.fen)
+                for uci in self.pv:
+                    move = chess.Move.from_uci(uci)
+                    san = board.san(move)
+                    self.pvsan.append(san)
+                    board.push(move)
+            else:
+                pass
 
     def toblob(self):
         return {
@@ -187,7 +204,8 @@ class PvItem:
             "depth": self.depth,
             "scorekind": self.scorekind,
             "score": self.score,
-            "pv": self.pv
+            "pv": self.pv,
+            "pvsan": self.pvsan
         }
 
     def valid(self):
@@ -203,7 +221,8 @@ class PvItem:
         return f"< pvitem < {self.multipv} | {self.depth} | {self.scorekind} | {self.score} | {self.pv} > >"
 
 class DepthItem:
-    def __init__(self, depth):
+    def __init__(self, parentengine, depth):
+        self.parentengine = parentengine
         self.depth = depth
         self.pvitems = []
 
@@ -211,7 +230,7 @@ class DepthItem:
         while len(self.pvitems) < ( multipv + 1 ):
             self.pvitems.append(None)
         if self.pvitems[multipv] is None:
-            self.pvitems[multipv] = PvItem()
+            self.pvitems[multipv] = PvItem(self)
         return self.pvitems[multipv]
 
     def updateitem(self, multipv, uciinfo):
@@ -237,6 +256,15 @@ class DepthItem:
     def __repr__(self):
         return f"< depthitem < {self.depth} | {[pvitem for pvitem in self.pvitems]} >"
 
+class AnalyzeJob:
+    def __init__(self, fen, multipv = 1, variantkey = "standard"):
+        self.fen = fen
+        self.multipv = multipv
+        self.variantkey = variantkey
+
+    def __repr__(self):
+        return f"< analyzejob < {self.fen} | {self.multipv} | {self.variantkey} > >"
+
 class UciEngine(Engine):
     def resetanalysis(self):
         self.depthitems = []
@@ -248,11 +276,23 @@ class UciEngine(Engine):
         self.id = id
         self.systemlog = systemlog
         self.resetanalysis()
+        self.terminated = False
+        self.analyzing = False
+        self.currentanalyzejob = None
+        self.analysisqueue = Queue()
+        threading.Thread(target = self.analyzethreadtarget).start()
+
+    def terminated_func(self):
+        self.terminated = True
+        self.analyze("terminated")
     
     def read_stdout_func(self, sline):
         #print(self, sline)
         ui = UciInfo(sline)
         self.systemlog.log(SystemLogItem({"owner": self.id, "msg": sline, "kind": ui.kind}))
+        if ui.kind == "bestmove":
+            print("bestmove")
+            self.analyzing = False
         if ui.kind == "info":
             depthold = self.depth
             if ui.depth is None:
@@ -266,30 +306,48 @@ class UciEngine(Engine):
             while len(self.depthitems) < ( self.depth + 1 ):
                 self.depthitems.append(None)
             if self.depthitems[self.depth] is None:
-                self.depthitems[self.depth] = DepthItem(self.depth)
+                self.depthitems[self.depth] = DepthItem(self, self.depth)
             mpcold = self.depthitems[self.depth].multipvcount()
             self.depthitems[self.depth].updateitem(self.multipv, ui)
-            if ( time.time() - self.analyzestartedat ) > 1:
+            if ( time.time() - self.analyzestartedat ) > 0.5:
                 self.systemlog.log(SystemLogItem({"owner": self.id, "blob": [depthitem.toblob() for depthitem in self.depthitems if not ( depthitem is None )], "kind": "analysisinfo"}))
                 self.analyzestartedat = time.time()
 
-    def send_line(self, sline):
-        print("uci send line", sline)
+    def send_line(self, sline):        
         super().send_line(sline)
         self.systemlog.log(SystemLogItem({"owner": self.id, "msg": sline, "dir": "in"}))
 
     def setoption(self, name, value):
         self.send_line(f"setoption name {name} value {value}")
 
-    def analyze(self, fen, multipv = 1, variantkey = "standard"):        
-        ucivariant = variantkey2ucivariant(variantkey)
-        self.send_line("stop")
-        self.setoption("UCI_Variant", ucivariant)
-        self.setoption("MultiPV", multipv)
-        self.send_line(f"position fen {fen}")
-        self.resetanalysis()
-        self.analyzestartedat = time.time()
-        self.send_line("go infinite")
+    def awaitstop(self):
+        if self.analyzing:
+            print("awaiting stop")
+            self.send_line("stop")
+            while self.analyzing:
+                time.sleep(0.1)
+            print("awaiting stop done")
+
+    def analyzethreadtarget(self):
+        while True:
+            analyzejob = self.analysisqueue.get()
+            print("got analyze job", analyzejob)
+            if self.terminated:
+                    return
+            ucivariant = variantkey2ucivariant(analyzejob.variantkey)
+            self.awaitstop()
+            print("starting", analyzejob)
+            self.setoption("UCI_Variant", ucivariant)
+            self.setoption("MultiPV", analyzejob.multipv)
+            self.send_line(f"position fen {analyzejob.fen}")
+            self.resetanalysis()
+            self.analyzestartedat = time.time()            
+            self.analyzing = True
+            self.currentanalyzejob = analyzejob
+            self.send_line("go infinite")                
+
+    def analyze(self, analyzejob):        
+        self.analysisqueue.put(analyzejob)
 
     def stopanalyze(self):
         self.send_line("stop")

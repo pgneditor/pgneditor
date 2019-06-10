@@ -2406,50 +2406,59 @@ function SystemLog(argsopt){return new SystemLog_(argsopt)}
 ////////////////////////////////////////////////////////////////////
 class PvItem_ extends e{
     getsan(){
-        if(!this.pv) return "?"
-        if(this.pv.length == 0) return "?"
-        return this.pv[0]
+        if(!this.pvsan) return "?"
+        if(this.pvsan.length == 0) return "?"
+        return this.pvsan[0]
     }
 
     getpvverbal(){
-        if(!this.pv) return "?"
-        return this.pv.join(" ")
+        if(!this.pvsan) return "?"
+        return this.pvsan.join(" ")
     }
 
     getscoreverbal(){
         return `${this.scorekind == "mate" ? "#" : ""}${this.score}`
     }
 
-    constructor(blob){
+    constructor(parentdepthitem, blob){
         super("div")
+
+        this.parentdepthitem = parentdepthitem
 
         this.multipv = blob.multipv
         this.depth = blob.depth
         this.scorekind = blob.scorekind
         this.score = blob.score
-        this.pv = blob.pv        
+        this.pv = blob.pv      
+        this.pvsan = blob.pvsan
+        
+        let sc = scorecolor(this.scorekind, this.score)
 
-        this.container = Div().mar(1).disp("flex").ai("center").ff("monospace").fs(18)
+        this.container = Div().mar(1).disp("flex").ai("center").fs(18)
 
-        this.sandiv = Div().ta("center").bc("#eee").mar(1).pad(1).w(80).html(this.getsan())
+        this.sandiv = Div().cp().fw("bold").fs(24).c(sc).ta("center").bc("#eee").mar(1).pad(1).w(80).html(this.getsan())
 
-        this.depthdiv = Div().ta("center").bc("#eee").c("#007").mar(1).pad(1).w(40).html(`${this.depth}`)
+        this.sandiv.ae("mousedown", function(){
+            this.parentdepthitem.parentboard.makealgebmove(this.pv[0])
+        }.bind(this))
 
-        this.scorediv = Div().ta("center").bc("#eee").mar(1).pad(1).w(80).html(this.getscoreverbal())
+        this.depthdiv = Div().fs(16).ff("monospace").ta("center").bc("#eee").c("#007").mar(1).pad(1).w(40).html(`${this.depth}`)
 
-        this.pvdiv = Div().fs(14).bc("#eee").mar(1).pad(1).w(250).ellipsis().html(this.getpvverbal())
+        this.scorediv = Div().fs(20).ff("monospace").c(sc).ta("center").bc("#eee").mar(1).pad(1).w(80).html(this.getscoreverbal())
+
+        this.pvdiv = Div().fs(14).c("#770").bc("#eee").mar(1).pad(1).w(250).ellipsis().html(this.getpvverbal())
 
         this.container.a(
-            this.sandiv,
-            this.depthdiv,
+            this.sandiv,            
             this.scorediv,
+            this.depthdiv,
             this.pvdiv
         )
 
         this.a(this.container)
     }
 }
-function PvItem(blob){return new PvItem_(blob)}
+function PvItem(parentdepthitem, blob){return new PvItem_(parentdepthitem, blob)}
 
 class DepthItem_ extends e{
     build(){
@@ -2460,8 +2469,10 @@ class DepthItem_ extends e{
         return this
     }
 
-    constructor(blob){
+    constructor(parentboard, blob){
         super("div")
+
+        this.parentboard = parentboard
 
         this.depth = blob.depth
 
@@ -2469,7 +2480,7 @@ class DepthItem_ extends e{
 
         for(let pvitemblob of blob.pvitems){
             if(pvitemblob){
-                this.pvitems.push(PvItem(pvitemblob))
+                this.pvitems.push(PvItem(this, pvitemblob))
             }
         }
 
@@ -2480,7 +2491,7 @@ class DepthItem_ extends e{
         this.build()
     }
 }
-function DepthItem(blob){return new DepthItem_(blob)}
+function DepthItem(parentboard, blob){return new DepthItem_(parentboard, blob)}
 ////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////
