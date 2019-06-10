@@ -2352,6 +2352,14 @@ class SystemLogItem_ extends e{
         if(this.dir == "in"){
             this.msgdiv.c("#007")
         }else{
+            this.msgdiv.c("#000")
+        }
+
+        if(this.kind == "infostring"){
+            this.msgdiv.c("#770")
+        }
+
+        if(this.kind == "bestmove"){
             this.msgdiv.c("#070")
         }
 

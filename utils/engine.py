@@ -113,7 +113,22 @@ class Engine:
 ###################################################################
 
 def variantkey2ucivariant(variantkey):
-    return variantkey
+    return variantkey.lower()
+
+class UciInfo:
+    def __init__(self, sline):
+        self.kind = "unknown"
+        self.infostring = None
+        parts = sline.split(" ")
+        if parts[0] == "bestmove":
+            self.kind = "bestmove"
+            return
+        if not ( parts[0] == "info" ) or ( len(parts) < 2 ):
+            return
+        if parts[1] == "string":
+            self.kind = "infostring"
+            self.infostring = " ".join(parts[1:])
+            return
 
 class UciEngine(Engine):
     def __init__(self, workingdirectory, executablename, id, systemlog):
@@ -123,7 +138,8 @@ class UciEngine(Engine):
     
     def read_stdout_func(self, sline):
         #print(self, sline)
-        self.systemlog.log(SystemLogItem({"owner": self.id, "msg": sline}))
+        ui = UciInfo(sline)
+        self.systemlog.log(SystemLogItem({"owner": self.id, "msg": sline, "kind": ui.kind}))
 
     def send_line(self, sline):
         print("uci send line", sline)
