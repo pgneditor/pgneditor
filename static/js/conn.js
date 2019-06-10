@@ -1751,7 +1751,8 @@ class Board_ extends e{
         api({
             "kind": "analyze",
             "fen": this.basicboard.fen,
-            "variantkey": this.basicboard.variantkey            
+            "variantkey": this.basicboard.variantkey,
+            "multipv": this.multipvselect.v()
         }, function(resobj){console.log("analyze response", resobj)})
     }
 
@@ -1832,10 +1833,11 @@ class Board_ extends e{
         this.buildtraindiv()        
         this.rawsplitpane = SplitPane()
         this.enginesubmittext = SubmitText().onclick(this.enginesubmit.bind(this))
+        this.multipvselect = Select().setid(`${this.id}/multipv`).setoptions([...Array(20).keys()].map(x => [x + 1, x + 1]), 1)
         this.rawsplitpane.controlpanel.a(
             this.enginesubmittext,
             Button("Analyze", this.analyze.bind(this)),
-            Button("Stop", this.stopanalyze.bind(this))
+            Button("Stop", this.stopanalyze.bind(this))            
         )
         this.enginelog = SystemLog()
         this.rawsplitpane.setcontentelement(this.enginelog)
@@ -1847,7 +1849,8 @@ class Board_ extends e{
         this.analysissplitpane = SplitPane()
         this.analysissplitpane.controlpanel.a(
             Button("Analyze", this.analyze.bind(this)),
-            Button("Stop", this.stopanalyze.bind(this))
+            Button("Stop", this.stopanalyze.bind(this)),
+            this.multipvselect
         )
         this.analysistabpane = TabPane("analysistabpane").settabs([
             Tab("analysis", "Analysis", this.analysissplitpane, "A"),
