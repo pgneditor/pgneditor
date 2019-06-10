@@ -2344,6 +2344,7 @@ class SystemLogItem_ extends e{
         this.kind = blob.kind
         this.owner = blob.owner
         this.msg = blob.msg
+        this.blob = blob.blob
 
         this.container = Div().mar(1).disp("flex").ai("center")
 
@@ -2400,6 +2401,86 @@ class SystemLog_ extends e{
     }
 }
 function SystemLog(argsopt){return new SystemLog_(argsopt)}
+////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////
+class PvItem_ extends e{
+    getsan(){
+        if(!this.pv) return "?"
+        if(this.pv.length == 0) return "?"
+        return this.pv[0]
+    }
+
+    getpvverbal(){
+        if(!this.pv) return "?"
+        return this.pv.join(" ")
+    }
+
+    getscoreverbal(){
+        return `${this.scorekind == "mate" ? "#" : ""}${this.score}`
+    }
+
+    constructor(blob){
+        super("div")
+
+        this.multipv = blob.multipv
+        this.depth = blob.depth
+        this.scorekind = blob.scorekind
+        this.score = blob.score
+        this.pv = blob.pv        
+
+        this.container = Div().mar(1).disp("flex").ai("center").ff("monospace").fs(18)
+
+        this.sandiv = Div().ta("center").bc("#eee").mar(1).pad(1).w(80).html(this.getsan())
+
+        this.depthdiv = Div().ta("center").bc("#eee").c("#007").mar(1).pad(1).w(40).html(`${this.depth}`)
+
+        this.scorediv = Div().ta("center").bc("#eee").mar(1).pad(1).w(80).html(this.getscoreverbal())
+
+        this.pvdiv = Div().fs(14).bc("#eee").mar(1).pad(1).w(250).ellipsis().html(this.getpvverbal())
+
+        this.container.a(
+            this.sandiv,
+            this.depthdiv,
+            this.scorediv,
+            this.pvdiv
+        )
+
+        this.a(this.container)
+    }
+}
+function PvItem(blob){return new PvItem_(blob)}
+
+class DepthItem_ extends e{
+    build(){
+        this.container.x
+        for(let pvitem of this.pvitems){
+            this.container.a(pvitem)
+        }
+        return this
+    }
+
+    constructor(blob){
+        super("div")
+
+        this.depth = blob.depth
+
+        this.pvitems = []
+
+        for(let pvitemblob of blob.pvitems){
+            if(pvitemblob){
+                this.pvitems.push(PvItem(pvitemblob))
+            }
+        }
+
+        this.container = Div().pad(1).mar(2).bc("#eff")
+
+        this.a(this.container)
+
+        this.build()
+    }
+}
+function DepthItem(blob){return new DepthItem_(blob)}
 ////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////

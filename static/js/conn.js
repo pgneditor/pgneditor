@@ -1844,7 +1844,11 @@ class Board_ extends e{
         this.engineloges = new EventSource("/enginelog")
         this.engineloges.onmessage= function(ev){
             let li = SystemLogItem(JSON.parse(ev.data))
-            this.enginelog.add(li)
+            if(li.kind == "analysisinfo"){
+                this.buildanalysisinfo(li.blob)
+            }else{
+                this.enginelog.add(li)
+            }            
         }.bind(this)
         this.analysissplitpane = SplitPane()
         this.analysissplitpane.controlpanel.a(
@@ -1852,11 +1856,13 @@ class Board_ extends e{
             Button("Stop", this.stopanalyze.bind(this)),
             this.multipvselect
         )
+        this.analysisinfodiv = Div().pad(3)        
+        this.analysissplitpane.setcontentelement(this.analysisinfodiv)
         this.analysistabpane = TabPane("analysistabpane").settabs([
             Tab("analysis", "Analysis", this.analysissplitpane, "A"),
             Tab("raw", "Raw", this.rawsplitpane, "n")
         ]).selecttab("analysis", USE_STORED_IF_AVAILABLE)
-        this.analysistabpane.controlpanel.bc("#ccc")
+        this.analysistabpane.controlpanel.bc("#ccc")        
         this.tabpane = TabPane("boardtabpane").settabs([
             Tab("game", "Game", this.pgntext, "C"),
             Tab("tree", "Tree", this.treediv, "$"),
@@ -1875,6 +1881,16 @@ class Board_ extends e{
         this.guicontainer.a(this.boardcontainer, this.tabpane)
         this.a(this.guicontainer)
         this.resize(this.width, this.height)
+    }
+
+    buildanalysisinfo(blob){
+        this.analysisinfodiv.x
+        let blobslice = blob.slice().reverse()
+        while(blobslice.length > 3) blobslice.pop()        
+        for(let diblob of blobslice){
+            let di = DepthItem(diblob)
+            this.analysisinfodiv.a(di)
+        }
     }
 
     enginesubmit(command){

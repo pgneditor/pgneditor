@@ -181,6 +181,24 @@ class PvItem:
         if not ( ui.pv is None ):
             self.pv = ui.pv
 
+    def toblob(self):
+        return {
+            "multipv": self.multipv,
+            "depth": self.depth,
+            "scorekind": self.scorekind,
+            "score": self.score,
+            "pv": self.pv
+        }
+
+    def valid(self):
+        if self.scorekind is None:
+            return False
+        if self.score is None:
+            return False
+        if self.pv is None:
+            return False
+        return True
+
     def __repr__(self):
         return f"< pvitem < {self.multipv} | {self.depth} | {self.scorekind} | {self.score} | {self.pv} > >"
 
@@ -202,6 +220,20 @@ class DepthItem:
         pvitem.multipv = multipv
         pvitem.depth = self.depth
 
+    def toblob(self):
+        return {
+            "depth": self.depth,
+            "pvitems": [pvitem.toblob() for pvitem in self.pvitems if not ( pvitem is None )]
+        }
+
+    def multipvcount(self):
+        mpc = 0
+        for pvitem in self.pvitems:
+            if not ( pvitem is None ):
+                if pvitem.valid():
+                    mpc += 1
+        return mpc
+
     def __repr__(self):
         return f"< depthitem < {self.depth} | {[pvitem for pvitem in self.pvitems]} >"
 
@@ -222,6 +254,7 @@ class UciEngine(Engine):
         ui = UciInfo(sline)
         self.systemlog.log(SystemLogItem({"owner": self.id, "msg": sline, "kind": ui.kind}))
         if ui.kind == "info":
+            depthold = self.depth
             if ui.depth is None:
                 ui.depth = self.depth
             else:
@@ -234,7 +267,11 @@ class UciEngine(Engine):
                 self.depthitems.append(None)
             if self.depthitems[self.depth] is None:
                 self.depthitems[self.depth] = DepthItem(self.depth)
+            mpcold = self.depthitems[self.depth].multipvcount()
             self.depthitems[self.depth].updateitem(self.multipv, ui)
+            if ( time.time() - self.analyzestartedat ) > 1:
+                self.systemlog.log(SystemLogItem({"owner": self.id, "blob": [depthitem.toblob() for depthitem in self.depthitems if not ( depthitem is None )], "kind": "analysisinfo"}))
+                self.analyzestartedat = time.time()
 
     def send_line(self, sline):
         print("uci send line", sline)
@@ -251,12 +288,11 @@ class UciEngine(Engine):
         self.setoption("MultiPV", multipv)
         self.send_line(f"position fen {fen}")
         self.resetanalysis()
+        self.analyzestartedat = time.time()
         self.send_line("go infinite")
 
     def stopanalyze(self):
         self.send_line("stop")
-        for di in self.depthitems:
-            print(di)
 
     def __repr__(self):
         return f"< UciEngine {self.id} | {self.commandpath} >"

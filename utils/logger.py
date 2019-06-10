@@ -39,6 +39,7 @@ class SystemLogItem:
         self.kind = blob.get("kind", "normal")
         self.owner = blob.get("owner", None)
         self.msg = blob.get("msg", None)
+        self.blob = blob.get("blob", None)
 
     def toblob(self):
         return {
@@ -47,7 +48,8 @@ class SystemLogItem:
             "dir": self.dir,
             "kind": self.kind,
             "owner": self.owner,
-            "msg": self.msg
+            "msg": self.msg,
+            "blob": self.blob
         }
 
     def __repr__(self):
