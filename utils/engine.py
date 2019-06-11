@@ -358,8 +358,8 @@ class UciEngine(Engine):
             if self.analysisinfo.depth >= 5:
                 if ( time.time() - self.lastloggedat ) > 0.5:
                     self.systemlog.log(SystemLogItem({"owner": self.id, "blob": self.analysisinfo.toblob(), "kind": "analysisinfo"}))
-                    self.lastloggedat = time.time()
-                if ( time.time() - self.laststoredat ) > 20:
+                    self.lastloggedat = time.time()                
+                if ( time.time() - self.laststoredat ) > 3:
                     self.analysisinfo.storeifbetter()
                     self.laststoredat = time.time()
 
