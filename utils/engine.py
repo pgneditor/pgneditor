@@ -338,9 +338,23 @@ class UciEngine(Engine):
         self.systemlog = systemlog        
         self.terminated = False
         self.analyzing = False
+        self.idlestartedat = time.time()
         self.currentanalyzejob = None
         self.analysisqueue = Queue()
         threading.Thread(target = self.analyzethreadtarget).start()
+        threading.Thread(target = self.tickthreadtarget).start()
+
+    def tickthreadtarget(self):
+        while not self.terminated:
+            if self.analyzing:
+                msg = "analyzing for {:.0f} sec(s)".format(time.time() - self.analysisstartedat)
+            else:
+                msg = "idle for {:.0f} sec(s)".format(time.time() - self.idlestartedat)                
+            blob = {
+                "analyzing": self.analyzing
+            }
+            self.systemlog.log(SystemLogItem({"owner": self.id, "msg": msg, "blob": blob, "kind": "enginetick"}))
+            time.sleep(3)
 
     def terminated_func(self):
         self.terminated = True
@@ -353,6 +367,7 @@ class UciEngine(Engine):
         if ui.kind == "bestmove":
             print("bestmove")
             self.analyzing = False
+            self.idlestartedat = time.time()
         if ui.kind == "info":
             self.analysisinfo.updatewithuciinfo(ui)
             if self.analysisinfo.depth >= 5:
@@ -398,6 +413,7 @@ class UciEngine(Engine):
             self.lastloggedat = 0
             self.laststoredat = 0
             self.analyzing = True            
+            self.analysisstartedat = time.time()
             self.send_line("go infinite")                
 
     def analyze(self, analyzejob):        

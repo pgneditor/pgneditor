@@ -1861,23 +1861,21 @@ class Board_ extends e{
         )
         this.enginelog = SystemLog()
         this.rawsplitpane.setcontentelement(this.enginelog)
-        this.engineloges = new EventSource("/enginelog")
-        this.engineloges.onmessage= function(ev){
-            let li = SystemLogItem(JSON.parse(ev.data))
-            if(li.kind == "analysisinfo"){
-                this.buildanalysisinfo(li.blob)
-            }else{
-                this.enginelog.add(li)
-            }            
-        }.bind(this)
+        this.createengineeventsource()
         this.analysissplitpane = SplitPane()
         this.analysissplitpane.controlpanel.a(
-            Button("Analyze", this.analyze.bind(this)),
-            Button("Stop", this.stopanalyze.bind(this)),
-            this.multipvselect
+            Button("Analyze", this.analyze.bind(this)).bc("#afa"),
+            Button("Stop", this.stopanalyze.bind(this)).bc("#faa"),
+            Labeled("MultiPV", this.multipvselect)
         )
-        this.analysisinfodiv = Div().pad(3)        
-        this.analysissplitpane.setcontentelement(this.analysisinfodiv)
+        this.analysisinfocontainer = Div().pad(3)
+        this.enginetickdiv = Div().ff("monospace").pad(2).pl(8).pr(8).bc("#eee").curlyborder()
+        this.analysisinfodiv = Div().mt(3)
+        this.analysisinfocontainer.a(
+            this.enginetickdiv,
+            this.analysisinfodiv
+        )
+        this.analysissplitpane.setcontentelement(this.analysisinfocontainer)
         this.analysistabpane = TabPane("analysistabpane").settabs([
             Tab("analysis", "Analysis", this.analysissplitpane, "A"),
             Tab("raw", "Raw", this.rawsplitpane, "n")
@@ -1901,6 +1899,36 @@ class Board_ extends e{
         this.guicontainer.a(this.boardcontainer, this.tabpane)
         this.a(this.guicontainer)
         this.resize(this.width, this.height)
+        this.enginelasttick = new Date().getTime()
+        window.setInterval(this.checkengineconn.bind(this), 2000)
+    }
+
+    checkengineconn(){
+        if((new Date().getTime() - this.enginelasttick) > 9000){
+            console.log("engine conn timeout")
+            this.engineeventsource.close()
+            this.createengineeventsource()
+        }
+    }
+
+    createengineeventsource(){
+        this.engineeventsource = new EventSource("/enginelog")
+        this.engineeventsource.onmessage= function(ev){
+            let li = SystemLogItem(JSON.parse(ev.data))
+            if(li.kind == "analysisinfo"){
+                this.buildanalysisinfo(li.blob)
+            }else if(li.kind == "enginetick"){
+                this.enginetickdiv.html(li.msg)                
+                if(li.blob.analyzing){
+                    this.analysissplitpane.controlpanel.bc("#afa")
+                }else{
+                    this.analysissplitpane.controlpanel.bc("#ddd")
+                }
+                this.enginelasttick = new Date().getTime()
+            }else{
+                this.enginelog.add(li)
+            }            
+        }.bind(this)
     }
 
     buildanalysisinfo(blob){
