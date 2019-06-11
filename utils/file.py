@@ -338,6 +338,12 @@ createdir(FDBPATH)
 def localfdbpath(path):
     return f"{FDBPATH}/{path}"
 
+def assertlocalfdbpath(path):
+    parts = path.split("/")
+    if len(parts) > 1:
+        dir = "/".join(parts[:-1])
+        createdir(localfdbpath(dir))
+
 def read_json_from_fdb(path, default):
     if os.path.isfile(localfdbpath(path)):
         return read_json_from_file(localfdbpath(path), default)
@@ -345,14 +351,12 @@ def read_json_from_fdb(path, default):
     if not obj:
         return default
     obj = json.loads(obj)    
+    assertlocalfdbpath(path)
     write_json_to_file(localfdbpath(path), obj)        
     return obj
 
 def write_json_to_fdb(path, obj, writeremote = True):
-    parts = path.split("/")
-    if len(parts) > 1:
-        dir = "/".join(parts[:-1])
-        createdir(localfdbpath(dir))
+    assertlocalfdbpath(path)
     write_json_to_file(localfdbpath(path), obj)
     if writeremote:
         #print("setting remote", path)
