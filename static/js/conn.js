@@ -1104,6 +1104,8 @@ class Board_ extends e{
 
         if(this.analyzing){
             this.analyze()
+        }else{
+            this.getstoredanalysis()
         }
 
         ////////////////////////////////////////////////////////////////////
@@ -1117,6 +1119,18 @@ class Board_ extends e{
         ////////////////////////////////////////////////////////////////////
         this.dotrain()
         ////////////////////////////////////////////////////////////////////
+    }
+
+    getstoredanalysis(){
+        this.analysisinfodiv.x
+        api({
+            "kind": "getanalysisinfo",
+            "variantkey": this.basicboard.variantkey,            
+            "zobristkeyhex": this.currentnode.zobristkeyhex
+        }, function(resobj){
+            let blob = resobj.blob
+            if(blob) this.buildanalysisinfo(blob)            
+        }.bind(this))
     }
 
     get currenttreesize(){
@@ -1891,12 +1905,8 @@ class Board_ extends e{
 
     buildanalysisinfo(blob){
         this.analysisinfodiv.x
-        let blobslice = blob.slice().reverse()
-        while(blobslice.length > 3) blobslice.pop()        
-        for(let diblob of blobslice){
-            let di = DepthItem(this, diblob)
-            this.analysisinfodiv.a(di)
-        }
+        this.analysisinfo = AnalysisInfo(this, blob)
+        this.analysisinfodiv.a(this.analysisinfo)
     }
 
     enginesubmit(command){

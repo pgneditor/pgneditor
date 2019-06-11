@@ -2439,7 +2439,7 @@ class PvItem_ extends e{
         this.sandiv = Div().cp().fw("bold").fs(24).c(sc).ta("center").bc("#eee").mar(1).pad(1).w(80).html(this.getsan())
 
         this.sandiv.ae("mousedown", function(){
-            this.parentdepthitem.parentboard.makealgebmove(this.pv[0])
+            this.parentdepthitem.parentanalysisinfo.parentboard.makealgebmove(this.pv[0])
         }.bind(this))
 
         this.depthdiv = Div().fs(16).ff("monospace").ta("center").bc("#eee").c("#007").mar(1).pad(1).w(40).html(`${this.depth}`)
@@ -2469,10 +2469,10 @@ class DepthItem_ extends e{
         return this
     }
 
-    constructor(parentboard, blob){
+    constructor(parentanalysisinfo, blob){
         super("div")
 
-        this.parentboard = parentboard
+        this.parentanalysisinfo = parentanalysisinfo
 
         this.depth = blob.depth
 
@@ -2491,7 +2491,38 @@ class DepthItem_ extends e{
         this.build()
     }
 }
-function DepthItem(parentboard, blob){return new DepthItem_(parentboard, blob)}
+function DepthItem(parentanalysisinfo, blob){return new DepthItem_(parentanalysisinfo, blob)}
+
+class AnalysisInfo_ extends e{
+    build(){
+        this.container.x
+        for(let depthitem of this.depthitems.slice().reverse()){
+            this.container.a(depthitem)
+        }
+        return this
+    }
+
+    constructor(parentboard, blob){
+        super("div")
+
+        this.parentboard = parentboard
+
+        this.depthitems = []
+
+        for(let depthitemblob of blob.depthitems){
+            if(depthitemblob){
+                this.depthitems.push(DepthItem(this, depthitemblob))
+            }
+        }
+
+        this.container = Div().pad(1)
+
+        this.a(this.container)
+
+        this.build()
+    }
+}
+function AnalysisInfo(parentboard, blob){return new AnalysisInfo_(parentboard, blob)}
 ////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////

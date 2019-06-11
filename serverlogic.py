@@ -16,7 +16,7 @@ from utils.logger import log
 from utils.http import geturl
 from utils.study import Study, DEFAULT_MAX_PLIES, Book, BookMove, BookPosition, LichessGame, getvariantboard, get_zobrist_key_hex
 from utils.cryptography import encryptalphanum, decryptalphanum
-from utils.file import read_json_from_fdb, write_json_to_fdb, delfdb
+from utils.file import read_json_from_fdb, write_json_to_fdb, delfdb, read_json_from_fdb
 from utils.engine import UciEngine, AnalyzeJob
 from utils.config import SERVER_URL, KEEP_ALIVE, IS_PROD, ENGINE_WORKING_DIR, ENGINE_EXECUTABLE_NAME
 from utils.logger import SystemLog
@@ -167,6 +167,7 @@ class Req():
         self.command = reqobj.get("command", None)
         self.fen = reqobj.get("fen", None)
         self.multipv = reqobj.get("multipv", 1)
+        self.zobristkeyhex = reqobj.get("zobristkeyhex", None)
 
         if SERVERLOGIC_VERBOSE:
             log(self, "warning")
@@ -679,6 +680,15 @@ def stopanalyze(req):
             "kind": "stopanalyzefailed",
             "status": "not authorized"
         }
+
+def getanalysisinfo(req):    
+    fdbpath = f"analysisinfo/{req.variantkey}/{req.zobristkeyhex}"
+    log(f"< getting analysis info < {fdbpath} > >", "info")    
+    blob = read_json_from_fdb(fdbpath, None)
+    return {
+        "kind": "analysisinfo",
+        "blob": blob
+    }
 
 ###################################################################
 

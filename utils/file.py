@@ -349,6 +349,10 @@ def read_json_from_fdb(path, default):
     return obj
 
 def write_json_to_fdb(path, obj, writeremote = True):
+    parts = path.split("/")
+    if len(parts) > 1:
+        dir = "/".join(parts[:-1])
+        createdir(localfdbpath(dir))
     write_json_to_file(localfdbpath(path), obj)
     if writeremote:
         #print("setting remote", path)

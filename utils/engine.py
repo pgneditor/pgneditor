@@ -10,7 +10,8 @@ import chess
 ###################################################################
 
 from utils.logger import SystemLogItem
-from utils.study import getvariantboard
+from utils.study import getvariantboard, get_zobrist_key_hex
+from utils.file import read_json_from_fdb, write_json_to_fdb
 
 ###################################################################
 
@@ -187,7 +188,7 @@ class PvItem:
             self.pv = ui.pv
             if True:
                 self.pvsan = []
-                caj = self.parentdepthitem.parentengine.currentanalyzejob
+                caj = self.parentdepthitem.parentanalysisinfo.analyzejob
                 board = getvariantboard(caj.variantkey)
                 board.set_fen(caj.fen)
                 for uci in self.pv:
@@ -221,8 +222,8 @@ class PvItem:
         return f"< pvitem < {self.multipv} | {self.depth} | {self.scorekind} | {self.score} | {self.pv} > >"
 
 class DepthItem:
-    def __init__(self, parentengine, depth):
-        self.parentengine = parentengine
+    def __init__(self, parentanalysisinfo, depth):
+        self.parentanalysisinfo = parentanalysisinfo
         self.depth = depth
         self.pvitems = []
 
@@ -261,21 +262,80 @@ class AnalyzeJob:
         self.fen = fen
         self.multipv = multipv
         self.variantkey = variantkey
+        self.board = getvariantboard(self.variantkey)
+        self.board.set_fen(self.fen)
+        self.zobristkeyhex = get_zobrist_key_hex(self.board)
+
+    def toblob(self):
+        return {
+            "fen": self.fen,
+            "multipv": self.multipv,
+            "variantkey": self.variantkey,
+            "zobristkeyhex": self.zobristkeyhex
+        }
 
     def __repr__(self):
         return f"< analyzejob < {self.fen} | {self.multipv} | {self.variantkey} > >"
 
-class UciEngine(Engine):
-    def resetanalysis(self):
+MAX_STORE_DEPTHITEMS = 2
+
+class AnalysisInfo:
+    def __init__(self, analyzejob):
+        self.analyzejob = analyzejob
         self.depthitems = []
         self.depth = 0
         self.multipv = 1
 
+    def fdbpath(self):
+        return f"analysisinfo/{self.analyzejob.variantkey}/{self.analyzejob.zobristkeyhex}"
+
+    def updatewithuciinfo(self, ui):
+        depthold = self.depth
+        if ui.depth is None:
+            ui.depth = self.depth
+        else:
+            self.depth = ui.depth
+        if ui.multipv is None:
+            ui.multipv = self.multipv
+        else:
+            self.multipv = ui.multipv
+        while len(self.depthitems) < ( self.depth + 1 ):
+            self.depthitems.append(None)
+        if self.depthitems[self.depth] is None:
+            self.depthitems[self.depth] = DepthItem(self, self.depth)            
+        self.depthitems[self.depth].updateitem(self.multipv, ui)
+
+    def getdepthitems(self, max = MAX_STORE_DEPTHITEMS):
+        depthitems = [depthitem for depthitem in self.depthitems if not ( depthitem is None )]
+        if len(depthitems) > MAX_STORE_DEPTHITEMS:
+            depthitems = depthitems[-MAX_STORE_DEPTHITEMS:]
+        return depthitems
+
+    def storeifbetter(self):
+        print("store if better")
+        obj = read_json_from_fdb(self.fdbpath(), None)
+        if obj:            
+            storedmultipv = obj["analyzejob"]["multipv"]
+            storeddepth = obj["depth"]
+            print("stored", storedmultipv, storeddepth)
+            if ( self.analyzejob.multipv < storedmultipv ) or ( self.depth <= storeddepth ):
+                print("stored is better, ignoring")
+                return
+        print("storing at", self.fdbpath())
+        write_json_to_fdb(self.fdbpath(), self.toblob())
+
+    def toblob(self):
+        return {
+            "analyzejob": self.analyzejob.toblob(),
+            "depth": self.depth,
+            "depthitems": [depthitem.toblob() for depthitem in self.getdepthitems()]
+        }        
+
+class UciEngine(Engine):
     def __init__(self, workingdirectory, executablename, id, systemlog):
         super().__init__(workingdirectory, executablename)
         self.id = id
-        self.systemlog = systemlog
-        self.resetanalysis()
+        self.systemlog = systemlog        
         self.terminated = False
         self.analyzing = False
         self.currentanalyzejob = None
@@ -294,24 +354,14 @@ class UciEngine(Engine):
             print("bestmove")
             self.analyzing = False
         if ui.kind == "info":
-            depthold = self.depth
-            if ui.depth is None:
-                ui.depth = self.depth
-            else:
-                self.depth = ui.depth
-            if ui.multipv is None:
-                ui.multipv = self.multipv
-            else:
-                self.multipv = ui.multipv
-            while len(self.depthitems) < ( self.depth + 1 ):
-                self.depthitems.append(None)
-            if self.depthitems[self.depth] is None:
-                self.depthitems[self.depth] = DepthItem(self, self.depth)
-            mpcold = self.depthitems[self.depth].multipvcount()
-            self.depthitems[self.depth].updateitem(self.multipv, ui)
-            if ( time.time() - self.analyzestartedat ) > 0.5:
-                self.systemlog.log(SystemLogItem({"owner": self.id, "blob": [depthitem.toblob() for depthitem in self.depthitems if not ( depthitem is None )], "kind": "analysisinfo"}))
-                self.analyzestartedat = time.time()
+            self.analysisinfo.updatewithuciinfo(ui)
+            if self.analysisinfo.depth >= 5:
+                if ( time.time() - self.lastloggedat ) > 0.5:
+                    self.systemlog.log(SystemLogItem({"owner": self.id, "blob": self.analysisinfo.toblob(), "kind": "analysisinfo"}))
+                    self.lastloggedat = time.time()
+                if ( time.time() - self.laststoredat ) > 20:
+                    self.analysisinfo.storeifbetter()
+                    self.laststoredat = time.time()
 
     def send_line(self, sline):        
         super().send_line(sline)
@@ -330,20 +380,24 @@ class UciEngine(Engine):
 
     def analyzethreadtarget(self):
         while True:
-            analyzejob = self.analysisqueue.get()
-            print("got analyze job", analyzejob)
+            analyzejob = self.analysisqueue.get()            
             if self.terminated:
                     return
+            while not self.analysisqueue.empty():
+                analyzejob = self.analysisqueue.get()            
+                if self.terminated:
+                    return
+            print("got analyze job", analyzejob)
             ucivariant = variantkey2ucivariant(analyzejob.variantkey)
             self.awaitstop()
             print("starting", analyzejob)
+            self.analysisinfo = AnalysisInfo(analyzejob)
             self.setoption("UCI_Variant", ucivariant)
             self.setoption("MultiPV", analyzejob.multipv)
-            self.send_line(f"position fen {analyzejob.fen}")
-            self.resetanalysis()
-            self.analyzestartedat = time.time()            
-            self.analyzing = True
-            self.currentanalyzejob = analyzejob
+            self.send_line(f"position fen {analyzejob.fen}")            
+            self.lastloggedat = 0
+            self.laststoredat = 0
+            self.analyzing = True            
             self.send_line("go infinite")                
 
     def analyze(self, analyzejob):        
