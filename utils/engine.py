@@ -308,6 +308,8 @@ class AnalysisInfo:
         if ui.depth is None:
             ui.depth = self.depth
         else:
+            if ui.depth < self.depth:
+                return
             self.depth = ui.depth
         if ui.multipv is None:
             ui.multipv = self.multipv
