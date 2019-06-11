@@ -1915,8 +1915,10 @@ class Board_ extends e{
         this.engineeventsource = new EventSource("/enginelog")
         this.engineeventsource.onmessage= function(ev){
             let li = SystemLogItem(JSON.parse(ev.data))
-            if(li.kind == "analysisinfo"){
-                this.buildanalysisinfo(li.blob)
+            if(li.kind == "analysisinfo"){                
+                if(li.blob.analyzejob.zobristkeyhex == this.currentnode.zobristkeyhex){
+                    this.buildanalysisinfo(li.blob)   
+                }                
             }else if(li.kind == "enginetick"){
                 this.enginetickdiv.html(li.msg)                
                 if(li.blob.analyzing){

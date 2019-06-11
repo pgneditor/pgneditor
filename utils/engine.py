@@ -139,6 +139,8 @@ class UciInfo:
         self.score = None
         self.depth = None
         self.pv = None        
+        self.nps = None
+        self.nodes = None
         key = None
         for token in parts[1:]:
             if key == "multipv":
@@ -161,6 +163,18 @@ class UciInfo:
                     self.score = int(token)
                 except:
                     self.scorekind = None
+                key = None
+            elif key == "nps":
+                try:
+                    self.nps = int(token)
+                except:
+                    self.nps = None
+                key = None
+            elif key == "nodes":
+                try:
+                    self.nodes = int(token)
+                except:
+                    self.nodes = None
                 key = None
             elif key == "pv":
                 self.pv.append(token)
@@ -312,16 +326,16 @@ class AnalysisInfo:
         return depthitems
 
     def storeifbetter(self):
-        print("store if better")
+        #print("store if better")
         obj = read_json_from_fdb(self.fdbpath(), None)
         if obj:            
             storedmultipv = obj["analyzejob"]["multipv"]
             storeddepth = obj["depth"]
-            print("stored", storedmultipv, storeddepth)
+            #print("stored", storedmultipv, storeddepth)
             if ( self.analyzejob.multipv < storedmultipv ) or ( self.depth <= storeddepth ):
-                print("stored is better, ignoring")
+                #print("stored is better, ignoring")
                 return
-        print("storing at", self.fdbpath())
+        print("storing", self.analyzejob.multipv, self.depth, self.fdbpath())
         write_json_to_fdb(self.fdbpath(), self.toblob())
 
     def toblob(self):
@@ -347,7 +361,7 @@ class UciEngine(Engine):
     def tickthreadtarget(self):
         while not self.terminated:
             if self.analyzing:
-                msg = "analyzing for {:.0f} sec(s)".format(time.time() - self.analysisstartedat)
+                msg = "analyzing for {:.0f} sec(s) nps {} nodes {}".format(time.time() - self.analysisstartedat, self.nps, self.nodes)
             else:
                 msg = "idle for {:.0f} sec(s)".format(time.time() - self.idlestartedat)                
             blob = {
@@ -370,6 +384,10 @@ class UciEngine(Engine):
             self.idlestartedat = time.time()
         if ui.kind == "info":
             self.analysisinfo.updatewithuciinfo(ui)
+            if ui.nps:
+                self.nps = ui.nps
+            if ui.nodes:
+                self.nodes = ui.nodes
             if self.analysisinfo.depth >= 5:
                 if ( time.time() - self.lastloggedat ) > 0.5:
                     self.systemlog.log(SystemLogItem({"owner": self.id, "blob": self.analysisinfo.toblob(), "kind": "analysisinfo"}))
@@ -414,6 +432,8 @@ class UciEngine(Engine):
             self.laststoredat = 0
             self.analyzing = True            
             self.analysisstartedat = time.time()
+            self.nodes = 0
+            self.nps = 0
             self.send_line("go infinite")                
 
     def analyze(self, analyzejob):        
