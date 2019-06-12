@@ -1169,7 +1169,14 @@ class Board_ extends e{
                     trdiv
                 )
             }            
-        }
+
+            this.basicboard.bookcanvas.clear()
+            for(let child of this.currentnode.getchilds().slice().reverse()){
+                if(child.metrainweight > 0){
+                    this.basicboard.addalgebmovearrow(child.genuci, {opacity: child.metrainweight/10, color: "#00f", auxscalefactor: 1.2, canvas: this.basicboard.bookcanvas})
+                }                
+            }
+        }        
     }
 
     initgif(){

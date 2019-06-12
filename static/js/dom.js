@@ -456,7 +456,7 @@ class Canvas_ extends e{
         let l = diff.l()
         let rot = Math.asin((to.y - from.y)/l)        
         if(to.x < from.x) rot = Math.PI - rot             
-        let args = argsopt || {}
+        let args = argsopt || {}        
         let scalefactor = getelse(args, "scalefactor", 1)
         let auxscalefactor = getelse(args, "auxscalefactor", 1)
         let linewidth = getelse(args, "linewidth", 16) * scalefactor * auxscalefactor
@@ -465,8 +465,10 @@ class Canvas_ extends e{
         let pointwidth = getelse(args, "pointwidth", 30) * scalefactor * auxscalefactor
         let halfpointwidth = pointwidth / 2
         let color = getelse(args, "color", "#ff0")        
+        let opacity = getelse(args, "opacity", 1)        
         let lineheight = l - pointheight
         this.ctx.save()
+        this.ctx.globalAlpha = opacity
         this.ctx.translate(from.x, from.y)
         this.ctx.rotate(rot)
         this.ctx.fillStyle = color
@@ -1829,7 +1831,8 @@ class BasicBoard_ extends e{
         this.drawingscanvas = Canvas().setWidth(this.boardsize).setHeight(this.boardsize).poa()                
         this.drawanimationcanvas = Canvas().setWidth(this.boardsize).setHeight(this.boardsize).poa()                
         this.analysiscanvas = Canvas().setWidth(this.boardsize).setHeight(this.boardsize).poa()        
-        this.drawcontainer.a(this.drawcanvas, this.drawingscanvas, this.drawanimationcanvas, this.analysiscanvas)
+        this.bookcanvas = Canvas().setWidth(this.boardsize).setHeight(this.boardsize).poa()        
+        this.drawcontainer.a(this.drawcanvas, this.drawingscanvas, this.drawanimationcanvas, this.analysiscanvas, this.bookcanvas)
         // piece container
         this.piececontainer = Div().w(this.boardsize).h(this.boardsize).poa()        
         this.boardcontainer.a(this.arrowcontainer, this.drawcontainer, this.piececontainer)
