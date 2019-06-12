@@ -458,10 +458,11 @@ class Canvas_ extends e{
         if(to.x < from.x) rot = Math.PI - rot             
         let args = argsopt || {}
         let scalefactor = getelse(args, "scalefactor", 1)
-        let linewidth = getelse(args, "linewidth", 16) * scalefactor
+        let auxscalefactor = getelse(args, "auxscalefactor", 1)
+        let linewidth = getelse(args, "linewidth", 16) * scalefactor * auxscalefactor
         let halflinewidth = linewidth / 2
-        let pointheight = getelse(args, "pointheight", 40) * scalefactor
-        let pointwidth = getelse(args, "pointwidth", 30) * scalefactor
+        let pointheight = getelse(args, "pointheight", 40) * scalefactor * auxscalefactor
+        let pointwidth = getelse(args, "pointwidth", 30) * scalefactor * auxscalefactor
         let halfpointwidth = pointwidth / 2
         let color = getelse(args, "color", "#ff0")        
         let lineheight = l - pointheight
@@ -1547,7 +1548,8 @@ class BasicBoard_ extends e{
         let toc = this.squaremiddlecoord(move.tosq)
         //this.arrowcontainer.a(Arrow(fromc, toc, args))
         args.scalefactor = this.scalefactor
-        this.drawcanvas.arrow(fromc, toc, args)
+        let canvas = args.canvas || this.drawcanvas
+        canvas.arrow(fromc, toc, args)
     }
 
     addalgebmovearrow(algeb, argsopt){        
@@ -1826,7 +1828,8 @@ class BasicBoard_ extends e{
         this.drawcanvas = Canvas().setWidth(this.boardsize).setHeight(this.boardsize).poa()        
         this.drawingscanvas = Canvas().setWidth(this.boardsize).setHeight(this.boardsize).poa()                
         this.drawanimationcanvas = Canvas().setWidth(this.boardsize).setHeight(this.boardsize).poa()                
-        this.drawcontainer.a(this.drawcanvas, this.drawingscanvas, this.drawanimationcanvas)
+        this.analysiscanvas = Canvas().setWidth(this.boardsize).setHeight(this.boardsize).poa()        
+        this.drawcontainer.a(this.drawcanvas, this.drawingscanvas, this.drawanimationcanvas, this.analysiscanvas)
         // piece container
         this.piececontainer = Div().w(this.boardsize).h(this.boardsize).poa()        
         this.boardcontainer.a(this.arrowcontainer, this.drawcontainer, this.piececontainer)
@@ -2411,6 +2414,12 @@ class PvItem_ extends e{
         return this.pvsan[0]
     }
 
+    getuci(){
+        if(!this.pv) return null
+        if(this.pv.length == 0) return null
+        return this.pv[0]
+    }
+
     getpvverbal(){
         if(!this.pvsan) return "?"
         return this.pvsan.join(" ")
@@ -2461,6 +2470,10 @@ class PvItem_ extends e{
 function PvItem(parentdepthitem, blob){return new PvItem_(parentdepthitem, blob)}
 
 class DepthItem_ extends e{
+    size(){
+        return this.pvitems.filter(x => x).length
+    }
+
     build(){
         this.container.x
         for(let pvitem of this.pvitems){
@@ -2494,6 +2507,11 @@ class DepthItem_ extends e{
 function DepthItem(parentanalysisinfo, blob){return new DepthItem_(parentanalysisinfo, blob)}
 
 class AnalysisInfo_ extends e{
+    highestfullitem(){
+        for(let di of this.depthitems.slice().reverse()) if(di.size() >= this.analyzejob.multipv) return di
+        return null
+    }
+
     build(){
         this.container.x
         for(let depthitem of this.depthitems.slice().reverse()){
@@ -2506,6 +2524,8 @@ class AnalysisInfo_ extends e{
         super("div")
 
         this.parentboard = parentboard
+
+        this.analyzejob = blob.analyzejob
 
         this.depthitems = []
 

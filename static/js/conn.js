@@ -1933,10 +1933,28 @@ class Board_ extends e{
         }.bind(this)
     }
 
-    buildanalysisinfo(blob){
+    showanalysisinfo(){
         this.analysisinfodiv.x
-        this.analysisinfo = AnalysisInfo(this, blob)
         this.analysisinfodiv.a(this.analysisinfo)
+        let hfi = this.analysisinfo.highestfullitem()
+        let acanvas = this.basicboard.analysiscanvas
+        acanvas.clear()
+        if(hfi){
+            let multipv = this.analysisinfo.analyzejob.multipv
+            let i = multipv
+            for(let pvi of hfi.pvitems){
+                if(pvi){
+                    let uci = pvi.getuci()
+                    this.basicboard.addalgebmovearrow(uci, {canvas: acanvas, auxscalefactor: i / multipv, color: scorecolor(pvi.scorekind, pvi.score)})
+                    i--
+                }
+            }
+        }
+    }
+
+    buildanalysisinfo(blob){        
+        this.analysisinfo = AnalysisInfo(this, blob)
+        this.showanalysisinfo()
     }
 
     enginesubmit(command){
