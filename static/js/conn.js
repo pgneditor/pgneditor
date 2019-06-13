@@ -1045,7 +1045,9 @@ class Board_ extends e{
         this.basicboard.arrowcontainer.x
         this.basicboard.drawcanvas.clear()
         this.basicboard.setgenuci(study.currentnode.genuci)
-        this.basicboard.setdrawings(this.study.currentnode.drawings)
+        if(!this.trainon()){
+            this.basicboard.setdrawings(this.study.currentnode.drawings)
+        }        
         this.builddrawingsorganizer()
         let treebuild = this.study.tree()
         this.treediv.x.a(treebuild)        
@@ -2078,6 +2080,13 @@ class Board_ extends e{
         this.checktrainroot = true
         this.trainmode = this.trainmodeselect.v()
         console.log("train mode changed to", this.trainmode)
+        if(this.trainon()){
+            this.basicboard.drawingscanvas.clear()
+            this.basicboard.analysiscanvas.clear()
+            this.basicboard.bookcanvas.clear()
+        }else{
+            this.setgamefromstudy(this.study)
+        }
         if(((this.trainmode == "w")&&(this.basicboard.flip))||((this.trainmode == "b")&&(!this.basicboard.flip))){
             this.flip()
         }else{
