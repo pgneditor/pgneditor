@@ -1125,6 +1125,7 @@ class Board_ extends e{
 
     getstoredanalysis(){
         this.analysisinfodiv.x
+        this.basicboard.analysiscanvas.clear()
         api({
             "kind": "getanalysisinfo",
             "variantkey": this.basicboard.variantkey,            
