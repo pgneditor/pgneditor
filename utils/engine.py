@@ -363,7 +363,7 @@ class UciEngine(Engine):
     def tickthreadtarget(self):
         while not self.terminated:
             if self.analyzing:
-                msg = "analyzing for {:.0f} sec(s) nps {} nodes {}".format(time.time() - self.analysisstartedat, self.nps, self.nodes)
+                msg = "analyzing for {:.0f} sec(s) nps {} nodes {} fen {}".format(time.time() - self.analysisstartedat, self.nps, self.nodes, self.currentanalyzejob.fen)
             else:
                 msg = "idle for {:.0f} sec(s)".format(time.time() - self.idlestartedat)                
             blob = {
@@ -432,6 +432,7 @@ class UciEngine(Engine):
             self.send_line(f"position fen {analyzejob.fen}")            
             self.lastloggedat = 0
             self.laststoredat = 0
+            self.currentanalyzejob = analyzejob
             self.analyzing = True            
             self.analysisstartedat = time.time()
             self.nodes = 0
