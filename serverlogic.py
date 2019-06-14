@@ -215,6 +215,7 @@ def connected(req):
         importstudy(req)
     return {
         "kind": "connectedack",
+        "freeanalysis": FREE_ANALYSIS(),
         "players": SCAN_PLAYER_LIST.split(",")
     }
 
