@@ -18,7 +18,7 @@ from utils.study import Study, DEFAULT_MAX_PLIES, Book, BookMove, BookPosition, 
 from utils.cryptography import encryptalphanum, decryptalphanum
 from utils.file import read_json_from_fdb, write_json_to_fdb, delfdb, read_json_from_fdb
 from utils.engine import UciEngine, AnalyzeJob
-from utils.config import SERVER_URL, KEEP_ALIVE, IS_PROD, ENGINE_WORKING_DIR, ENGINE_EXECUTABLE_NAME
+from utils.config import SERVER_URL, KEEP_ALIVE, IS_PROD, ENGINE_WORKING_DIR, ENGINE_EXECUTABLE_NAME, FREE_ANALYSIS
 from utils.logger import SystemLog
 
 ###################################################################
@@ -657,7 +657,7 @@ def enginecommand(req):
 
 def analyze(req):
     global mainengine
-    if req.user.can("analyze"):
+    if req.user.can("analyze") or FREE_ANALYSIS():
         mainengine.analyze(AnalyzeJob(req.fen, multipv = req.multipv, variantkey = req.variantkey))
         return {
             "kind": "analyzestarted"
@@ -670,7 +670,7 @@ def analyze(req):
 
 def stopanalyze(req):
     global mainengine
-    if req.user.can("analyze"):
+    if req.user.can("analyze") or FREE_ANALYSIS():
         mainengine.stopanalyze()
         return {
             "kind": "analyzestopped"
@@ -678,6 +678,18 @@ def stopanalyze(req):
     else:
         return {
             "kind": "stopanalyzefailed",
+            "status": "not authorized"
+        }
+
+def newengine(req):    
+    if req.user.can("analyze"):
+        newengine_func()
+        return {
+            "kind": "newenginedone"
+        }
+    else:
+        return {
+            "kind": "newenginefailed",
             "status": "not authorized"
         }
 

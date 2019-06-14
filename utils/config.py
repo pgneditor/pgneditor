@@ -39,3 +39,8 @@ def ENGINE_EXECUTABLE_NAME():
     return "stockfish"
 
 ###################################################################
+
+def FREE_ANALYSIS():
+    return getenvboolelse("FREEANALYSIS", False)
+
+###################################################################

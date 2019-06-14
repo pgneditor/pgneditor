@@ -1793,6 +1793,12 @@ class Board_ extends e{
         }, function(resobj){console.log("stop analyze response", resobj)})
     }
 
+    newengine(){        
+        api({
+            "kind": "newengine"
+        }, function(resobj){console.log("new engine response", resobj)})
+    }
+
     constructor(argsopt){
         super("div")
         this.initgif()
@@ -1868,7 +1874,8 @@ class Board_ extends e{
         this.rawsplitpane.controlpanel.a(
             this.enginesubmittext,
             Button("Analyze", this.analyze.bind(this)),
-            Button("Stop", this.stopanalyze.bind(this))            
+            Button("Stop", this.stopanalyze.bind(this)),            
+            Button("New", this.newengine.bind(this))            
         )
         this.enginelog = SystemLog()
         this.rawsplitpane.setcontentelement(this.enginelog)
