@@ -367,6 +367,9 @@ class GameNode_ extends e{
             this.messagediv.disp("flex")            
             this.messagediv.scrollcentersmooth()
             this.messagetextinput = CopyTextArea({width: MESSAGE_WIDTH - 10, height: MESSAGE_HEIGHT - 30})
+            this.messagetextinput.ae("keydown", function(ev){
+                ev.stopPropagation()
+            })
             this.messagecontroldiv = Div().disp("flex").a(
                 Button("Save", this.savemessage.bind(this)),
                 Button("Close", this.closemessage.bind(this)).ml(10)

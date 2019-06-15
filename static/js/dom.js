@@ -618,6 +618,9 @@ class TextInput_ extends Input_{
         this.ae("keyup", this.defaultchangehandler.bind(this))
         if(this.id) this.setText(getLocal(this.id, this.defaultvalue))
         this.handlechange = true
+        this.ae("keydown", function(ev){
+            ev.stopPropagation()
+        })
     }
 
     defaultchangehandler(){
@@ -651,6 +654,9 @@ function TextInput(argsopt){return new TextInput_(argsopt)}
 class TextArea_ extends e{
     constructor(){
         super("textarea")
+        this.ae("keydown", function(ev){
+            ev.stopPropagation()
+        })
     }
 
     setText(text){
