@@ -1664,6 +1664,7 @@ class Board_ extends e{
     durationchanged(){
         let duration = parseInt(this.durationtextinput.getText())
         if(isNaN(duration)) duration = 1000
+        this.study.currentnode.duration = duration
         api({
             "kind": "saveduration",
             "id": this.study.id,
@@ -1680,6 +1681,7 @@ class Board_ extends e{
     drawingschanged(drawings){
         console.log("drawings changed", drawings)
         this.basicboard.setdrawings(drawings)        
+        this.currentnode.drawings = drawings
         this.builddrawingsorganizer()
         api({
             "kind": "setdrawings",
