@@ -1658,16 +1658,13 @@ class Board_ extends e{
     }
 
     durationsaved(resobj){
-        if(resobj.kind == "durationsaved"){
-            let duration = resobj.duration
-            //this.durationtextinput.setText(`${duration}`)
-        }
+        console.log("duration saved", resobj)
     }
 
     durationchanged(){
         let duration = parseInt(this.durationtextinput.getText())
         if(isNaN(duration)) duration = 1000
-        this.study.currentnode.duration = duration
+        this.currentnode.duration = duration
         api({
             "kind": "saveduration",
             "id": this.study.id,
