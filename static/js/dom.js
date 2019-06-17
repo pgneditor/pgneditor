@@ -1417,6 +1417,10 @@ class Move{
     }
 
     toalgeb(){
+        if(this.fromsq.equals(this.tosq)){
+            let algeb = `${this.prompiece.kind}@${this.tosq.toalgeb()}`
+            return algeb
+        }
         let algeb = `${this.fromsq.toalgeb()}${this.tosq.toalgeb()}`
         if(this.prompiece) algeb += this.prompiece.kind
         return algeb
@@ -1509,6 +1513,76 @@ class Piece{
     }
 }
 
+function piecefrompieceletter(pieceletter){
+    if( (pieceletter >= "A") && (pieceletter <= "Z") ){
+        return new Piece(pieceletter.toLowerCase(), 1)
+    }
+    return new Piece(pieceletter, 0)
+}
+
+class CapturedPanel_ extends e{
+    resize(width, height){
+        this.width = width
+        this.height = height
+        this.piecesize = this.height * 0.8
+        this.container.w(this.width).h(this.height)
+        return this
+    }
+
+    selectpdiv(selectedpdiv, p){        
+        this.selectedpdiv = selectedpdiv
+        this.selectedpiece = p
+        for(let pdiv of this.pdivs){
+            pdiv.bdc("#aaa").bc("#bbb")
+        }
+        if(this.parentbasicboard.turnfen != this.color) return
+        if(this.selectedpdiv){
+            this.selectedpdiv.bdc("#070").bc("#afa")
+        }        
+        console.log("selected piece", p)
+    }
+
+    setfromfen(fen, color){
+        this.fen = fen
+        this.color = color
+        this.container.x
+        let parts = this.fen.split(/\[|\]/)
+        this.pdivs = []        
+        if(parts.length > 1){
+            let allpieces = parts[1].split("").filter(x => ispieceofcolor(x, this.color)).map(pl => piecefrompieceletter(pl))            
+            let pieces = []
+            let piececounts = {}
+            for(let p of allpieces){
+                if(p.kind in piececounts){
+                    piececounts[p.kind]++
+                }else{
+                    piececounts[p.kind] = 1
+                    pieces.push(p)
+                }
+            }
+            for(let p of pieces){
+                let pdiv = Div().por().cp().w(this.piecesize).h(this.piecesize).bds("solid").bdw(this.piecesize * 0.05)
+                let cdiv = Div().poa().disp("flex").ai("center").jc("space-around").w(this.piecesize/2).h(this.piecesize/2).l(this.piecesize * 0.8).bc("#fff")
+                cdiv.a(Div().html(piececounts[p.kind]).fs(this.piecesize/2).fw("bold")) 
+                pdiv.a(cdiv)
+                let klass = getclassforpiece(p, this.parentbasicboard.piecestyle)                    
+                pdiv.ac(klass).ae("mousedown", this.selectpdiv.bind(this, pdiv, p))
+                this.pdivs.push(pdiv)
+                this.container.a(pdiv)
+            }
+        }
+        this.selectpdiv()
+    }
+
+    constructor(parentbasicboard){
+        super("div")
+        this.parentbasicboard = parentbasicboard        
+        this.container = Div().disp("flex").ai("center").jc("space-around").bc("#ccc")
+        this.a(this.container)
+    }
+}
+function CapturedPanel(parentbasicboard){return new CapturedPanel_(parentbasicboard)}
+
 const NOMINAL_BASIC_BOARD_SIZE = 500
 
 class BasicBoard_ extends e{
@@ -1543,6 +1617,11 @@ class BasicBoard_ extends e{
     }
 
     movefromalgeb(algeb){
+        if(algeb.includes("@")){
+            let sq = this.squarefromalgeb(algeb.slice(2,4))
+            let p = new Piece(algeb.slice(0,1).toLowerCase(), this.turnfen == "w" ? 1 : 0)
+            return new Move(sq, sq, p)    
+        }
         return new Move(this.squarefromalgeb(algeb.slice(0,2)), this.squarefromalgeb(algeb.slice(2,4)))
     }
 
@@ -1680,7 +1759,8 @@ class BasicBoard_ extends e{
     setfromfen(fen){        
         this.fen = fen
         let fenparts = fen.split(" ")
-        this.whiteturn = fenparts[1] == "w"
+        this.turnfen = fenparts[1]
+        this.whiteturn = this.turnfen == "w"
         this.blackturn = !this.whiteturn
         let rankfens = fenparts[0].split("/")
         for(let i=0;i<this.BOARD_AREA;i++) this.rep[i] = new Piece()
@@ -1704,6 +1784,13 @@ class BasicBoard_ extends e{
             }
         }        
         this.buildpieces()
+        if(this.flip){
+            this.capturedpanels[0].setfromfen(this.fen, "w")
+            this.capturedpanels[1].setfromfen(this.fen, "b")
+        }else{
+            this.capturedpanels[0].setfromfen(this.fen, "b")
+            this.capturedpanels[1].setfromfen(this.fen, "w")
+        }
         return this
     }
 
@@ -1768,7 +1855,16 @@ class BasicBoard_ extends e{
 
     squareclicked(sq){
         if(!this.drawkind){            
-            return
+            let cpi = this.turnfen == "b" ? 0 : 1
+            if(this.flip) cpi = 1 - cpi
+            let cp = this.capturedpanels[cpi]
+            if(cp.selectedpiece){
+                let m = new Move(sq, sq, cp.selectedpiece)
+                console.log("place move", m)
+                if(this.dragmovecallback){
+                    this.dragmovecallback(m)
+                }
+            }
         }        
         this.drawanimationcanvas.clear()
         this.drawcurrentsq = sq
@@ -1798,7 +1894,7 @@ class BasicBoard_ extends e{
         // captured panels
         this.capturedpanels = []
         for(let i=0;i<2;i++){
-            let cp = Div().w(this.outerboardsize).h(this.capturedpanelheight).bc("#ccc")
+            let cp = CapturedPanel(this).resize(this.outerboardsize, this.capturedpanelheight)
             this.capturedpanels.push(cp)
         }
         // board containers

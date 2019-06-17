@@ -80,6 +80,11 @@ function feninfo(fen){
 
 ////////////////////////////////////////////////////////////////////
 
+function ispieceofcolor(piece, color){
+    if(color == "w") return ( piece >= "A" ) && ( piece <= "Z" )
+    return ( piece >= "a" ) && ( piece <= "z" )
+}
+
 function scorecolor(scorekind, score){
     if(scorekind == "mate") return score > 0 ? "#0f0" : "#f00"
     if(score > 500) return "#0c0"
