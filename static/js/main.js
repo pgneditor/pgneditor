@@ -60,7 +60,7 @@ function initapp(resobj){
         infodiv.disp("block")
         setTimeout(function(){
             infodiv.disp("none")
-        }, 10000)
+        }, 3000)
     }    
 }
 

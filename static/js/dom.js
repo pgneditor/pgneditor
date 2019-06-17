@@ -1521,6 +1521,29 @@ function piecefrompieceletter(pieceletter){
 }
 
 class CapturedPanel_ extends e{
+    getcanvas(){
+        let canvas = Canvas().setWidth(this.width).setHeight(this.height)
+        canvas.ctx.fillStyle = "#999"
+        canvas.ctx.fillRect(0, 0, this.width, this.height)                
+        let totalpiecesize = 1.5 * this.piecesize
+        let margin = ( this.width - this.pieces.length * totalpiecesize ) / 2
+        if(margin < 0) margin = 0
+        for(let i=0;i<this.pieces.length;i++){
+            let pdiv = this.pdivs[i]
+            let imgurl = window.getComputedStyle(pdiv.e)["background-image"]
+            imgurl = imgurl.substring(5, imgurl.length - 2)    
+            let img = Img().width(this.piecesize).height(this.piecesize)
+            img.e.src = imgurl                            
+            canvas.ctx.drawImage(img.e, margin + i * totalpiecesize, this.height * 0.1, this.piecesize, this.piecesize)
+            canvas.ctx.fillStyle = "#bbb"
+            canvas.ctx.fillRect(margin + i * totalpiecesize + this.piecesize * 0.8, this.height * 0.1, this.piecesize * 0.5, this.piecesize * 0.7)
+            canvas.ctx.fillStyle = "#00f"
+            canvas.ctx.font = `${this.height * 0.6}px serif`            
+            canvas.ctx.fillText(`${this.piececountslist[i]}`, margin + i * totalpiecesize + this.piecesize * 0.85, this.height * 0.6)
+        }        
+        return canvas
+    }
+
     resize(width, height){
         this.width = width
         this.height = height
@@ -1548,10 +1571,12 @@ class CapturedPanel_ extends e{
         this.container.x
         let parts = this.fen.split(/\[|\]/)
         this.pdivs = []        
+        this.pieces = []
+        this.piececountslist = []
         if(parts.length > 1){
             let allpieces = parts[1].split("").filter(x => ispieceofcolor(x, this.color)).map(pl => piecefrompieceletter(pl))            
             let pieces = []
-            let piececounts = {}
+            let piececounts = {}            
             for(let p of allpieces){
                 if(p.kind in piececounts){
                     piececounts[p.kind]++
@@ -1563,13 +1588,16 @@ class CapturedPanel_ extends e{
             for(let p of pieces){
                 let pdiv = Div().por().cp().w(this.piecesize).h(this.piecesize).bds("solid").bdw(this.piecesize * 0.05)
                 let cdiv = Div().poa().disp("flex").ai("center").jc("space-around").w(this.piecesize/2).h(this.piecesize/2).l(this.piecesize * 0.8).bc("#fff")
-                cdiv.a(Div().html(piececounts[p.kind]).fs(this.piecesize/2).fw("bold")) 
+                let pcount = piececounts[p.kind]
+                cdiv.a(Div().html(pcount).fs(this.piecesize/2).fw("bold")) 
+                this.piececountslist.push(pcount)
                 pdiv.a(cdiv)
                 let klass = getclassforpiece(p, this.parentbasicboard.piecestyle)                    
                 pdiv.ac(klass).ae("mousedown", this.selectpdiv.bind(this, pdiv, p))
                 this.pdivs.push(pdiv)
                 this.container.a(pdiv)
             }
+            this.pieces = pieces            
         }
         this.selectpdiv()
     }
@@ -1709,11 +1737,16 @@ class BasicBoard_ extends e{
     }
 
     getcanvas(){
-        let canvas = Canvas().setWidth(this.outerboardsize).setHeight(this.outerboardsize)
-        canvas.ctx.drawImage(this.outerboardcontainerbackgroundcanvas.e, 0, 0)
-        canvas.ctx.drawImage(this.innerboardcontainerbackgroundcanvas.e, this.outerboardmargin, this.outerboardmargin)
-        canvas.ctx.drawImage(this.boardcontainerbackgroundcanvas.e, this.outerboardmargin + this.innerboardmargin, this.outerboardmargin + this.innerboardmargin)        
-        canvas.ctx.drawImage(this.getpiececanvas().e, this.outerboardmargin + this.innerboardmargin, this.outerboardmargin + this.innerboardmargin)
+        let canvas = Canvas().setWidth(this.outerboardsize).setHeight(this.outerboardsize + 2 * this.capturedpanelheight)        
+        canvas.ctx.drawImage(this.outerboardcontainerbackgroundcanvas.e, 0, this.capturedpanelheight)
+        canvas.ctx.drawImage(this.innerboardcontainerbackgroundcanvas.e, this.outerboardmargin, this.capturedpanelheight + this.outerboardmargin)
+        canvas.ctx.drawImage(this.boardcontainerbackgroundcanvas.e, this.outerboardmargin + this.innerboardmargin, this.capturedpanelheight + this.outerboardmargin + this.innerboardmargin)        
+        canvas.ctx.drawImage(this.getpiececanvas().e, this.outerboardmargin + this.innerboardmargin, this.capturedpanelheight + this.outerboardmargin + this.innerboardmargin)
+        canvas.ctx.fillStyle = "#ccc"
+        if(this.capturedpanelheight > 0){
+            canvas.ctx.drawImage(this.capturedpanels[0].getcanvas().e, 0, 1)
+            canvas.ctx.drawImage(this.capturedpanels[1].getcanvas().e, 0, this.capturedpanelheight + this.outerboardsize - 1)
+        }        
         return canvas
     }
 
