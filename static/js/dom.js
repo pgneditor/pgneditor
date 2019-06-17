@@ -2237,14 +2237,24 @@ function Iframe(){return new Iframe_()}
 ////////////////////////////////////////////////////////////////////
 // content button
 class ContentButton_ extends e{
+    clicked(){
+        if(this.callback){            
+            this.op(0.5)
+            this.callback()                        
+            setTimeout(function(){this.op(1)}.bind(this), 250)
+        }
+    }
+
     constructor(content, callback){
         super("div")        
+        this.callback = callback
         this.ac("unselectable")
         this.disp("inline-block").cp().bds("solid").bdw(1).pad(2).bdc("#777").pl(4).pr(4).mar(2).curlyborder(5)
-        if(callback) this.ae("mousedown", callback)        
+        this.ae("mousedown", this.clicked.bind(this))        
         this.content = content
         this.a(this.content)
         this.setselected(false)        
+        this.transition("opacity 0.25s")
     }
 }
 function ContentButton(content, callback){return new ContentButton_(content, callback)}
