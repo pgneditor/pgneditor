@@ -2240,7 +2240,7 @@ class ContentButton_ extends e{
     clicked(){
         if(this.callback){            
             this.op(0.5)
-            this.callback()                        
+            setTimeout(this.callback, 0)
             setTimeout(function(){this.op(1)}.bind(this), 250)
         }
     }
