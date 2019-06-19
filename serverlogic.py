@@ -714,12 +714,18 @@ def getanalysisbook(req):
     }
 
 def saveanalysisbook(req):    
-    fdbpath = f"analysisbook/{req.variantkey}/{req.zobristkeyhex}"
-    log(f"< saving analysis book < {fdbpath} > >", "info")    
-    write_json_to_fdb(fdbpath, req.blob)
-    return {
-        "kind": "analysisbooksaved"
-    }
+    if req.user.can("admin"):
+        fdbpath = f"analysisbook/{req.variantkey}/{req.zobristkeyhex}"
+        log(f"< saving analysis book < {fdbpath} > >", "info")    
+        write_json_to_fdb(fdbpath, req.blob)
+        return {
+            "kind": "analysisbooksaved"
+        }
+    else:
+        return {
+            "kind": "saveanalysisbookfailed",
+            "status": "not authorized"
+        }
 
 ###################################################################
 
