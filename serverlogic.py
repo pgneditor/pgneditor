@@ -16,7 +16,7 @@ from utils.logger import log
 from utils.http import geturl
 from utils.study import Study, DEFAULT_MAX_PLIES, Book, BookMove, BookPosition, LichessGame, getvariantboard, get_zobrist_key_hex
 from utils.cryptography import encryptalphanum, decryptalphanum
-from utils.file import read_json_from_fdb, write_json_to_fdb, delfdb, read_json_from_fdb
+from utils.file import read_json_from_fdb, write_json_to_fdb, delfdb, read_json_from_fdb, fdb
 from utils.engine import UciEngine, AnalyzeJob
 from utils.config import SERVER_URL, KEEP_ALIVE, IS_PROD, ENGINE_WORKING_DIR, ENGINE_EXECUTABLE_NAME, FREE_ANALYSIS
 from utils.logger import SystemLog
@@ -1008,6 +1008,32 @@ def initenginetarget():
     newengine_func()
     print("initializing engine done")
 
+analysisbook = None
+
+def loadanalysisbook():
+    global analysisbook
+    analysisbook = fdb.reference("analysisbook/atomic").get()
+    if analysisbook:
+        print("analysis book loaded", len(list(analysisbook.keys())), "position(s)")
+
+def bottarget():
+    BOTTOKEN = os.environ.get("BOTTOKEN", None)
+    if not BOTTOKEN:
+        print("no bot token")
+        return
+    loadanalysisbook()
+    r = requests.get("https://lichess.org//api/stream/event", headers = {
+        "Authorization": f"Bearer {BOTTOKEN}",
+        "Accept": "application/x-ndjson"
+    }, stream = True)                            
+    for line in r.iter_lines():        
+        line = line.decode("utf-8")
+        try:
+            event = json.loads(line)
+            print("bot", json.dumps(event, indent = 2))
+        except:
+            pass
+
 ###################################################################
 
 def cleanplayers():
@@ -1025,6 +1051,8 @@ if IS_PROD() or False:
 #Thread(target = enginetesttarget).start()
 
 Thread(target = initenginetarget).start()
+
+Thread(target = bottarget).start()
 
 print("serverlogic started, prod", IS_PROD())
 
