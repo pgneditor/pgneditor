@@ -1113,6 +1113,8 @@ class Board_ extends e{
             this.getstoredanalysis()
         }
 
+        this.getstoredbook()
+
         ////////////////////////////////////////////////////////////////////
         if(this.mergequeue){
             this.mergetextinput.setText(this.mergequeue)
@@ -1124,6 +1126,52 @@ class Board_ extends e{
         ////////////////////////////////////////////////////////////////////
         this.dotrain()
         ////////////////////////////////////////////////////////////////////
+    }
+
+    saveanalysisbook(){        
+        let blob = this.analysisbook.toblob()
+        console.log("saving analysis book", blob)
+        api({
+            "kind": "saveanalysisbook",
+            "variantkey": this.basicboard.variantkey,            
+            "zobristkeyhex": this.currentnode.zobristkeyhex,
+            "blob": blob
+        }, function(resobj){
+            console.log("save analysis book", resobj)
+        }.bind(this))
+    }
+
+    showanalysisbook(){
+        this.analysisbookdiv.x                
+        this.analysisbookdiv.a(this.analysisbook)
+    }
+
+    buildanalysisbook(blob){
+        this.analysisbook = BookPosition(this, blob)
+        let hasmissing = false
+        for(let child of this.currentnode.getchilds()){
+            if(!this.analysisbook.hasuci(child.genuci)){
+                hasmissing = true
+                this.analysisbook.moves.push(BookMove(this.analysisbook, {uci:child.genuci, san:child.gensan, weight: 0}))
+            }
+        }
+        if(hasmissing){
+            this.analysisbook.build()
+            this.saveanalysisbook()
+        }
+        this.showanalysisbook()
+    }
+
+    getstoredbook(){
+        this.analysisbookdiv.x
+        api({
+            "kind": "getanalysisbook",
+            "variantkey": this.basicboard.variantkey,            
+            "zobristkeyhex": this.currentnode.zobristkeyhex
+        }, function(resobj){
+            let blob = resobj.blob
+            this.buildanalysisbook(blob)            
+        }.bind(this))
     }
 
     getstoredanalysis(){
@@ -1896,8 +1944,10 @@ class Board_ extends e{
             this.analysisinfodiv
         )
         this.analysissplitpane.setcontentelement(this.analysisinfocontainer)
+        this.analysisbookdiv = Div().pad(3).pl(9)
         this.analysistabpane = TabPane("analysistabpane").settabs([
             Tab("analysis", "Analysis", this.analysissplitpane, "A"),
+            Tab("book", "Book", this.analysisbookdiv, "?"),
             Tab("raw", "Raw", this.rawsplitpane, "n")
         ]).selecttab("analysis", USE_STORED_IF_AVAILABLE)
         this.analysistabpane.controlpanel.bc("#ccc")        

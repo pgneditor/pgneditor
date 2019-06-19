@@ -2691,6 +2691,92 @@ class AnalysisInfo_ extends e{
     }
 }
 function AnalysisInfo(parentboard, blob){return new AnalysisInfo_(parentboard, blob)}
+
+class BookMove_ extends e{
+    weightchanged(){
+        this.weight = this.weightselect.v()
+        this.parentbookposition.build()
+        this.parentbookposition.parentboard.saveanalysisbook()
+    }
+
+    toblob(){
+        return {
+            uci: this.uci,
+            san: this.san,
+            weight: this.weight
+        }
+    }
+
+    sandivclicked(){
+        this.parentbookposition.parentboard.makealgebmove(this.uci)
+    }
+
+    build(){
+        this.container.x
+        this.sandiv = Div().cp().fw(this.weight > 0 ? "bold" : "normal").w(80).fs(24).pad(1).html(this.san)
+        this.sandiv.ae("mousedown", this.sandivclicked.bind(this))
+        this.sandiv.c(`rgb(0, ${this.weight > 0 ? 10 + this.weight * 24 : 0}, 0)`)
+        this.weightselect = Select().setoptions([...Array(11).keys()].map(x => [x, x]), this.weight)
+        this.weightselect.ae("change", this.weightchanged.bind(this))
+        this.container.a(
+            this.sandiv,
+            this.weightselect
+        )
+        return this
+    }
+
+    constructor(parentbookposition, blob){
+        super("div")
+        this.parentbookposition = parentbookposition
+        this.uci = blob.uci
+        this.san = blob.san
+        this.weight = blob.weight
+        this.container = Div().pad(1).disp("flex").ai("center").ac("unselectable")
+        this.a(this.container)
+        this.build()
+    }
+}
+function BookMove(parentbookposition, blob){return new BookMove_(parentbookposition, blob)}
+
+class BookPosition_ extends e{
+    build(){        
+        this.container.x                
+        this.moves.sort((a, b) => b.weight - a.weight)
+        for(let bookmove of this.moves){
+            this.container.a(bookmove.build())
+        }
+        return this
+    }
+
+    toblob(){
+        return {
+            movesblob: this.moves.map(m => m.toblob())
+        }
+    }
+
+    hasuci(uci){
+        for(let bookmove of this.moves){
+            if(bookmove.uci == uci) return true
+        }
+        return false
+    }
+
+    constructor(parentboard, blobopt){
+        super("div")
+        this.moves = []
+        let blob = blobopt || {movesblob:[]}
+        for(let moveblob of blob.movesblob){
+            let bookmove = BookMove(this, moveblob)
+            this.moves.push(bookmove)            
+        }
+        this.parentboard = parentboard
+        this.movesblob = blob.moves        
+        this.container = Div().pad(1)
+        this.a(this.container)
+        this.build()
+    }
+}
+function BookPosition(parentboard, blobopt){return new BookPosition_(parentboard, blobopt)}
 ////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////

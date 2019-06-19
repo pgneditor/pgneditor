@@ -168,6 +168,7 @@ class Req():
         self.fen = reqobj.get("fen", None)
         self.multipv = reqobj.get("multipv", 1)
         self.zobristkeyhex = reqobj.get("zobristkeyhex", None)
+        self.blob = reqobj.get("blob", None)
 
         if SERVERLOGIC_VERBOSE:
             log(self, "warning")
@@ -701,6 +702,23 @@ def getanalysisinfo(req):
     return {
         "kind": "analysisinfo",
         "blob": blob
+    }
+
+def getanalysisbook(req):    
+    fdbpath = f"analysisbook/{req.variantkey}/{req.zobristkeyhex}"
+    log(f"< getting analysis book < {fdbpath} > >", "info")    
+    blob = read_json_from_fdb(fdbpath, None)
+    return {
+        "kind": "analysisbook",
+        "blob": blob
+    }
+
+def saveanalysisbook(req):    
+    fdbpath = f"analysisbook/{req.variantkey}/{req.zobristkeyhex}"
+    log(f"< saving analysis book < {fdbpath} > >", "info")    
+    write_json_to_fdb(fdbpath, req.blob)
+    return {
+        "kind": "analysisbooksaved"
     }
 
 ###################################################################
