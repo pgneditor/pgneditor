@@ -272,9 +272,21 @@ class DepthItem:
     def __repr__(self):
         return f"< depthitem < {self.depth} | {[pvitem for pvitem in self.pvitems]} >"
 
+class TimeControl:
+    def __init__(self, wtime = 0, winc = 0, btime = 0, binc = 0):
+        self.wtime = int(wtime)
+        self.winc = int(winc)
+        self.btime = int(btime)
+        self.binc = int(binc)
+
+    def __repr__(self):
+        return f"< timecontrol < {self.wtime} + {self.winc} | {self.btime} + {self.binc} > >"
+
 class AnalyzeJob:
-    def __init__(self, fen, multipv = 1, variantkey = "standard"):
+    def __init__(self, fen, moves = [], timecontrol = None, multipv = 1, variantkey = "standard"):
         self.fen = fen
+        self.moves = moves
+        self.timecontrol = timecontrol
         self.multipv = int(multipv)
         self.variantkey = variantkey
         self.board = getvariantboard(self.variantkey)
@@ -284,13 +296,14 @@ class AnalyzeJob:
     def toblob(self):
         return {
             "fen": self.fen,
+            "moves": self.moves,
             "multipv": self.multipv,
             "variantkey": self.variantkey,
             "zobristkeyhex": self.zobristkeyhex
         }
 
     def __repr__(self):
-        return f"< analyzejob < {self.fen} | {self.multipv} | {self.variantkey} > >"
+        return f"< analyzejob < {self.fen} | {self.moves} | {self.timecontrol} | {self.multipv} | {self.variantkey} > >"
 
 MAX_STORE_DEPTHITEMS = 2
 
@@ -363,14 +376,15 @@ class UciEngine(Engine):
 
     def tickthreadtarget(self):
         while not self.terminated:
-            if self.analyzing:
-                msg = "analyzing for {:.0f} sec(s) nps {} nodes {} fen {}".format(time.time() - self.analysisstartedat, self.nps, self.nodes, self.currentanalyzejob.fen)
-            else:
-                msg = "idle for {:.0f} sec(s)".format(time.time() - self.idlestartedat)                
-            blob = {
-                "analyzing": self.analyzing
-            }
-            self.systemlog.log(SystemLogItem({"owner": self.id, "msg": msg, "blob": blob, "kind": "enginetick"}))
+            if self.systemlog:
+                if self.analyzing:
+                    msg = "analyzing for {:.0f} sec(s) nps {} nodes {} fen {}".format(time.time() - self.analysisstartedat, self.nps, self.nodes, self.currentanalyzejob.fen)
+                else:
+                    msg = "idle for {:.0f} sec(s)".format(time.time() - self.idlestartedat)                
+                blob = {
+                    "analyzing": self.analyzing
+                }            
+                self.systemlog.log(SystemLogItem({"owner": self.id, "msg": msg, "blob": blob, "kind": "enginetick"}))
             time.sleep(3)
 
     def terminated_func(self):
@@ -380,66 +394,80 @@ class UciEngine(Engine):
     def read_stdout_func(self, sline):
         #print(self, sline)
         ui = UciInfo(sline)
-        self.systemlog.log(SystemLogItem({"owner": self.id, "msg": sline, "kind": ui.kind}))
+        if self.systemlog:
+            self.systemlog.log(SystemLogItem({"owner": self.id, "msg": sline, "kind": ui.kind}))
         if ui.kind == "bestmove":
             print("bestmove")
             self.bestmove = ui.bestmove
             self.analyzing = False
             self.idlestartedat = time.time()
         if ui.kind == "info":
-            self.analysisinfo.updatewithuciinfo(ui)
-            if ui.nps:
-                self.nps = ui.nps
-            if ui.nodes:
-                self.nodes = ui.nodes
-            if self.analysisinfo.depth >= 5:
-                if ( time.time() - self.lastloggedat ) > 0.5:
-                    self.systemlog.log(SystemLogItem({"owner": self.id, "blob": self.analysisinfo.toblob(), "kind": "analysisinfo"}))
-                    self.lastloggedat = time.time()                
-                if ( time.time() - self.laststoredat ) > 3:
-                    self.analysisinfo.storeifbetter()
-                    self.laststoredat = time.time()
+            if self.systemlog:
+                self.analysisinfo.updatewithuciinfo(ui)
+                if ui.nps:
+                    self.nps = ui.nps
+                if ui.nodes:
+                    self.nodes = ui.nodes
+                if self.analysisinfo.depth >= 5:
+                    if ( time.time() - self.lastloggedat ) > 0.5:
+                        if self.systemlog:
+                            self.systemlog.log(SystemLogItem({"owner": self.id, "blob": self.analysisinfo.toblob(), "kind": "analysisinfo"}))
+                        self.lastloggedat = time.time()                
+                    if ( time.time() - self.laststoredat ) > 3:
+                        self.analysisinfo.storeifbetter()
+                        self.laststoredat = time.time()
 
     def send_line(self, sline):        
         super().send_line(sline)
-        self.systemlog.log(SystemLogItem({"owner": self.id, "msg": sline, "dir": "in"}))
+        if self.systemlog:
+            self.systemlog.log(SystemLogItem({"owner": self.id, "msg": sline, "dir": "in"}))
 
     def setoption(self, name, value):
         self.send_line(f"setoption name {name} value {value}")
 
-    def awaitstop(self):
+    def awaitstop(self, sendstop = True):
         if self.analyzing:
             print("awaiting stop")
-            self.send_line("stop")
+            if sendstop:
+                self.send_line("stop")
             while self.analyzing:
                 time.sleep(0.1)
             print("awaiting stop done")
+
+    def doanalyze(self, analyzejob):
+        ucivariant = variantkey2ucivariant(analyzejob.variantkey)
+        self.awaitstop()
+        print("starting", analyzejob)
+        self.analysisinfo = AnalysisInfo(analyzejob)
+        self.setoption("UCI_Variant", ucivariant)
+        self.setoption("MultiPV", analyzejob.multipv)
+        if len(analyzejob.moves) > 0:
+            self.send_line(f"position fen {analyzejob.fen} moves " + " ".join(analyzejob.moves))            
+        else:
+            self.send_line(f"position fen {analyzejob.fen}")            
+        self.lastloggedat = 0
+        self.laststoredat = 0
+        self.currentanalyzejob = analyzejob
+        self.analyzing = True            
+        self.analysisstartedat = time.time()
+        self.nodes = 0
+        self.nps = 0
+        if not analyzejob.timecontrol:
+            self.send_line("go infinite")                
+        else:
+            self.send_line(f"go wtime {analyzejob.timecontrol.wtime} winc {analyzejob.timecontrol.winc} btime {analyzejob.timecontrol.btime} binc {analyzejob.timecontrol.binc}")                
 
     def analyzethreadtarget(self):
         while True:
             analyzejob = self.analysisqueue.get()            
             if self.terminated:
-                    return
+                return
             while not self.analysisqueue.empty():
                 analyzejob = self.analysisqueue.get()            
                 if self.terminated:
                     return
             print("got analyze job", analyzejob)
-            ucivariant = variantkey2ucivariant(analyzejob.variantkey)
-            self.awaitstop()
-            print("starting", analyzejob)
-            self.analysisinfo = AnalysisInfo(analyzejob)
-            self.setoption("UCI_Variant", ucivariant)
-            self.setoption("MultiPV", analyzejob.multipv)
-            self.send_line(f"position fen {analyzejob.fen}")            
-            self.lastloggedat = 0
-            self.laststoredat = 0
-            self.currentanalyzejob = analyzejob
-            self.analyzing = True            
-            self.analysisstartedat = time.time()
-            self.nodes = 0
-            self.nps = 0
-            self.send_line("go infinite")                
+            self.doanalyze(analyzejob)
 
     def analyze(self, analyzejob):        
         self.analysisqueue.put(analyzejob)

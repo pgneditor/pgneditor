@@ -18,7 +18,7 @@ from utils.http import geturl
 from utils.study import Study, DEFAULT_MAX_PLIES, Book, BookMove, BookPosition, LichessGame, getvariantboard, get_zobrist_key_hex
 from utils.cryptography import encryptalphanum, decryptalphanum
 from utils.file import read_json_from_fdb, write_json_to_fdb, delfdb, read_json_from_fdb, fdb
-from utils.engine import UciEngine, AnalyzeJob
+from utils.engine import UciEngine, AnalyzeJob, TimeControl
 from utils.config import SERVER_URL, KEEP_ALIVE, IS_PROD, ENGINE_WORKING_DIR, ENGINE_EXECUTABLE_NAME, FREE_ANALYSIS
 from utils.logger import SystemLog
 from utils.http import posturl
@@ -69,6 +69,8 @@ mainenginelog = SystemLog()
 
 def newengine_func():
     global mainengine, mainenginelog    
+    if mainengine:
+        mainengine.kill()
     mainengine = UciEngine(ENGINE_WORKING_DIR(), ENGINE_EXECUTABLE_NAME(), "mainengine", mainenginelog)
     mainengine.open()
 
@@ -1036,7 +1038,7 @@ class Bot:
         self.variant = variant
         self.analysisbook = None
         self.playing = False
-        self.engine = UciEngine(ENGINE_WORKING_DIR(), ENGINE_EXECUTABLE_NAME(), "botengine", SystemLog())
+        self.engine = UciEngine(ENGINE_WORKING_DIR(), ENGINE_EXECUTABLE_NAME(), "botengine", None)
         self.engine.open()
         Thread(target = self.streameventstaget).start()
 
@@ -1097,16 +1099,20 @@ class Bot:
         })        
         print("make move response", res)
 
-    def getenginemove(self, board):  
+    def getenginemove(self, board, initialboard, moves = [], timecontrol = None):  
         legalmoves = board.legal_moves
         print("legal moves", legalmoves)
         if len(list(legalmoves)) == 0:
             print("no legal moves")
             return None        
-        self.engine.analyze(AnalyzeJob(fen = board.fen(), multipv = 1, variantkey = self.variant))
-        time.sleep(2)
-        self.engine.send_line("stop")
-        self.engine.awaitstop()
+        self.engine.doanalyze(AnalyzeJob(fen = initialboard.fen(), moves = moves, multipv = 1, variantkey = self.variant, timecontrol = timecontrol))        
+        if not timecontrol:
+            print("waiting for move")
+            time.sleep(2)
+            self.engine.send_line("stop")
+        else:
+            pass
+        self.engine.awaitstop(sendstop = False)
         bestmove = self.engine.bestmove
         return bestmove
 
@@ -1153,8 +1159,8 @@ class Bot:
                                     moves = movesstr.split(" ")
                                 board = self.initialboard.copy()
                                 for uci in moves:
-                                    move = chess.Move.from_uci(uci)                            
-                                    board.push(move)
+                                    move = chess.Move.from_uci(uci)                                                                
+                                    board.push(move)                                    
                                 if board.turn == self.color:
                                     print("bot to move")
                                     bookmove = self.getbookmove(board)
@@ -1163,7 +1169,8 @@ class Bot:
                                         self.makemove(gameid, bookmove)
                                     else:
                                         print("getting engine move")
-                                        enginemove = self.getenginemove(board)
+                                        timecontrol = TimeControl(state["wtime"], state["winc"], state["btime"], state["binc"])
+                                        enginemove = self.getenginemove(board, self.initialboard, moves, timecontrol)
                                         if enginemove:
                                             print("making engine move")
                                             self.makemove(gameid, enginemove)
@@ -1226,6 +1233,7 @@ class Bot:
                     self.lasttick = time.time()
         except:
             print("event stream exception")
+            pe()
         print("event stream closed")
 
 ###################################################################
