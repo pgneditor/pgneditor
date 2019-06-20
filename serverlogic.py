@@ -847,7 +847,7 @@ def exportgames(kind, playerndjson):
                 if ( cnt % 20 ) == 0:
                     print("read cnt", cnt, "found", found, "rate", cnt / (time.time() - start))
         except:
-            pe()                                
+            print("problem loading games")
     if found > 0:
         #print("writing player", playerndjson.player)
         playerndjson.ndjson = rationalizeplayerdata(playerndjson.ndjson)                
@@ -1038,9 +1038,12 @@ class Bot:
         self.variant = variant
         self.analysisbook = None
         self.playing = False
-        self.engine = UciEngine(ENGINE_WORKING_DIR(), ENGINE_EXECUTABLE_NAME(), "botengine", None)
+        self.gameticks = {}
+        self.engine = UciEngine(ENGINE_WORKING_DIR(), ENGINE_EXECUTABLE_NAME(), "botengine", None)        
         self.engine.open()
-        Thread(target = self.streameventstaget).start()
+        self.engine.setoption("Move Overhead", 2000)
+        self.loadanalysisbook()
+        Thread(target = self.streameventstarget).start()
 
     def loadanalysisbook(self):
         self.analysisbook = fdb.reference(f"analysisbook/{self.variant}").get()
@@ -1049,12 +1052,10 @@ class Bot:
 
     def monitoreventstreamtarget(self, r):
         while True:
-            if ( time.time() - self.lasttick ) > 60:
+            if ( time.time() - self.lasttick ) > 30:
                 print("event stream timeout")
-                r.close()
-                time.sleep(60)
-                Thread(target = self.streameventstaget).start()
-            time.sleep(60)            
+                r.close()                                
+                return
 
     def challengeaction(self, kind, id):
         print(kind, "challenge", id)
@@ -1087,8 +1088,7 @@ class Bot:
                 print("position not found in book")
                 return None
         except:
-            print("problem finding book move")
-            pe()
+            print("problem finding book move")            
             return None
 
     def makemove(self, gameid, uci):
@@ -1116,6 +1116,14 @@ class Bot:
         bestmove = self.engine.bestmove
         return bestmove
 
+    def monitorplaygametarget(self, r, gameid):
+        while True:
+            if ( time.time() - self.gameticks[gameid] ) > 30:
+                print("play game timeout", gameid)
+                r.close()
+                return
+            time.sleep(10)
+
     def playgame(self, event):
         print("playing game", event)
         self.playing = True
@@ -1126,10 +1134,14 @@ class Bot:
                 "Authorization": f"Bearer {self.token}",
                 "Accept": "application/x-ndjson"
             }, stream = True)                   
+            self.gameticks[gameid] = time.time()
+            Thread(target = self.monitorplaygametarget, args = (r, gameid)).start()        
             try:                     
-                for line in r.iter_lines():        
-                    line = line.decode("utf-8")
+                for line in r.iter_lines():                                             
                     try:
+                        line = line.decode("utf-8")
+                        self.gameticks[gameid] = time.time()
+                        self.lasttick = time.time()
                         event = json.loads(line)
                         kind = event["type"]
                         if kind == "gameFull":
@@ -1178,63 +1190,64 @@ class Bot:
                                             print("no engine move")
                                             break
                             except:
-                                print("probblem processing game event")
-                                pe()
+                                print("probblem processing game state event")
                     except:
                         pass
             except:
                 print("stream game exception")
         except:
-            print("problem playing game")
-            pe()
+            print("problem playing game")            
         print("finished playing game")
         self.playing = False
 
-    def streameventstaget(self):
-        self.loadanalysisbook()
-        r = requests.get("https://lichess.org//api/stream/event", headers = {
-            "Authorization": f"Bearer {self.token}",
-            "Accept": "application/x-ndjson"
-        }, stream = True)                            
-        self.lasttick = time.time()
-        Thread(target = self.monitoreventstreamtarget, args = (r,)).start()        
-        try:
-            for line in r.iter_lines():        
-                line = line.decode("utf-8")
-                try:
-                    event = json.loads(line)
-                    print("bot", json.dumps(event, indent = 2))
+    def streameventstarget(self):        
+        while True:
+            print("opening event stream")
+            r = requests.get("https://lichess.org//api/stream/event", headers = {
+                "Authorization": f"Bearer {self.token}",
+                "Accept": "application/x-ndjson"
+            }, stream = True)                            
+            self.lasttick = time.time()
+            Thread(target = self.monitoreventstreamtarget, args = (r,)).start()        
+            try:
+                for line in r.iter_lines():        
+                    line = line.decode("utf-8")                
                     try:
-                        kind = event["type"]
-                        if kind == "challenge":
-                            print("incoming challenge")
-                            challenge = event["challenge"]
-                            id = challenge["id"]
-                            challenger = challenge["challenger"]
-                            variant = challenge["variant"]["key"]
-                            if challenger["title"] == "BOT":
-                                print("not accepting bot challenge")
-                                self.challengeaction("decline", id)
-                            elif not ( variant == self.variant ):
-                                print("not accepting variant", variant)
-                                self.challengeaction("decline", id)
-                            elif self.playing:
-                                print("not accepting challenge while playing")
-                                self.challengeaction("decline", id)
-                            else:
-                                print("accepting challenge")
-                                self.challengeaction("accept", id)
-                        elif kind == "gameStart":
-                            self.playgame(event)
-                    except:
-                        print("bot event exception")
-                        pe()
-                except:
-                    self.lasttick = time.time()
-        except:
-            print("event stream exception")
-            pe()
-        print("event stream closed")
+                        event = json.loads(line)
+                        print("bot", json.dumps(event, indent = 2))
+                        try:
+                            kind = event["type"]
+                            if kind == "challenge":
+                                print("incoming challenge")
+                                challenge = event["challenge"]
+                                id = challenge["id"]
+                                challenger = challenge["challenger"]
+                                variant = challenge["variant"]["key"]
+                                speed = challenge["speed"]
+                                if challenger["title"] == "BOT":
+                                    print("not accepting bot challenge")
+                                    self.challengeaction("decline", id)
+                                elif not ( variant == self.variant ):
+                                    print("not accepting variant", variant)
+                                    self.challengeaction("decline", id)
+                                elif not ( ( speed == "bullet" ) or ( speed == "blitz" ) ):
+                                    print("not accepting speed", speed)
+                                    self.challengeaction("decline", id)
+                                elif self.playing:
+                                    print("not accepting challenge while playing")
+                                    self.challengeaction("decline", id)
+                                else:
+                                    print("accepting challenge")
+                                    self.challengeaction("accept", id)
+                            elif kind == "gameStart":
+                                self.playgame(event)
+                        except:
+                            print("bot event exception")                        
+                    except:                        
+                        self.lasttick = time.time()
+            except:
+                print("event stream exception")
+            print("event stream closed")
 
 ###################################################################
 
