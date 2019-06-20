@@ -8,6 +8,7 @@ from threading import Thread
 import requests
 import json
 import chess
+import random
 
 ###################################################################
 
@@ -1026,14 +1027,17 @@ def initenginetarget():
     print("initializing engine done")
 
 class Bot:
-    def __init__(self, token = os.environ.get("BOTTOKEN", None), variant = "atomic"):
+    def __init__(self, token = os.environ.get("BOTTOKEN", None), username = os.environ.get("BOTUSERNAME", "AtomicVsEngineBot"), variant = "atomic"):
         self.token = token        
         if not self.token:
             print("no bot token")
             return
+        self.username = username
         self.variant = variant
         self.analysisbook = None
         self.playing = False
+        self.engine = UciEngine(ENGINE_WORKING_DIR(), ENGINE_EXECUTABLE_NAME(), "botengine", SystemLog())
+        self.engine.open()
         Thread(target = self.streameventstaget).start()
 
     def loadanalysisbook(self):
@@ -1057,6 +1061,127 @@ class Bot:
             "Accept": "application/json"
         })        
         print(kind, "challenge response", res)
+
+    def getbookmove(self, board):
+        try:
+            zkh = get_zobrist_key_hex(board)
+            if zkh in self.analysisbook:
+                print("position found in book")
+                posblob = json.loads(self.analysisbook[zkh])                
+                if "movesblob" in posblob:
+                    movesblob = posblob["movesblob"]
+                    ucilist = []
+                    for moveblob in movesblob:                        
+                        for i in range(int(moveblob["weight"])):
+                            ucilist.append(moveblob["uci"])
+                    index = random.randint(0, len(ucilist) - 1)
+                    print("ucilist", ucilist, index)
+                    seluci = ucilist[index]
+                    print("selected uci", seluci)
+                    return seluci
+                else:
+                    return None
+            else:
+                print("position not found in book")
+                return None
+        except:
+            print("problem finding book move")
+            pe()
+            return None
+
+    def makemove(self, gameid, uci):
+        print("making move", gameid, uci)
+        res = posturl(f"https://lichess.org//api/bot/game/{gameid}/move/{uci}", asjson = True, headers = {
+            "Authorization": f"Bearer {self.token}",
+            "Accept": "application/json"
+        })        
+        print("make move response", res)
+
+    def getenginemove(self, board):  
+        legalmoves = board.legal_moves
+        print("legal moves", legalmoves)
+        if len(list(legalmoves)) == 0:
+            print("no legal moves")
+            return None        
+        self.engine.analyze(AnalyzeJob(fen = board.fen(), multipv = 1, variantkey = self.variant))
+        time.sleep(2)
+        self.engine.send_line("stop")
+        self.engine.awaitstop()
+        bestmove = self.engine.bestmove
+        return bestmove
+
+    def playgame(self, event):
+        print("playing game", event)
+        self.playing = True
+        try:
+            game = event["game"]
+            gameid = game["id"]
+            r = requests.get(f"https://lichess.org//api/bot/game/stream/{gameid}", headers = {
+                "Authorization": f"Bearer {self.token}",
+                "Accept": "application/x-ndjson"
+            }, stream = True)                   
+            try:                     
+                for line in r.iter_lines():        
+                    line = line.decode("utf-8")
+                    try:
+                        event = json.loads(line)
+                        kind = event["type"]
+                        if kind == "gameFull":
+                            self.initialfen = event["initialFen"]
+                            self.initialboard = getvariantboard(self.variant)
+                            if not ( self.initialfen == "startpos" ):
+                                self.initialboard.set_fen(self.initialfen)
+                            self.whiteid = event["white"]["id"]
+                            self.blackid = event["black"]["id"]
+                            if self.whiteid == self.username.lower():
+                                self.color = chess.WHITE
+                            elif self.blackid == self.username.lower():
+                                self.color = chess.BLACK
+                            else:
+                                print("could not find bot color")
+                                break
+                            print("game started", self.whiteid, self.blackid, self.color, self.initialfen)
+                        if ( kind == "gameFull" ) or ( kind == "gameState" ):
+                            try:
+                                if kind == "gameFull":
+                                    state = event["state"]
+                                else:
+                                    state = event
+                                movesstr = state["moves"]
+                                moves = []
+                                if len(movesstr) > 0:                                    
+                                    moves = movesstr.split(" ")
+                                board = self.initialboard.copy()
+                                for uci in moves:
+                                    move = chess.Move.from_uci(uci)                            
+                                    board.push(move)
+                                if board.turn == self.color:
+                                    print("bot to move")
+                                    bookmove = self.getbookmove(board)
+                                    if bookmove:
+                                        print("making book move")
+                                        self.makemove(gameid, bookmove)
+                                    else:
+                                        print("getting engine move")
+                                        enginemove = self.getenginemove(board)
+                                        if enginemove:
+                                            print("making engine move")
+                                            self.makemove(gameid, enginemove)
+                                        else:
+                                            print("no engine move")
+                                            break
+                            except:
+                                print("probblem processing game event")
+                                pe()
+                    except:
+                        pass
+            except:
+                print("stream game exception")
+        except:
+            print("problem playing game")
+            pe()
+        print("finished playing game")
+        self.playing = False
 
     def streameventstaget(self):
         self.loadanalysisbook()
@@ -1088,9 +1213,12 @@ class Bot:
                                 self.challengeaction("decline", id)
                             elif self.playing:
                                 print("not accepting challenge while playing")
+                                self.challengeaction("decline", id)
                             else:
                                 print("accepting challenge")
                                 self.challengeaction("accept", id)
+                        elif kind == "gameStart":
+                            self.playgame(event)
                     except:
                         print("bot event exception")
                         pe()

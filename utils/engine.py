@@ -126,6 +126,7 @@ class UciInfo:
         parts = sline.split(" ")
         if parts[0] == "bestmove":
             self.kind = "bestmove"
+            self.bestmove = parts[1]
             return
         if not ( parts[0] == "info" ) or ( len(parts) < 2 ):
             return
@@ -274,7 +275,7 @@ class DepthItem:
 class AnalyzeJob:
     def __init__(self, fen, multipv = 1, variantkey = "standard"):
         self.fen = fen
-        self.multipv = multipv
+        self.multipv = int(multipv)
         self.variantkey = variantkey
         self.board = getvariantboard(self.variantkey)
         self.board.set_fen(self.fen)
@@ -331,8 +332,8 @@ class AnalysisInfo:
         #print("store if better")
         obj = read_json_from_fdb(self.fdbpath(), None)
         if obj:            
-            storedmultipv = obj["analyzejob"]["multipv"]
-            storeddepth = obj["depth"]
+            storedmultipv = int(obj["analyzejob"]["multipv"])
+            storeddepth = int(obj["depth"])
             #print("stored", storedmultipv, storeddepth)
             if ( self.analyzejob.multipv < storedmultipv ) or ( self.depth <= storeddepth ):
                 #print("stored is better, ignoring")
@@ -382,6 +383,7 @@ class UciEngine(Engine):
         self.systemlog.log(SystemLogItem({"owner": self.id, "msg": sline, "kind": ui.kind}))
         if ui.kind == "bestmove":
             print("bestmove")
+            self.bestmove = ui.bestmove
             self.analyzing = False
             self.idlestartedat = time.time()
         if ui.kind == "info":
