@@ -1056,6 +1056,7 @@ class Bot:
                 print("event stream timeout")
                 r.close()                                
                 return
+            time.sleep(10)
 
     def challengeaction(self, kind, id):
         print(kind, "challenge", id)
