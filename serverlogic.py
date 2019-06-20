@@ -807,7 +807,7 @@ def rationalizeplayerdata(ndjson):
     return filtered
 
 def exportgames(kind, playerndjson):
-    #print("export", kind, playerndjson)
+    print("export", kind, playerndjson)
     if ( kind == "old" ) and ( len(playerndjson.ndjson) >= MAX_NDJSON_SIZE ):
         #print("cache full, not exporting")
         return
@@ -848,6 +848,7 @@ def exportgames(kind, playerndjson):
                     print("read cnt", cnt, "found", found, "rate", cnt / (time.time() - start))
         except:
             print("problem loading games")
+            pe()
     if found > 0:
         #print("writing player", playerndjson.player)
         playerndjson.ndjson = rationalizeplayerdata(playerndjson.ndjson)                
