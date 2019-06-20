@@ -848,7 +848,6 @@ def exportgames(kind, playerndjson):
                     print("read cnt", cnt, "found", found, "rate", cnt / (time.time() - start))
         except:
             print("problem loading games")
-            pe()
     if found > 0:
         #print("writing player", playerndjson.player)
         playerndjson.ndjson = rationalizeplayerdata(playerndjson.ndjson)                
