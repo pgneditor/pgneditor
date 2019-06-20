@@ -20,6 +20,7 @@ from utils.file import read_json_from_fdb, write_json_to_fdb, delfdb, read_json_
 from utils.engine import UciEngine, AnalyzeJob
 from utils.config import SERVER_URL, KEEP_ALIVE, IS_PROD, ENGINE_WORKING_DIR, ENGINE_EXECUTABLE_NAME, FREE_ANALYSIS
 from utils.logger import SystemLog
+from utils.http import posturl
 
 ###################################################################
 
@@ -57,6 +58,8 @@ class FirestoreDb(utils.file.Db):
         super(FirestoreDb, self).__init__()
 
 db = FirestoreDb()
+
+bot = None
 
 ###################################################################
 
@@ -727,6 +730,20 @@ def saveanalysisbook(req):
             "status": "not authorized"
         }
 
+def reloadanalysisbook(req):
+    global bot
+    if req.user.can("admin"):        
+        log(f"< reload analysis book >", "info")    
+        bot.loadanalysisbook()
+        return {
+            "kind": "analysisbookreloaded"
+        }
+    else:
+        return {
+            "kind": "reloadnalysisbookfailed",
+            "status": "not authorized"
+        }
+
 ###################################################################
 
 def jsonapi(reqobj):
@@ -1008,31 +1025,80 @@ def initenginetarget():
     newengine_func()
     print("initializing engine done")
 
-analysisbook = None
+class Bot:
+    def __init__(self, token = os.environ.get("BOTTOKEN", None), variant = "atomic"):
+        self.token = token        
+        if not self.token:
+            print("no bot token")
+            return
+        self.variant = variant
+        self.analysisbook = None
+        self.playing = False
+        Thread(target = self.streameventstaget).start()
 
-def loadanalysisbook():
-    global analysisbook
-    analysisbook = fdb.reference("analysisbook/atomic").get()
-    if analysisbook:
-        print("analysis book loaded", len(list(analysisbook.keys())), "position(s)")
+    def loadanalysisbook(self):
+        self.analysisbook = fdb.reference(f"analysisbook/{self.variant}").get()
+        if self.analysisbook:
+            print("analysis book loaded", len(list(self.analysisbook.keys())), "position(s)")
 
-def bottarget():
-    BOTTOKEN = os.environ.get("BOTTOKEN", None)
-    if not BOTTOKEN:
-        print("no bot token")
-        return
-    loadanalysisbook()
-    r = requests.get("https://lichess.org//api/stream/event", headers = {
-        "Authorization": f"Bearer {BOTTOKEN}",
-        "Accept": "application/x-ndjson"
-    }, stream = True)                            
-    for line in r.iter_lines():        
-        line = line.decode("utf-8")
+    def monitoreventstreamtarget(self, r):
+        while True:
+            if ( time.time() - self.lasttick ) > 60:
+                print("event stream timeout")
+                r.close()
+                time.sleep(60)
+                Thread(target = self.streameventstaget).start()
+            time.sleep(60)            
+
+    def challengeaction(self, kind, id):
+        print(kind, "challenge", id)
+        res = posturl(f"https://lichess.org//api/challenge/{id}/{kind}", asjson = True, headers = {
+            "Authorization": f"Bearer {self.token}",
+            "Accept": "application/json"
+        })        
+        print(kind, "challenge response", res)
+
+    def streameventstaget(self):
+        self.loadanalysisbook()
+        r = requests.get("https://lichess.org//api/stream/event", headers = {
+            "Authorization": f"Bearer {self.token}",
+            "Accept": "application/x-ndjson"
+        }, stream = True)                            
+        self.lasttick = time.time()
+        Thread(target = self.monitoreventstreamtarget, args = (r,)).start()        
         try:
-            event = json.loads(line)
-            print("bot", json.dumps(event, indent = 2))
+            for line in r.iter_lines():        
+                line = line.decode("utf-8")
+                try:
+                    event = json.loads(line)
+                    print("bot", json.dumps(event, indent = 2))
+                    try:
+                        kind = event["type"]
+                        if kind == "challenge":
+                            print("incoming challenge")
+                            challenge = event["challenge"]
+                            id = challenge["id"]
+                            challenger = challenge["challenger"]
+                            variant = challenge["variant"]["key"]
+                            if challenger["title"] == "BOT":
+                                print("not accepting bot challenge")
+                                self.challengeaction("decline", id)
+                            elif not ( variant == self.variant ):
+                                print("not accepting variant", variant)
+                                self.challengeaction("decline", id)
+                            elif self.playing:
+                                print("not accepting challenge while playing")
+                            else:
+                                print("accepting challenge")
+                                self.challengeaction("accept", id)
+                    except:
+                        print("bot event exception")
+                        pe()
+                except:
+                    self.lasttick = time.time()
         except:
-            pass
+            print("event stream exception")
+        print("event stream closed")
 
 ###################################################################
 
@@ -1052,7 +1118,7 @@ if IS_PROD() or False:
 
 Thread(target = initenginetarget).start()
 
-Thread(target = bottarget).start()
+bot = Bot()
 
 print("serverlogic started, prod", IS_PROD())
 

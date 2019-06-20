@@ -1945,9 +1945,14 @@ class Board_ extends e{
         )
         this.analysissplitpane.setcontentelement(this.analysisinfocontainer)
         this.analysisbookdiv = Div().pad(3).pl(9)
+        this.botdiv = Div().pad(3)
+        this.botdiv.a(
+            Button("Reload analysis book", this.botreloadanalysisbook.bind(this))
+        )
         this.analysistabpane = TabPane("analysistabpane").settabs([
             Tab("analysis", "Analysis", this.analysissplitpane, "A"),
             Tab("book", "Book", this.analysisbookdiv, "?"),
+            Tab("bot", "Bot", this.botdiv, "%"),
             Tab("raw", "Raw", this.rawsplitpane, "n")
         ]).selecttab("analysis", USE_STORED_IF_AVAILABLE)
         this.analysistabpane.controlpanel.bc("#ccc")        
@@ -1971,6 +1976,12 @@ class Board_ extends e{
         this.resize(this.width, this.height)
         this.enginelasttick = new Date().getTime()
         window.setInterval(this.checkengineconn.bind(this), 2000)
+    }
+
+    botreloadanalysisbook(){
+        api({
+            "kind": "reloadanalysisbook"
+        }, function(resobj){console.log("reload analysis book", resobj)})
     }
 
     checkengineconn(){
