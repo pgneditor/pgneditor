@@ -1203,52 +1203,56 @@ class Bot:
 
     def streameventstarget(self):        
         while True:
-            print("opening event stream")
-            r = requests.get("https://lichess.org//api/stream/event", headers = {
-                "Authorization": f"Bearer {self.token}",
-                "Accept": "application/x-ndjson"
-            }, stream = True)                            
-            self.lasttick = time.time()
-            Thread(target = self.monitoreventstreamtarget, args = (r,)).start()        
             try:
-                for line in r.iter_lines():        
-                    line = line.decode("utf-8")                
-                    try:
-                        event = json.loads(line)
-                        print("bot", json.dumps(event, indent = 2))
+                print("opening event stream")
+                r = requests.get("https://lichess.org//api/stream/event", headers = {
+                    "Authorization": f"Bearer {self.token}",
+                    "Accept": "application/x-ndjson"
+                }, stream = True)                            
+                self.lasttick = time.time()
+                Thread(target = self.monitoreventstreamtarget, args = (r,)).start()        
+                try:
+                    for line in r.iter_lines():        
+                        line = line.decode("utf-8")                
                         try:
-                            kind = event["type"]
-                            if kind == "challenge":
-                                print("incoming challenge")
-                                challenge = event["challenge"]
-                                id = challenge["id"]
-                                challenger = challenge["challenger"]
-                                variant = challenge["variant"]["key"]
-                                speed = challenge["speed"]
-                                if challenger["title"] == "BOT":
-                                    print("not accepting bot challenge")
-                                    self.challengeaction("decline", id)
-                                elif not ( variant == self.variant ):
-                                    print("not accepting variant", variant)
-                                    self.challengeaction("decline", id)
-                                elif not ( ( speed == "bullet" ) or ( speed == "blitz" ) ):
-                                    print("not accepting speed", speed)
-                                    self.challengeaction("decline", id)
-                                elif self.playing:
-                                    print("not accepting challenge while playing")
-                                    self.challengeaction("decline", id)
-                                else:
-                                    print("accepting challenge")
-                                    self.challengeaction("accept", id)
-                            elif kind == "gameStart":
-                                self.playgame(event)
-                        except:
-                            print("bot event exception")                        
-                    except:                        
-                        self.lasttick = time.time()
+                            event = json.loads(line)
+                            print("bot", json.dumps(event, indent = 2))
+                            try:
+                                kind = event["type"]
+                                if kind == "challenge":
+                                    print("incoming challenge")
+                                    challenge = event["challenge"]
+                                    id = challenge["id"]
+                                    challenger = challenge["challenger"]
+                                    variant = challenge["variant"]["key"]
+                                    speed = challenge["speed"]
+                                    if challenger["title"] == "BOT":
+                                        print("not accepting bot challenge")
+                                        self.challengeaction("decline", id)
+                                    elif not ( variant == self.variant ):
+                                        print("not accepting variant", variant)
+                                        self.challengeaction("decline", id)
+                                    elif not ( ( speed == "bullet" ) or ( speed == "blitz" ) ):
+                                        print("not accepting speed", speed)
+                                        self.challengeaction("decline", id)
+                                    elif self.playing:
+                                        print("not accepting challenge while playing")
+                                        self.challengeaction("decline", id)
+                                    else:
+                                        print("accepting challenge")
+                                        self.challengeaction("accept", id)
+                                elif kind == "gameStart":
+                                    self.playgame(event)
+                            except:
+                                print("bot event exception")                        
+                        except:                        
+                            self.lasttick = time.time()
+                except:
+                    print("event stream exception")
+                print("event stream closed")
             except:
-                print("event stream exception")
-            print("event stream closed")
+                print("could no open event stream")
+                time.sleep(60)
 
 ###################################################################
 

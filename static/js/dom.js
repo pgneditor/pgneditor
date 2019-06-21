@@ -2711,6 +2711,11 @@ class BookMove_ extends e{
         this.parentbookposition.parentboard.makealgebmove(this.uci)
     }
 
+    deletemove(){
+        this.parentbookposition.deletmovebyuci(this.uci)
+        this.parentbookposition.parentboard.saveanalysisbook()
+    }
+
     build(){
         this.container.x
         this.sandiv = Div().cp().fw(this.weight > 0 ? "bold" : "normal").w(80).fs(24).pad(1).html(this.san)
@@ -2720,7 +2725,8 @@ class BookMove_ extends e{
         this.weightselect.ae("change", this.weightchanged.bind(this))
         this.container.a(
             this.sandiv,
-            this.weightselect
+            this.weightselect,
+            Button("Del", this.deletemove.bind(this)).ml(20).fs(12)
         )
         return this
     }
@@ -2739,6 +2745,15 @@ class BookMove_ extends e{
 function BookMove(parentbookposition, blob){return new BookMove_(parentbookposition, blob)}
 
 class BookPosition_ extends e{
+    deletmovebyuci(uci){
+        let newmoves = []
+        for(let move of this.moves){
+            if(move.uci != uci) newmoves.push(move)
+        }
+        this.moves = newmoves
+        this.build()
+    }
+
     build(){        
         this.container.x                
         this.moves.sort((a, b) => b.weight - a.weight)
