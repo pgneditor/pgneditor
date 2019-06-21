@@ -716,6 +716,7 @@ def getanalysisbook(req):
     blob = read_json_from_fdb(fdbpath, None)
     return {
         "kind": "analysisbook",
+        "zobristkeyhex": req.zobristkeyhex,
         "blob": blob
     }
 

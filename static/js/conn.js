@@ -1169,6 +1169,10 @@ class Board_ extends e{
             "variantkey": this.basicboard.variantkey,            
             "zobristkeyhex": this.currentnode.zobristkeyhex
         }, function(resobj){
+            if(resobj.zobristkeyhex != this.currentnode.zobristkeyhex){
+                console.log("loaded analysis book does not match position")
+                return
+            }
             let blob = resobj.blob
             this.buildanalysisbook(blob)            
         }.bind(this))
