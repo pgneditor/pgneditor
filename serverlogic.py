@@ -1232,6 +1232,7 @@ class Bot:
         except:
             print("problem playing game")            
         print("finished playing game")
+        self.engine.stop()
         self.playing = False
 
     def streameventstarget(self):        
