@@ -1110,7 +1110,7 @@ class Bot:
         print("time control", timecontrol)
         ponderok = False
         if len(moves) > 0:
-            if moves[-1] == self.ponder:
+            if moves[-1] == ponder:
                 ponderok = True
                 print("ponder ok")
         enginestarted = time.time()
