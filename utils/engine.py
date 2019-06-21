@@ -127,6 +127,11 @@ class UciInfo:
         if parts[0] == "bestmove":
             self.kind = "bestmove"
             self.bestmove = parts[1]
+            try:
+                if parts[2] == "ponder":
+                    self.ponder = parts[3]
+            except:
+                self.ponder = None
             return
         if not ( parts[0] == "info" ) or ( len(parts) < 2 ):
             return
@@ -390,6 +395,14 @@ class UciEngine(Engine):
     def terminated_func(self):
         self.terminated = True
         self.analyze("terminated")
+
+    def awaitbestmove(self):
+        self.awaitstop(sendstop = False)
+        return ( self.bestmove, self.ponder )
+
+    def awaitponder(self):
+        self.send_line("ponderhit")
+        return self.awaitbestmove()
     
     def read_stdout_func(self, sline):
         #print(self, sline)
@@ -399,6 +412,7 @@ class UciEngine(Engine):
         if ui.kind == "bestmove":
             print("bestmove")
             self.bestmove = ui.bestmove
+            self.ponder = ui.ponder
             self.analyzing = False
             self.idlestartedat = time.time()
         if ui.kind == "info":
@@ -425,16 +439,20 @@ class UciEngine(Engine):
     def setoption(self, name, value):
         self.send_line(f"setoption name {name} value {value}")
 
+    def stop(self):
+        if self.analyzing:
+            self.send_line("stop")
+
     def awaitstop(self, sendstop = True):
         if self.analyzing:
             print("awaiting stop")
             if sendstop:
-                self.send_line("stop")
+                self.stop()
             while self.analyzing:
                 time.sleep(0.1)
             print("awaiting stop done")
 
-    def doanalyze(self, analyzejob):
+    def doanalyze(self, analyzejob, ponder = False):
         ucivariant = variantkey2ucivariant(analyzejob.variantkey)
         self.awaitstop()
         print("starting", analyzejob)
@@ -452,10 +470,13 @@ class UciEngine(Engine):
         self.analysisstartedat = time.time()
         self.nodes = 0
         self.nps = 0
+        pondercmd = ""
+        if ponder:
+            pondercmd = " ponder"
         if not analyzejob.timecontrol:
             self.send_line("go infinite")                
         else:
-            self.send_line(f"go wtime {analyzejob.timecontrol.wtime} winc {analyzejob.timecontrol.winc} btime {analyzejob.timecontrol.btime} binc {analyzejob.timecontrol.binc}")                
+            self.send_line(f"go wtime {analyzejob.timecontrol.wtime} winc {analyzejob.timecontrol.winc} btime {analyzejob.timecontrol.btime} binc {analyzejob.timecontrol.binc}" + pondercmd)                
 
     def analyzethreadtarget(self):
         while True:
@@ -473,7 +494,7 @@ class UciEngine(Engine):
         self.analysisqueue.put(analyzejob)
 
     def stopanalyze(self):
-        self.send_line("stop")
+        self.stop()
 
     def __repr__(self):
         return f"< UciEngine {self.id} | {self.commandpath} >"

@@ -1101,22 +1101,49 @@ class Bot:
         })        
         print("make move response", res)
 
-    def getenginemove(self, board, initialboard, moves = [], timecontrol = None):  
+    def getenginemove(self, board, initialboard, moves = [], timecontrol = None, ponder = None):        
         legalmoves = board.legal_moves
         print("legal moves", legalmoves)
         if len(list(legalmoves)) == 0:
             print("no legal moves")
             return None        
-        self.engine.doanalyze(AnalyzeJob(fen = initialboard.fen(), moves = moves, multipv = 1, variantkey = self.variant, timecontrol = timecontrol))        
-        if not timecontrol:
-            print("waiting for move")
-            time.sleep(2)
-            self.engine.send_line("stop")
+        print("time control", timecontrol)
+        ponderok = False
+        if len(moves) > 0:
+            if moves[-1] == self.ponder:
+                ponderok = True
+                print("ponder ok")
+        enginestarted = time.time()
+        if ponderok:
+            ( bestmove, ponder ) = self.engine.awaitponder()
         else:
-            pass
-        self.engine.awaitstop(sendstop = False)
-        bestmove = self.engine.bestmove
-        return bestmove
+            self.engine.doanalyze(AnalyzeJob(fen = initialboard.fen(), moves = moves, multipv = 1, variantkey = self.variant, timecontrol = timecontrol))        
+            if not timecontrol:
+                print("waiting for move")
+                time.sleep(2)
+                self.engine.stop()
+            else:
+                pass
+            ( bestmove, ponder ) = self.engine.awaitbestmove()
+        elapsed = time.time() - enginestarted
+        print("elapsed", elapsed)
+        if timecontrol:
+            if self.color == chess.WHITE:
+                timecontrol.wtime -= int(elapsed * 1000)
+                if timecontrol.wtime < 0:
+                    timecontrol.wtime = 50
+                print("new wtime", timecontrol.wtime)
+            else:
+                timecontrol.btime -= int(elapsed * 1000)
+                if timecontrol.btime < 0:
+                    timecontrol.btime = 50
+                print("new btime", timecontrol.btime)                
+        if ponder:
+            moves.append(bestmove)
+            moves.append(ponder)
+            print("start pondering on", moves)
+            self.engine.doanalyze(AnalyzeJob(fen = initialboard.fen(), moves = moves, multipv = 1, variantkey = self.variant, timecontrol = timecontrol), ponder = True)        
+        return ( bestmove, ponder )
 
     def monitorplaygametarget(self, r, gameid):
         while True:
@@ -1129,6 +1156,7 @@ class Bot:
     def playgame(self, event):
         print("playing game", event)
         self.playing = True
+        self.ponder = None
         try:
             game = event["game"]
             gameid = game["id"]
@@ -1179,20 +1207,24 @@ class Bot:
                                     print("bot to move")
                                     bookmove = self.getbookmove(board)
                                     if bookmove:
-                                        print("making book move")
+                                        print("making book move")                                        
                                         self.makemove(gameid, bookmove)
+                                        self.engine.stop()
+                                        self.ponder = None
                                     else:
                                         print("getting engine move")
                                         timecontrol = TimeControl(state["wtime"], state["winc"], state["btime"], state["binc"])
-                                        enginemove = self.getenginemove(board, self.initialboard, moves, timecontrol)
+                                        ( enginemove, ponder ) = self.getenginemove(board, self.initialboard, moves, timecontrol, self.ponder)
+                                        self.ponder = ponder
                                         if enginemove:
-                                            print("making engine move")
+                                            print("making engine move", enginemove, "ponder", ponder)
                                             self.makemove(gameid, enginemove)
                                         else:
                                             print("no engine move")
                                             break
                             except:
                                 print("probblem processing game state event")
+                                pe()
                     except:
                         pass
             except:
