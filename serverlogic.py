@@ -1106,7 +1106,7 @@ class Bot:
         legalmoves = board.legal_moves        
         if len(list(legalmoves)) == 0:
             print("no legal moves")
-            return None                
+            return ( None, None )
         ponderok = False
         if len(moves) > 0:
             if moves[-1] == ponder:
