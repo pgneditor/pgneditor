@@ -175,6 +175,10 @@ class Req():
         self.multipv = reqobj.get("multipv", 1)
         self.zobristkeyhex = reqobj.get("zobristkeyhex", None)
         self.blob = reqobj.get("blob", None)
+        self.username = reqobj.get("username", None)
+        self.initial = reqobj.get("initial", None)
+        self.increment = reqobj.get("increment", None)
+        self.rated = reqobj.get("rated", None)
 
         if SERVERLOGIC_VERBOSE:
             log(self, "warning")
@@ -748,6 +752,22 @@ def reloadanalysisbook(req):
             "status": "not authorized"
         }
 
+def challenge(req):
+    global bot
+    if req.user.can("admin"):        
+        log(f"< challenge | {req.username} | {req.initial} | {req.increment} | {req.rated} >", "info")    
+        status = bot.challenge(req.username, req.initial, req.increment, req.rated)
+        print("challenge status", status)
+        return {
+            "kind": "challengeissued",
+            "status": status
+        }
+    else:
+        return {
+            "kind": "challengefailed",
+            "status": "not authorized"
+        }
+
 ###################################################################
 
 def jsonapi(reqobj):
@@ -1030,6 +1050,23 @@ def initenginetarget():
     print("initializing engine done")
 
 class Bot:
+    def challenge(self, username, initial, increment, rated):
+        ratedstr = "true"
+        if not rated:
+            ratedstr = "false"
+        fields = {
+            "variant": self.variant,
+            "clock.limit": str(initial),
+            "clock.increment": str(increment),
+            "rated": ratedstr
+        }
+        print("making challenge", fields)        
+        res = posturl(f"https://lichess.org//api/challenge/{username}", asjson = True, headers = {
+            "Authorization": f"Bearer {self.token}",
+            "Accept": "application/json"
+        }, fields = fields)        
+        return res
+
     def newengine(self):
         if self.engine:
             self.engine.kill()

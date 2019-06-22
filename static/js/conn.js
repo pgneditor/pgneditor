@@ -1950,8 +1950,21 @@ class Board_ extends e{
         this.analysissplitpane.setcontentelement(this.analysisinfocontainer)
         this.analysisbookdiv = Div().pad(3).pl(9)
         this.botdiv = Div().pad(3)
+        this.challengediv = Div().pad(3).curlyborder().mt(5)
+        this.challengeusernametextinput = CopyText({id: this.id + "/challengeusernametextinput", docopy:false})
+        this.challengeinitialtextinput = CopyText({id: this.id + "/challengeinitialtextinput", docopy:false, width: 150})
+        this.challengeincrementtextinput = CopyText({id: this.id + "/challengeincrementtextinput", docopy:false, width: 150})
+        this.challengeratedcheck = Check({id: `${this.id}/challengerated`})
+        this.challengediv.a(
+            Labeled("Challenge user", this.challengeusernametextinput),
+            Labeled("Initial time", this.challengeinitialtextinput),
+            Labeled("Increment", this.challengeincrementtextinput),
+            Labeled("Rated", this.challengeratedcheck),
+            Div().mt(5).mb(5).a(Button("Challenge", this.challenge.bind(this)).fs(20).w(300))
+        )
         this.botdiv.a(
-            Button("Reload analysis book", this.botreloadanalysisbook.bind(this))
+            Button("Reload analysis book", this.botreloadanalysisbook.bind(this)).fs(20),
+            this.challengediv
         )
         this.analysistabpane = TabPane("analysistabpane").settabs([
             Tab("analysis", "Analysis", this.analysissplitpane, "A"),
@@ -1980,6 +1993,19 @@ class Board_ extends e{
         this.resize(this.width, this.height)
         this.enginelasttick = new Date().getTime()
         window.setInterval(this.checkengineconn.bind(this), 2000)
+    }
+
+    challenge(){
+        api({
+            "kind": "challenge",
+            "username": this.challengeusernametextinput.getText(),
+            "initial": this.challengeinitialtextinput.getText(),
+            "increment": this.challengeincrementtextinput.getText(),
+            "rated": this.challengeratedcheck.checked
+        }, function(resobj){
+            console.log("challenge", resobj)
+            window.alert(`Challenge returned : ${JSON.stringify(resobj.status)}`)
+        })
     }
 
     botreloadanalysisbook(){
