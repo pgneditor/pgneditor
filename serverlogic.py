@@ -1030,6 +1030,12 @@ def initenginetarget():
     print("initializing engine done")
 
 class Bot:
+    def newengine(self):
+        if self.engine:
+            self.engine.kill()
+        self.engine = UciEngine(ENGINE_WORKING_DIR(), ENGINE_EXECUTABLE_NAME(), "botengine", None)        
+        self.engine.open()        
+
     def __init__(self, token = os.environ.get("BOTTOKEN", None), username = os.environ.get("BOTUSERNAME", "AtomicVsEngineBot"), variant = "atomic"):
         self.token = token        
         if not self.token:
@@ -1040,9 +1046,8 @@ class Bot:
         self.analysisbook = None
         self.playing = False
         self.gameticks = {}
-        self.engine = UciEngine(ENGINE_WORKING_DIR(), ENGINE_EXECUTABLE_NAME(), "botengine", None)        
-        self.engine.open()
-        self.engine.setoption("Move Overhead", 2000)
+        self.engine = None
+        self.newengine()
         self.loadanalysisbook()
         Thread(target = self.streameventstarget).start()
 
@@ -1070,8 +1075,7 @@ class Bot:
     def getbookmove(self, board):
         try:
             zkh = get_zobrist_key_hex(board)
-            if zkh in self.analysisbook:
-                print("position found in book")
+            if zkh in self.analysisbook:                
                 posblob = json.loads(self.analysisbook[zkh])                
                 if "movesblob" in posblob:
                     movesblob = posblob["movesblob"]
@@ -1079,40 +1083,43 @@ class Bot:
                     for moveblob in movesblob:                        
                         for i in range(int(moveblob["weight"])):
                             ucilist.append(moveblob["uci"])
-                    index = random.randint(0, len(ucilist) - 1)
-                    print("ucilist", ucilist, index)
-                    seluci = ucilist[index]
-                    print("selected uci", seluci)
+                    index = random.randint(0, len(ucilist) - 1)                    
+                    seluci = ucilist[index]                    
                     return seluci
                 else:
                     return None
-            else:
-                print("position not found in book")
+            else:                
                 return None
         except:
             print("problem finding book move")            
             return None
 
     def makemove(self, gameid, uci):
-        print("making move", gameid, uci)
+        #print("making move", gameid, uci)
         res = posturl(f"https://lichess.org//api/bot/game/{gameid}/move/{uci}", asjson = True, headers = {
             "Authorization": f"Bearer {self.token}",
             "Accept": "application/json"
         })        
         print("make move response", res)
 
-    def getenginemove(self, board, initialboard, moves = [], timecontrol = None, ponder = None):        
-        legalmoves = board.legal_moves
-        print("legal moves", legalmoves)
+    def getenginemove(self, board, initialboard, moves = [], timecontrol = None, ponder = None):                
+        legalmoves = board.legal_moves        
         if len(list(legalmoves)) == 0:
             print("no legal moves")
-            return None        
-        print("time control", timecontrol)
+            return None                
         ponderok = False
         if len(moves) > 0:
             if moves[-1] == ponder:
                 ponderok = True
                 print("ponder ok")
+        moveoverhead = 0
+        if timecontrol:
+            mytime = timecontrol.wtime
+            if self.color == chess.BLACK:
+                mytime = timecontrol.btime            
+            if mytime < 30000:
+                moveoverhead = os.environ.get("MOVEOVERHEAD", 1500)        
+        self.engine.setoption("Move Overhead", moveoverhead)
         enginestarted = time.time()
         if ponderok:
             ( bestmove, ponder ) = self.engine.awaitponder()
@@ -1125,23 +1132,19 @@ class Bot:
             else:
                 pass
             ( bestmove, ponder ) = self.engine.awaitbestmove()
-        elapsed = time.time() - enginestarted
-        print("elapsed", elapsed)
+        elapsed = time.time() - enginestarted        
         if timecontrol:
             if self.color == chess.WHITE:
                 timecontrol.wtime -= int(elapsed * 1000)
                 if timecontrol.wtime < 0:
-                    timecontrol.wtime = 50
-                print("new wtime", timecontrol.wtime)
+                    timecontrol.wtime = 50                
             else:
                 timecontrol.btime -= int(elapsed * 1000)
                 if timecontrol.btime < 0:
-                    timecontrol.btime = 50
-                print("new btime", timecontrol.btime)                
+                    timecontrol.btime = 50                
         if ponder:
             moves.append(bestmove)
-            moves.append(ponder)
-            print("start pondering on", moves)
+            moves.append(ponder)            
             self.engine.doanalyze(AnalyzeJob(fen = initialboard.fen(), moves = moves, multipv = 1, variantkey = self.variant, timecontrol = timecontrol), ponder = True)        
         return ( bestmove, ponder )
 
@@ -1203,16 +1206,14 @@ class Bot:
                                 for uci in moves:
                                     move = chess.Move.from_uci(uci)                                                                
                                     board.push(move)                                    
-                                if board.turn == self.color:
-                                    print("bot to move")
+                                if board.turn == self.color:                                    
                                     bookmove = self.getbookmove(board)
                                     if bookmove:
-                                        print("making book move")                                        
+                                        print("making book move", bookmove)                                        
                                         self.makemove(gameid, bookmove)
                                         self.engine.stop()
                                         self.ponder = None
-                                    else:
-                                        print("getting engine move")
+                                    else:                                        
                                         timecontrol = TimeControl(state["wtime"], state["winc"], state["btime"], state["binc"])
                                         ( enginemove, ponder ) = self.getenginemove(board, self.initialboard, moves, timecontrol, self.ponder)
                                         self.ponder = ponder

@@ -409,8 +409,7 @@ class UciEngine(Engine):
         ui = UciInfo(sline)
         if self.systemlog:
             self.systemlog.log(SystemLogItem({"owner": self.id, "msg": sline, "kind": ui.kind}))
-        if ui.kind == "bestmove":
-            print("bestmove")
+        if ui.kind == "bestmove":            
             self.bestmove = ui.bestmove
             self.ponder = ui.ponder
             self.analyzing = False
@@ -454,8 +453,7 @@ class UciEngine(Engine):
 
     def doanalyze(self, analyzejob, ponder = False):
         ucivariant = variantkey2ucivariant(analyzejob.variantkey)
-        self.awaitstop()
-        print("starting", analyzejob)
+        self.awaitstop()        
         self.analysisinfo = AnalysisInfo(analyzejob)
         self.setoption("UCI_Variant", ucivariant)
         self.setoption("MultiPV", analyzejob.multipv)
@@ -497,5 +495,5 @@ class UciEngine(Engine):
         self.stop()
 
     def __repr__(self):
-        return f"< UciEngine {self.id} | {self.commandpath} >"
+        return f"< {self.id} >"
 
