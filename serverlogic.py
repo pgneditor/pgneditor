@@ -179,6 +179,7 @@ class Req():
         self.initial = reqobj.get("initial", None)
         self.increment = reqobj.get("increment", None)
         self.rated = reqobj.get("rated", None)
+        self.color = reqobj.get("color", None)
 
         if SERVERLOGIC_VERBOSE:
             log(self, "warning")
@@ -755,8 +756,8 @@ def reloadanalysisbook(req):
 def challenge(req):
     global bot
     if req.user.can("admin"):        
-        log(f"< challenge | {req.username} | {req.initial} | {req.increment} | {req.rated} >", "info")    
-        status = bot.challenge(req.username, req.initial, req.increment, req.rated)
+        log(f"< challenge | {req.username} | {req.initial} | {req.increment} | {req.rated} | {req.color} >", "info")    
+        status = bot.challenge(req.username, req.initial, req.increment, req.rated, req.color)
         print("challenge status", status)
         return {
             "kind": "challengeissued",
@@ -1050,7 +1051,7 @@ def initenginetarget():
     print("initializing engine done")
 
 class Bot:
-    def challenge(self, username, initial, increment, rated):
+    def challenge(self, username, initial, increment, rated, color):
         ratedstr = "true"
         if not rated:
             ratedstr = "false"
@@ -1058,7 +1059,8 @@ class Bot:
             "variant": self.variant,
             "clock.limit": str(initial),
             "clock.increment": str(increment),
-            "rated": ratedstr
+            "rated": ratedstr,
+            "color": color
         }
         print("making challenge", fields)        
         res = posturl(f"https://lichess.org//api/challenge/{username}", asjson = True, headers = {
