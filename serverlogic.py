@@ -1046,9 +1046,9 @@ def enginetesttarget():
 
 def initenginetarget():
     global mainengine
-    print("initializing engine")
+    #print("initializing engine")
     newengine_func()
-    print("initializing engine done")
+    #print("initializing engine done")
 
 class Bot:
     def challenge(self, username, initial, increment, rated, color):
@@ -1093,7 +1093,8 @@ class Bot:
     def loadanalysisbook(self):
         self.analysisbook = fdb.reference(f"analysisbook/{self.variant}").get()
         if self.analysisbook:
-            print("analysis book loaded", len(list(self.analysisbook.keys())), "position(s)")
+            #print("analysis book loaded", len(list(self.analysisbook.keys())), "position(s)")
+            pass
 
     def monitoreventstreamtarget(self, r):
         while True:
@@ -1278,7 +1279,7 @@ class Bot:
     def streameventstarget(self):        
         while True:
             try:
-                print("opening event stream")
+                #print("opening event stream")
                 r = requests.get("https://lichess.org//api/stream/event", headers = {
                     "Authorization": f"Bearer {self.token}",
                     "Accept": "application/x-ndjson"
@@ -1348,7 +1349,7 @@ Thread(target = initenginetarget).start()
 
 bot = Bot()
 
-print("serverlogic started, prod", IS_PROD())
+#print("serverlogic started, prod", IS_PROD())
 
 #buildplayerbook("sefulesefarka", force = True)
 
