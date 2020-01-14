@@ -67,7 +67,7 @@ class Engine:
             self.read_stderr_func(sline)
 
     def open(self):        
-        print("open", self)
+        #print("open", self)
 
         self.process = Popen(
             [self.commandpath],
