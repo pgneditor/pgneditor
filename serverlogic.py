@@ -1338,7 +1338,7 @@ def cleanplayers():
 
 #cleanplayers()
 
-if IS_PROD() or False:
+if IS_PROD() and False:
     Thread(target = scanplayerstarget).start()
     Thread(target = keepalivetarget).start()
 
